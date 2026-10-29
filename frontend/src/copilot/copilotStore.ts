@@ -68,6 +68,8 @@ export interface CopilotStore {
   stop: (agentId: string) => void;
   /** Sets the status of the proposal on the assistant message at `index` (Apply and Discard). */
   setProposalStatus: (agentId: string, index: number, status: Proposal["status"]) => void;
+  /** Pulses `node` on the canvas (or stops, with null) while the pointer is on something about it; a running turn owns the focus. */
+  setFocus: (agentId: string, node: string | null) => void;
   /** Shows the working copy on the canvas again; the proposal stays pending in the conversation. */
   hideReview: (agentId: string) => void;
   /** Clears the conversation and the server-side session. */
@@ -180,6 +182,7 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
       }
     },
     stop: (agentId) => controllers.get(agentId)?.abort(),
+    setFocus: (agentId, node) => patch(agentId, (chat) => (chat.running ? chat : { ...chat, focus: node })),
     hideReview: (agentId) => patch(agentId, (chat) => ({ ...chat, review: null })),
     setProposalStatus: (agentId, index, status) =>
       patch(agentId, (chat) => ({

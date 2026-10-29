@@ -945,6 +945,46 @@ button.issues__item:hover {
   font-size: 13px;
 }
 
+.findings {
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid var(--control);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.findings__title {
+  margin: 0 0 4px;
+  font-size: 13px;
+}
+
+.findings ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.findings p {
+  margin: 2px 0;
+}
+
+.findings__label {
+  font-weight: 600;
+}
+
+.findings__runs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.findings__run {
+  padding: 0 6px;
+  font-family: monospace;
+}
+
 .proposal--discarded {
   opacity: 0.6;
 }
