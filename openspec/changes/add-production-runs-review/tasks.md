@@ -22,7 +22,7 @@ Each group is a vertical slice that ends with something usable and verified. Tes
 ## 4. Copilot can read the open agent's runs
 
 - [x] 4.1 `render_runs(runs)` in `backend/copilot/` producing the text format in design Decision 4. Verify: pytest snapshot on one run with a flag, transitions with args and a missing `via`.
-- [ ] 4.2 Workspace: `runs_path(agent_id)` under `workspace/runs/` (git-ignored); the runner writes the file before each turn when the agent has runs, removes a stale one otherwise, and adds the "Its production runs are in …" line to the prompt only when it exists. Verify: pytest with a fake SDK client checks the file and the prompt line for a demo agent, and their absence for an agent without runs.
+- [x] 4.2 Workspace: `runs_path(agent_id)` under `workspace/runs/` (git-ignored); the runner writes the file before each turn when the agent has runs, removes a stale one otherwise, and adds the "Its production runs are in …" line to the prompt only when it exists. Verify: pytest with a fake SDK client checks the file and the prompt line for a demo agent, and their absence for an agent without runs.
 - [ ] 4.3 Guard: allow `Read` on the current agent's runs file, deny `Edit`/`Write` on it and any access to another agent's runs file. Verify: extend the guard pytest table with these cases plus `..` and symlink variants.
 
 ## 5. Findings tool, review skill and prompt

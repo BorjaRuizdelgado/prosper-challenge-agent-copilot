@@ -48,3 +48,23 @@ def test_overwrites_previous_draft():
 def test_read_missing_draft_raises():
     with pytest.raises(FileNotFoundError):
         workspace.read_draft("nope")
+
+
+RUN = {
+    "id": "r-1", "started_at": "2026-10-21T09:14:00Z", "duration_s": 30, "outcome": "completed",
+    "transcript": [{"speaker": "caller", "text": "Hi"}], "path": [{"node": "a"}],
+}
+
+
+def test_runs_are_written_as_text_and_a_stale_file_is_removed(copilot_workspace):
+    path = workspace.write_runs("clinic", [RUN])
+    assert path == copilot_workspace / "runs" / "clinic.txt"
+    assert path.read_text().startswith("run r-1 · completed · 30s\npath: a\nCaller: Hi")
+    assert workspace.write_runs("clinic", []) is None
+    assert not path.exists()
+    assert workspace.write_runs("clinic", []) is None  # nothing to remove is fine
+
+
+def test_runs_path_rejects_bad_ids():
+    with pytest.raises(InvalidAgentId):
+        workspace.runs_path("../x")

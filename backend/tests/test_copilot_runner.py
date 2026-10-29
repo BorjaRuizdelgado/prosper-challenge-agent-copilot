@@ -236,3 +236,29 @@ def test_model_defaults_to_haiku_and_can_be_overridden(monkeypatch):
     assert runner._options("demo").model == "haiku"
     monkeypatch.setenv("COPILOT_MODEL", "sonnet")
     assert runner._options("demo").model == "sonnet"
+
+
+async def test_prompt_points_at_the_runs_file_of_an_agent_with_runs(tmp_path, monkeypatch):
+    runs_dir = tmp_path / "runs-data"
+    runs_dir.mkdir()
+    run = {
+        "id": "r-1", "started_at": "2026-10-21T09:14:00Z", "duration_s": 30, "outcome": "stuck",
+        "transcript": [{"speaker": "caller", "text": "Hello?"}], "path": [{"node": "a"}],
+    }
+    (runs_dir / "clinic.json").write_text(json.dumps([run]))
+    monkeypatch.setenv("RUNS_DIR", str(runs_dir))
+    await collect([result()])
+    assert FakeClient.instances[0].prompt == (
+        "The agent draft is drafts/clinic.json. Its production runs are in runs/clinic.txt.\n\ndo it"
+    )
+    assert "run r-1 · stuck · 30s" in (workspace.workspace_dir() / "runs" / "clinic.txt").read_text()
+
+
+async def test_no_runs_means_no_file_no_prompt_line_and_no_stale_file(tmp_path, monkeypatch):
+    monkeypatch.setenv("RUNS_DIR", str(tmp_path / "none"))
+    stale = workspace.runs_path("clinic")
+    stale.parent.mkdir(parents=True)
+    stale.write_text("old")
+    await collect([result()])
+    assert not stale.exists()
+    assert "production runs" not in FakeClient.instances[0].prompt
