@@ -43,7 +43,7 @@ export function AgentList() {
             <li key={a.id} className="agent-list__row">
               <NavLink to={`/agents/${a.id}`} className="agent-list__item">
                 <span>{a.name}</span>
-                <span className="agent-list__meta">{a.node_count} nodes</span>
+                <span className="agent-list__meta">{a.node_count} {a.node_count === 1 ? "node" : "nodes"}</span>
               </NavLink>
               <span className="agent-list__actions">
                 <button type="button" aria-label={`Rename ${a.name}`} onClick={() => setDialog({ kind: "rename", agent: a })}>

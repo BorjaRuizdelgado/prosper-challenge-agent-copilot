@@ -823,3 +823,264 @@ button.issues__item:hover {
   font-family: var(--font-mono);
   font-size: 12px;
 }
+
+/* ---- copilot ---- */
+.copilot {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
+
+.copilot__bar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.copilot__empty {
+  color: var(--muted);
+}
+
+.copilot__empty ul,
+.copilot__messages,
+.copilot__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.copilot__empty ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.copilot__example {
+  width: 100%;
+  text-align: left;
+}
+
+.copilot__messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.copilot__msg {
+  overflow-wrap: anywhere;
+}
+
+.copilot__msg--user {
+  align-self: flex-end;
+  max-width: 85%;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--control);
+  white-space: pre-wrap;
+}
+
+.copilot__steps {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.copilot__text {
+  margin: 4px 0 0;
+  white-space: pre-wrap;
+}
+
+.copilot__working,
+.copilot__note {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.copilot__error {
+  margin: 4px 0 0;
+  color: var(--negative);
+}
+
+.copilot__form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.copilot__form textarea {
+  resize: vertical;
+  font: inherit;
+}
+
+/* The node the copilot is reading or editing; same outline as a call's active node, but pulsing. */
+.node-card--copilot {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  animation: copilot-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes copilot-pulse {
+  50% {
+    outline-offset: 4px;
+    outline-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node-card--copilot {
+    animation: none;
+  }
+}
+
+/* ---- copilot proposal card ---- */
+.proposal {
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid var(--control);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.proposal--discarded {
+  opacity: 0.6;
+}
+
+.proposal__summary {
+  margin: 0;
+  font-weight: 600;
+}
+
+.proposal__issues,
+.proposal__changes ul,
+.proposal__fields {
+  margin: 4px 0 0;
+  padding-left: 16px;
+}
+
+.proposal__issue--error,
+.proposal__warn {
+  color: var(--negative);
+}
+
+.proposal__warn {
+  margin: 4px 0 0;
+}
+
+.proposal__changes {
+  margin-top: 6px;
+}
+
+.proposal__before,
+.proposal__after {
+  margin: 2px 0;
+  white-space: pre-wrap;
+}
+
+.proposal__before {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.proposal__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* ---- copilot draft on the canvas ---- */
+.editor__canvas {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.review-banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-control);
+  font-size: 13px;
+}
+
+.node-card--added {
+  border-color: var(--positive);
+  animation: draft-fade-in 0.4s ease-out;
+}
+
+.node-card--changed {
+  border-color: var(--warning);
+  animation: draft-flash 0.8s ease-out;
+}
+
+.node-card--removed {
+  opacity: 0.4;
+  border-style: dashed;
+  border-color: var(--negative);
+}
+
+.react-flow__edge-path.edge--added {
+  stroke: var(--positive);
+}
+
+.react-flow__edge-path.edge--changed {
+  stroke: var(--warning);
+}
+
+.react-flow__edge-path.edge--removed {
+  stroke: var(--negative);
+  stroke-dasharray: 4 4;
+  opacity: 0.5;
+}
+
+.edge-label--added {
+  border-color: var(--positive);
+}
+
+.edge-label--changed {
+  border-color: var(--warning);
+}
+
+.edge-label--removed {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.inspector--readonly {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+@keyframes draft-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes draft-flash {
+  from {
+    background: var(--active);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node-card--added,
+  .node-card--changed {
+    animation: none;
+  }
+}

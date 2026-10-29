@@ -41,7 +41,7 @@ export function bezierThroughOffset(
 }
 
 /** A bezier edge whose label (the function name) can be dragged; the line bends to keep passing through it. */
-export function LabelEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, label, selected, markerEnd }: EdgeProps) {
+export function LabelEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, label, selected, markerEnd, data }: EdgeProps) {
   const offset = useAgentStore((s) => s.labelOffsets[id]) ?? { x: 0, y: 0 };
   const moveLabel = useAgentStore((s) => s.moveLabel);
   const select = useAgentStore((s) => s.select);
@@ -51,14 +51,15 @@ export function LabelEdge({ id, sourceX, sourceY, targetX, targetY, sourcePositi
   const { path, mid } = bezierThroughOffset([sourceX, sourceY], [targetX, targetY], sourcePosition, targetPosition, offset);
   const [nodeName, fn] = id.split("::");
   const severity = useAgentStore((s) => worstSeverity(s.issues, nodeName, fn));
+  const change = (data as { change?: string } | undefined)?.change;
   const taken = useCallStore((s) => s.lastTransition?.from === nodeName && s.lastTransition.via === fn);
 
   return (
     <>
-      <BaseEdge id={id} path={path} markerEnd={markerEnd} className={taken ? "edge--taken" : undefined} />
+      <BaseEdge id={id} path={path} markerEnd={markerEnd} className={[taken && "edge--taken", change && `edge--${change}`].filter(Boolean).join(" ") || undefined} />
       <EdgeLabelRenderer>
         <div
-          className={`edge-label nodrag nopan${selected ? " edge-label--selected" : ""}${severity ? ` edge-label--${severity}` : ""}${taken ? " edge-label--taken" : ""}`}
+          className={`edge-label nodrag nopan${selected ? " edge-label--selected" : ""}${severity ? ` edge-label--${severity}` : ""}${taken ? " edge-label--taken" : ""}${change ? ` edge-label--${change}` : ""}`}
           style={{ transform: `translate(-50%, -50%) translate(${mid.x}px, ${mid.y}px)` }}
           title="Drag to move this label"
           onPointerDown={(e) => {

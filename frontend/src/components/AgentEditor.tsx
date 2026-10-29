@@ -4,6 +4,7 @@ import { useAgentStore } from "../store";
 import { useValidation } from "../useValidation";
 import { Dock } from "./Dock";
 import { GraphCanvas } from "./GraphCanvas";
+import { ReviewBanner } from "./ReviewBanner";
 import { SaveBar } from "./SaveBar";
 
 export function AgentEditor() {
@@ -33,7 +34,7 @@ export function AgentEditor() {
     <div className="editor">
       <header className="editor__bar">
         <h1 className="editor__title">{agent.name}</h1>
-        <span className="editor__meta">{agent.nodes.length} nodes</span>
+        <span className="editor__meta">{agent.nodes.length} {agent.nodes.length === 1 ? "node" : "nodes"}</span>
         <div className="editor__tools">
           <button type="button" onClick={() => addNode()}>
             Add node
@@ -45,7 +46,10 @@ export function AgentEditor() {
         <SaveBar />
       </header>
       <div className="editor__body">
-        <GraphCanvas agent={agent} positions={positions} />
+        <div className="editor__canvas">
+          <ReviewBanner />
+          <GraphCanvas agent={agent} positions={positions} />
+        </div>
         <Dock />
       </div>
     </div>

@@ -1,0 +1,206 @@
+import { create } from "zustand";
+import type { Agent, Issue } from "../model";
+import { type CopilotEvent, resetCopilot, streamCopilot } from "./client";
+
+export interface Step {
+  label: string;
+  node?: string;
+}
+
+/** A proposed agent with the working copy it was made from, so Apply can tell it went stale. */
+export interface Proposal {
+  agent: Agent;
+  issues: Issue[];
+  base: Agent;
+  status: "pending" | "applied" | "discarded";
+}
+
+export type ChatMessage =
+  | { role: "user"; text: string }
+  | {
+      role: "assistant";
+      text: string;
+      steps: Step[];
+      proposal?: Proposal;
+      error?: { message: string; setup: boolean };
+      stopped?: boolean;
+    };
+
+export interface Chat {
+  messages: ChatMessage[];
+  running: boolean;
+  /** When the running turn was sent (ms since epoch), for the panel's timer; null when idle. */
+  startedAt: number | null;
+  /** The node the copilot is reading or editing right now (`step.node`); the canvas pulses it. Null when idle. */
+  focus: string | null;
+  /**
+   * What the canvas shows instead of the working copy: the latest draft (while the turn runs) or the
+   * pending proposal (after it), with the working copy it was made from. Null when the canvas shows the working copy.
+   */
+  review: { base: Agent; agent: Agent } | null;
+}
+
+const emptyChat: Chat = { messages: [], running: false, startedAt: null, focus: null, review: null };
+
+export type Streamer = (agentId: string, message: string, agent: Agent, signal: AbortSignal) => AsyncIterable<CopilotEvent>;
+
+let streamer: Streamer = streamCopilot;
+
+/** Swap the event source (tests pass a fake); returns a restore function. */
+export function setCopilotStreamer(next: Streamer) {
+  const previous = streamer;
+  streamer = next;
+  return () => {
+    streamer = previous;
+  };
+}
+
+export interface CopilotStore {
+  chats: Record<string, Chat>;
+  /** Text waiting to be dropped into the panel's input (e.g. from a finished call); the panel takes it and clears it. */
+  prefill: string | null;
+  setPrefill: (text: string | null) => void;
+  /** Sends an instruction with the current working copy; resolves when the turn has ended. */
+  send: (agentId: string, message: string, agent: Agent) => Promise<void>;
+  /** Aborts the running turn; its output so far stays, and it yields no proposal. */
+  stop: (agentId: string) => void;
+  /** Sets the status of the proposal on the assistant message at `index` (Apply and Discard). */
+  setProposalStatus: (agentId: string, index: number, status: Proposal["status"]) => void;
+  /** Shows the working copy on the canvas again; the proposal stays pending in the conversation. */
+  hideReview: (agentId: string) => void;
+  /** Clears the conversation and the server-side session. */
+  reset: (agentId: string) => Promise<void>;
+}
+
+const controllers = new Map<string, AbortController>();
+
+const STORAGE_KEY = "copilot-chats-v1";
+
+/** The part of a chat worth keeping across a page reload (the rest is live state). */
+interface SavedChat {
+  messages: ChatMessage[];
+  /** A turn was in flight when it was saved; the reload cut it off. */
+  running: boolean;
+}
+
+/** Set when the page starts unloading: the browser then aborts the stream, and that error must not be saved. */
+let unloading = false;
+if (typeof window !== "undefined") window.addEventListener("pagehide", () => (unloading = true));
+
+function saveChats(chats: Record<string, Chat>) {
+  if (unloading) return;
+  try {
+    const saved: Record<string, SavedChat> = {};
+    for (const [id, c] of Object.entries(chats)) if (c.messages.length) saved[id] = { messages: c.messages, running: c.running };
+    if (Object.keys(saved).length) localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+    else localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // storage full or unavailable: the conversation just won't survive a reload
+  }
+}
+
+/** Conversations saved by `saveChats`. A turn the reload cut off is shown as stopped; a pending proposal puts its draft back on the canvas. */
+export function loadChats(): Record<string, Chat> {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}") as Record<string, SavedChat>;
+    return Object.fromEntries(
+      Object.entries(saved).map(([id, { messages, running }]) => {
+        const msgs = messages.map((m, i) => (running && i === messages.length - 1 && m.role === "assistant" ? { ...m, stopped: true } : m));
+        const last = msgs[msgs.length - 1];
+        const pending = last?.role === "assistant" && last.proposal?.status === "pending" ? last.proposal : null;
+        return [id, { ...emptyChat, messages: msgs, review: pending ? { base: pending.base, agent: pending.agent } : null }];
+      }),
+    );
+  } catch {
+    return {};
+  }
+}
+
+export const chatOf = (chats: Record<string, Chat>, agentId: string | null): Chat =>
+  (agentId && chats[agentId]) || emptyChat;
+
+export const useCopilotStore = create<CopilotStore>((set, get) => {
+  const patch = (agentId: string, change: (chat: Chat) => Chat) =>
+    set((s) => ({ chats: { ...s.chats, [agentId]: change(chatOf(s.chats, agentId)) } }));
+
+  /** Updates the assistant message of the running turn (always the last one). */
+  const patchReply = (agentId: string, change: (m: Extract<ChatMessage, { role: "assistant" }>) => Partial<ChatMessage>) =>
+    patch(agentId, (chat) => {
+      const last = chat.messages[chat.messages.length - 1];
+      if (last?.role !== "assistant") return chat;
+      return { ...chat, messages: [...chat.messages.slice(0, -1), { ...last, ...change(last) } as ChatMessage] };
+    });
+
+  return {
+    chats: loadChats(),
+    prefill: null,
+    setPrefill: (prefill) => set({ prefill }),
+    send: async (agentId, message, agent) => {
+      if (chatOf(get().chats, agentId).running || !message.trim()) return;
+      const controller = new AbortController();
+      controllers.set(agentId, controller);
+      patch(agentId, (chat) => ({
+        ...chat,
+        messages: [...chat.messages, { role: "user", text: message.trim() }, { role: "assistant", text: "", steps: [] }],
+        running: true,
+        startedAt: Date.now(),
+      }));
+      try {
+        for await (const e of streamer(agentId, message.trim(), agent, controller.signal)) {
+          if (controller.signal.aborted) break;
+          if (e.event === "step") {
+            // Text streamed before a tool call is narration, not the reply: drop it.
+            patchReply(agentId, (m) => ({ text: "", steps: [...m.steps, { label: e.label, node: e.node }] }));
+            // A step without a node (validating) keeps the last focus; only the end of the turn clears it.
+            if (e.node) patch(agentId, (chat) => ({ ...chat, focus: e.node! }));
+          }
+          else if (e.event === "draft") patch(agentId, (chat) => ({ ...chat, review: { base: agent, agent: e.agent } }));
+          else if (e.event === "text") patchReply(agentId, (m) => ({ text: m.text + e.delta }));
+          else if (e.event === "proposal") {
+            patchReply(agentId, () => ({ proposal: { agent: e.agent, issues: e.issues, base: agent, status: "pending" } }));
+            patch(agentId, (chat) => ({ ...chat, review: { base: agent, agent: e.agent } }));
+          }
+          else if (e.event === "error") patchReply(agentId, () => ({ error: { message: e.message, setup: !!e.setup } }));
+          else if (e.event === "done") break;
+        }
+      } catch (err) {
+        patchReply(agentId, () => ({ error: { message: (err as Error).message || "The copilot failed.", setup: false } }));
+      } finally {
+        if (controllers.get(agentId) === controller) controllers.delete(agentId);
+        if (controller.signal.aborted) patchReply(agentId, () => ({ stopped: true }));
+        // Only a proposal keeps the canvas on the draft; a stopped, failed or no-change turn restores the working copy.
+        patch(agentId, (chat) => {
+          const last = chat.messages[chat.messages.length - 1];
+          const keep = last?.role === "assistant" && last.proposal?.status === "pending" && !controller.signal.aborted;
+          return { ...chat, running: false, startedAt: null, focus: null, review: keep ? chat.review : null };
+        });
+      }
+    },
+    stop: (agentId) => controllers.get(agentId)?.abort(),
+    hideReview: (agentId) => patch(agentId, (chat) => ({ ...chat, review: null })),
+    setProposalStatus: (agentId, index, status) =>
+      patch(agentId, (chat) => ({
+        ...chat,
+        review: status === "pending" ? chat.review : null,
+        messages: chat.messages.map((m, i) =>
+          i === index && m.role === "assistant" && m.proposal ? { ...m, proposal: { ...m.proposal, status } } : m,
+        ),
+      })),
+    reset: async (agentId) => {
+      controllers.get(agentId)?.abort();
+      controllers.delete(agentId);
+      patch(agentId, () => emptyChat);
+      await resetCopilot(agentId).catch(() => {});
+    },
+  };
+});
+
+useCopilotStore.subscribe((state, prev) => {
+  if (state.chats !== prev.chats) saveChats(state.chats);
+});
+
+export const resetCopilotStore = () => {
+  controllers.forEach((c) => c.abort());
+  controllers.clear();
+  useCopilotStore.setState({ chats: {}, prefill: null });
+};

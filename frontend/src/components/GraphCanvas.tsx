@@ -2,7 +2,8 @@ import { Background, ConnectionMode, Controls, ReactFlow, ReactFlowProvider, use
 import "@xyflow/react/dist/style.css";
 import { useEffect, useMemo, useRef } from "react";
 import { connect, deleteEdges, reconnect } from "../canvasActions";
-import { toFlow } from "../graph";
+import { chatOf, useCopilotStore } from "../copilot/copilotStore";
+import { toFlow, toReviewFlow } from "../graph";
 import { useAgentStore } from "../store";
 import type { Agent, Position } from "../model";
 import { LabelEdge } from "./LabelEdge";
@@ -30,14 +31,32 @@ function FitOnResize() {
   return null;
 }
 
+/** Refits the view when the graph gains or loses nodes (a copilot draft, Apply, Add node), so new ones are never off screen. */
+function FitOnDraftChange({ count }: { count: number }) {
+  const { fitView } = useReactFlow();
+  const seen = useRef(count);
+  useEffect(() => {
+    if (seen.current === count) return;
+    seen.current = count;
+    void fitView(FIT);
+  }, [count, fitView]);
+  return null;
+}
+
 export function GraphCanvas({ agent, positions }: { agent: Agent; positions: Record<string, Position> }) {
   const selection = useAgentStore((s) => s.selection);
   const select = useAgentStore((s) => s.select);
   const layoutRun = useAgentStore((s) => s.layoutRun);
   const moveNode = useAgentStore((s) => s.moveNode);
-  const { nodes, edges } = useMemo(() => toFlow(agent, positions, selection), [agent, positions, selection]);
+  const agentId = useAgentStore((s) => s.agentId);
+  const review = useCopilotStore((s) => chatOf(s.chats, agentId).review);
+  const { nodes, edges } = useMemo(
+    () => (review ? toReviewFlow(review.base, review.agent, positions, selection) : toFlow(agent, positions, selection)),
+    [agent, positions, selection, review],
+  );
+  const readOnly = review !== null;
   return (
-    <div className="canvas" data-testid="canvas">
+    <div className={`canvas${readOnly ? " canvas--review" : ""}`} data-testid="canvas">
       <ReactFlowProvider>
         <ReactFlow
           key={layoutRun}
@@ -50,20 +69,21 @@ export function GraphCanvas({ agent, positions }: { agent: Agent; positions: Rec
           onNodeClick={(_, n) => select({ kind: "node", node: n.id })}
           onEdgeClick={(_, e) => select({ kind: "edge", node: e.source, function: e.sourceHandle! })}
           onPaneClick={() => select(null)}
-          nodesDraggable
+          nodesDraggable={!readOnly}
           onNodeDrag={(_, n) => moveNode(n.id, n.position)}
-          nodesConnectable
+          nodesConnectable={!readOnly}
           connectionMode={ConnectionMode.Loose}
-          edgesReconnectable
+          edgesReconnectable={!readOnly}
           onConnect={(c) => connect(c)}
           onReconnect={(old, c) => reconnect(old, c)}
-          deleteKeyCode={["Backspace", "Delete"]}
+          deleteKeyCode={readOnly ? null : ["Backspace", "Delete"]}
           // Only edges are deletable from the keyboard; nodes go through the confirmed delete flow.
           onBeforeDelete={async ({ edges }) => ({ nodes: [], edges })}
           onEdgesDelete={deleteEdges}
           minZoom={0.2}
         >
           <FitOnResize />
+          <FitOnDraftChange count={nodes.length} />
           <Background gap={20} color="var(--control)" />
           <Controls showInteractive={false} />
         </ReactFlow>
