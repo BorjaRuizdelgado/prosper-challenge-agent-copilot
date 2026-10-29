@@ -1,6 +1,7 @@
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { App } from "../App";
+import { autoLayout } from "../layout";
 import { useAgentStore } from "../store";
 import { json, mockApi, renderApp } from "../test/helpers";
 
@@ -126,4 +127,18 @@ test("registers a beforeunload guard only while dirty", async () => {
   window.dispatchEvent(event);
 
   expect(event.defaultPrevented).toBe(true);
+});
+
+test("a moved node's position is saved in the layout and Auto layout resets it", async () => {
+  renderApp(<App />, "/agents/s-1");
+  await screen.findByRole("complementary", { name: "Dock" });
+  await act(async () => useAgentStore.getState().moveNode("greeting", { x: 555, y: 321 }));
+  fireEvent.click(screen.getByRole("button", { name: "Save" }));
+  await waitFor(() => expect(status()).toHaveTextContent("Saved"));
+  expect(sent()[0].layout.greeting).toEqual({ x: 555, y: 321 });
+
+  fireEvent.click(screen.getByRole("button", { name: "Auto layout" }));
+  expect(useAgentStore.getState().positions.greeting).not.toEqual({ x: 555, y: 321 });
+  expect(useAgentStore.getState().positions.greeting).toEqual(autoLayout(agent).greeting);
+  expect(status()).toHaveTextContent("Unsaved changes");
 });

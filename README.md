@@ -44,6 +44,12 @@ make test   # pytest + Vitest
 
 Open `http://localhost:5173`. Agents are JSON files in `backend/agents/` (git-ignored; seeded from `example_flow.json` on first run). Run pieces separately with `make api` / `make frontend`.
 
+### Editing the graph
+
+- **Nodes:** *Add node* in the editor bar creates an empty `new_node`; select a node to edit it in the Inspector. There you can *Set as initial* or *Delete node*. Deleting states how many edges from other nodes will be removed with it; the initial node (and the last remaining node) cannot be deleted, so pick another initial node first.
+- **Edges:** drag from a card's handle to another node to connect, drag an edge end to retarget, select and press Delete/Backspace to remove.
+- **Layout:** drag cards to place them. Positions are saved with the agent as `layout` when you press *Save*. *Auto layout* re-arranges everything (left to right) and marks the agent unsaved; nodes without a saved position (e.g. added by hand in the JSON) are laid out automatically on load.
+
 ## Layout
 
 | Path | Responsibility |

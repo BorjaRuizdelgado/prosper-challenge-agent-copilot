@@ -12,11 +12,14 @@ const nodeTypes = { card: NodeCard };
 export function GraphCanvas({ agent, positions }: { agent: Agent; positions: Record<string, Position> }) {
   const selection = useAgentStore((s) => s.selection);
   const select = useAgentStore((s) => s.select);
+  const layoutRun = useAgentStore((s) => s.layoutRun);
+  const moveNode = useAgentStore((s) => s.moveNode);
   const { nodes, edges } = useMemo(() => toFlow(agent, positions, selection), [agent, positions, selection]);
   return (
     <div className="canvas" data-testid="canvas">
       <ReactFlowProvider>
         <ReactFlow
+          key={layoutRun}
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
@@ -25,7 +28,8 @@ export function GraphCanvas({ agent, positions }: { agent: Agent; positions: Rec
           onNodeClick={(_, n) => select({ kind: "node", node: n.id })}
           onEdgeClick={(_, e) => select({ kind: "edge", node: e.source, function: e.sourceHandle! })}
           onPaneClick={() => select(null)}
-          nodesDraggable={false}
+          nodesDraggable
+          onNodeDrag={(_, n) => moveNode(n.id, n.position)}
           nodesConnectable
           edgesReconnectable
           onConnect={(c) => connect(c)}

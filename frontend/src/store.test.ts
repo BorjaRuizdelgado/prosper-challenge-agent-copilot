@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test } from "vitest";
 import type { Agent } from "./model";
+import { NODE_HEIGHT, NODE_WIDTH } from "./layout";
 import { incomingEdgeCount, useAgentStore } from "./store";
 
 const agent = (): Agent => ({
@@ -233,6 +234,35 @@ describe("setInitialNode", () => {
 
     state().setInitialNode("confirm");
     expect(state().agent!.initial_node).toBe("confirm");
+    expect(state().dirty).toBe(true);
+  });
+});
+
+describe("moveNode and autoLayout", () => {
+  test("moving a node records its position and marks dirty", () => {
+    state().moveNode("confirm", { x: 10, y: 20 });
+
+    expect(state().positions.confirm).toEqual({ x: 10, y: 20 });
+    expect(state().positions.greeting).toEqual({ x: 0, y: 0 });
+    expect(state().dirty).toBe(true);
+  });
+
+  test("moving to the same spot or an unknown node changes nothing", () => {
+    state().moveNode("confirm", { x: 400, y: 0 });
+    state().moveNode("nope", { x: 1, y: 1 });
+
+    expect(state().dirty).toBe(false);
+  });
+
+  test("auto layout replaces every position without overlaps and marks dirty", () => {
+    state().moveNode("confirm", { x: 0, y: 0 }); // stacked on greeting
+    const run = state().layoutRun;
+
+    state().autoLayout();
+
+    const { greeting, confirm } = state().positions;
+    expect(Math.abs(greeting.x - confirm.x) >= NODE_WIDTH || Math.abs(greeting.y - confirm.y) >= NODE_HEIGHT).toBe(true);
+    expect(state().layoutRun).toBe(run + 1);
     expect(state().dirty).toBe(true);
   });
 });

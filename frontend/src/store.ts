@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import * as api from "./api";
-import { NODE_HEIGHT, resolveLayout } from "./layout";
+import { autoLayout, NODE_HEIGHT, resolveLayout } from "./layout";
 import type { Agent, AgentNode, Edge, Position } from "./model";
 
 export type Selection = { kind: "node"; node: string } | { kind: "edge"; node: string; function: string } | null;
@@ -58,6 +58,8 @@ export interface AgentState {
   agent: Agent | null;
   /** Position of every node (saved or auto-laid-out). */
   positions: Record<string, Position>;
+  /** Bumped by auto layout so the canvas refits its view to the new arrangement. */
+  layoutRun: number;
   selection: Selection;
   /** True when the working copy differs from what was last loaded or saved. */
   dirty: boolean;
@@ -75,6 +77,10 @@ export interface AgentState {
   /** Deletes a node and every edge targeting it; the initial node and the last node are protected. */
   removeNode: (name: string) => RemoveNodeResult;
   setInitialNode: (name: string) => void;
+  /** Records where the user dragged a node; saved with the agent as its `layout`. */
+  moveNode: (name: string, position: Position) => void;
+  /** Discards every position and lays the whole graph out again. */
+  autoLayout: () => void;
   /** Adds an edge from `from` to `target` with a unique function name, selects it and returns the name. */
   addEdge: (from: string, target: string) => string | null;
   updateEdge: (from: string, fn: string, patch: EdgePatch) => void;
@@ -95,6 +101,7 @@ const empty = {
   error: null,
   agent: null,
   positions: {},
+  layoutRun: 0,
   selection: null as Selection,
   dirty: false,
   saveStatus: "idle" as SaveStatus,
@@ -254,6 +261,17 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       selection: selection && (selection.node === name || selectedEdgeTargets(agent, selection, name)) ? null : selection,
     });
     return { ok: true };
+  },
+  moveNode(name, position) {
+    const { agent, positions } = get();
+    const current = positions[name];
+    if (!agent || !current || (current.x === position.x && current.y === position.y)) return;
+    set({ dirty: true, positions: { ...positions, [name]: position } });
+  },
+  autoLayout() {
+    const { agent } = get();
+    if (!agent) return;
+    set({ dirty: true, positions: autoLayout(agent), layoutRun: get().layoutRun + 1 });
   },
   setInitialNode(name) {
     const { agent } = get();
