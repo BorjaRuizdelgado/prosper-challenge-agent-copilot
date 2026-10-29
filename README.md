@@ -39,7 +39,7 @@ Needs **Node 20+** in addition to the above.
 make up     # install + create .env + start everything
 make down   # stop all services
 make dev    # agents API :8000 + voice runner :7860 + Vite :5173
-make test   # pytest + Vitest
+make test   # pytest + Vitest (the call is faked; see docs/manual-call-test.md for the real one)
 ```
 
 Open `http://localhost:5173`. Agents are JSON files in `backend/agents/` (git-ignored; seeded from `example_flow.json` on first run). Run pieces separately with `make api` / `make frontend`.
@@ -54,14 +54,27 @@ Open `http://localhost:5173`. Agents are JSON files in `backend/agents/` (git-ig
 - **Issues tab:** after edits settle (~400 ms) the working copy, saved or not, is sent to `POST /api/agents/validate`, the same rules `AgentBuilder` enforces. Errors (e.g. an edge to a missing node) and warnings (unreachable node, no terminal node, dead end) are listed; clicking one selects the node or edge, which also carries a red/amber `!` marker. Errors will block starting a test call. If the request fails the tab says the list may be stale.
 - **JSON tab:** the whole agent, including `layout`, as editable JSON. *Apply* replaces the graph and marks it unsaved; malformed JSON (with the line when the browser reports one) or the wrong shape is rejected and the graph is left untouched. *Discard* returns to the current graph.
 
+### Test call
+
+The **Call** tab talks to the agent you are editing, from the browser (needs `OPENAI_API_KEY` and `ELEVENLABS_API_KEY` in `backend/.env` and the voice runner on :7860, which `make dev` starts).
+
+- **Test call** asks for the microphone, starts a session for this agent's id and shows *Connecting… → Live*. Mute and *Hang up* are available while live. A dirty agent shows **Save and call**: the call always runs the saved version. Blocking issues disable the button and say why.
+- **Transcript:** your words and the agent's, alternating, plus a note for the first node and every transition with the data collected. It stays after hang-up until the next call.
+- **Canvas:** the node the call is in gets a teal outline and the last edge taken is coloured; both clear when the call ends.
+- **Failures:** mic denied returns to *Ready* with instructions; a backend that is down, or one that cannot start the session (unknown id, missing keys), shows *Call failed* with a *Retry* button. The runner cannot report setup errors back before a session exists, so those show up in the browser as a ~20 s timeout and in the runner log as the real reason.
+
+How it works: the browser `POST`s `/voice/start` (proxied to the runner) with `{"body": {"agent_id": ...}}`, the Pipecat client then connects over SmallWebRTC, and `bot.py` loads that agent. Transitions travel as an RTVI server message `{"type": "node_changed", "from", "node", "via", "args"}` (`backend/session.py`). `docs/manual-call-test.md` is the checklist for the parts that need a mic and paid keys.
+
 ## Layout
 
 | Path | Responsibility |
 | --- | --- |
 | `backend/bot.py` | The voice pipeline (WebRTC + ElevenLabs STT/TTS + OpenAI LLM). Loads an agent JSON via `AgentBuilder` and runs it. No graph logic lives here. |
 | `backend/agent_builder/` | All agent-building code. `schema.py` = the declarative `AgentConfig` / `Node` / `Edge` contract; `builder.py` = `AgentBuilder`, which loads + validates the JSON and compiles it into a Pipecat Flows graph. |
+| `backend/session.py` | Call setup helpers with no Pipecat imports: read `agent_id` from the session body, load the agent (refusing unknown ids and blocking issues), check API keys, build the `node_changed` message. |
 | `backend/api/` | FastAPI app that lists/edits agent JSON files in `backend/agents/` for the UI. |
-| `frontend/` | Vite + React + TypeScript agent builder UI. |
+| `frontend/` | Vite + React + TypeScript agent builder UI. `src/call/` holds the voice client wrapper and the call store (state machine, transcript, active node). |
+| `docs/manual-call-test.md` | Manual checklist for the real voice path. |
 | `backend/example_flow.json` | The example agent **as data** — a clinic scheduler. The artifact the Phase 2 Composer generates/edits. |
 
 `bot.py` runs the agent whose id the session is started with (`{"agent_id": ...}` in the `/start` body); there is no hardcoded agent. `backend/session.py` loads it, refuses unknown ids and agents with blocking issues, and checks the API keys.
