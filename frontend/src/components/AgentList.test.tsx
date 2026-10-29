@@ -1,30 +1,14 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
 import { afterEach, vi } from "vitest";
+import { json, mockFetch, renderApp } from "../test/helpers";
 import { AgentList } from "./AgentList";
 
 const agents = [
   { id: "a-1", name: "Scheduler", node_count: 4, updated_at: "2026-01-01T00:00:00Z" },
 ];
 
-function mockFetch(...responses: Array<Response | Error>) {
-  const fn = vi.fn();
-  responses.forEach((r) =>
-    r instanceof Error ? fn.mockRejectedValueOnce(r) : fn.mockResolvedValueOnce(r),
-  );
-  vi.stubGlobal("fetch", fn);
-  return fn;
-}
-
-const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
-
-const renderList = () =>
-  render(
-    <MemoryRouter>
-      <AgentList />
-    </MemoryRouter>,
-  );
+const renderList = () => renderApp(<AgentList />);
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -42,7 +26,8 @@ test("shows an empty state when there are no agents", async () => {
   mockFetch(json([]));
   renderList();
 
-  expect(await screen.findByText("No agents yet.")).toBeInTheDocument();
+  expect(await screen.findByText(/No agents yet/)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "New agent" })).toBeInTheDocument();
 });
 
 test("shows an error and retries on demand", async () => {

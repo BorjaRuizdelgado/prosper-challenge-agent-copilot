@@ -13,7 +13,7 @@ Each group is a vertical slice that ends with something usable and verified in t
 ## 2. Agent lifecycle (create, rename, duplicate, delete)
 
 - [x] 2.1 Backend: `POST /api/agents` (name → starter agent), `GET/PUT/DELETE /api/agents/{id}`, `POST /api/agents/{id}/duplicate`, atomic writes, 404s. Verify: pytest for each route, including failed-write leaves the old file and unknown id → 404.
-- [ ] 2.2 Frontend: "New agent" dialog, rename, duplicate, delete with confirmation, navigation to the new agent URL, optimistic list refresh and error toasts. Verify: Vitest for the dialogs; manual check in the browser.
+- [x] 2.2 Frontend: "New agent" dialog, rename, duplicate, delete with confirmation, navigation to the new agent URL, optimistic list refresh and error toasts. Verify: Vitest for the dialogs; manual check in the browser.
 
 ## 3. Read-only graph of an agent
 
