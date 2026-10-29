@@ -1,6 +1,6 @@
 import { useAgentStore } from "./store";
 
-/** Id of the handle on every card that starts a brand-new edge. */
+/** Id prefix of the handles (one per side) on every card that start a brand-new edge. */
 export const NEW_EDGE_HANDLE = "__new";
 
 interface Link {
@@ -12,7 +12,7 @@ interface Link {
 /** Dragging from the "new edge" handle adds an edge; dragging from an existing edge's handle retargets it. */
 export function connect({ source, sourceHandle, target }: Link) {
   const { addEdge, retargetEdge } = useAgentStore.getState();
-  if (!sourceHandle || sourceHandle === NEW_EDGE_HANDLE) addEdge(source, target);
+  if (!sourceHandle || sourceHandle.startsWith(NEW_EDGE_HANDLE)) addEdge(source, target);
   else retargetEdge(source, sourceHandle, target);
 }
 

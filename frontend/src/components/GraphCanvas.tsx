@@ -1,4 +1,4 @@
-import { Background, Controls, ReactFlow, ReactFlowProvider } from "@xyflow/react";
+import { Background, ConnectionMode, Controls, ReactFlow, ReactFlowProvider } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useMemo } from "react";
 import { connect, deleteEdges, reconnect } from "../canvasActions";
@@ -31,6 +31,7 @@ export function GraphCanvas({ agent, positions }: { agent: Agent; positions: Rec
           nodesDraggable
           onNodeDrag={(_, n) => moveNode(n.id, n.position)}
           nodesConnectable
+          connectionMode={ConnectionMode.Loose}
           edgesReconnectable
           onConnect={(c) => connect(c)}
           onReconnect={(old, c) => reconnect(old, c)}

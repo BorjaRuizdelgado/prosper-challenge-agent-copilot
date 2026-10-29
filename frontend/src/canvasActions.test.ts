@@ -26,6 +26,18 @@ test("dragging from the new-edge handle adds and selects an edge", () => {
   expect(useAgentStore.getState().selection).toEqual({ kind: "edge", node: "b", function: "to_c" });
 });
 
+test.each(["top", "right", "bottom"])("dragging from the %s new-edge handle adds an edge", (side) => {
+  connect({ source: "b", sourceHandle: `${NEW_EDGE_HANDLE}_${side}`, target: "c" });
+
+  expect(edges("b")).toHaveLength(1);
+});
+
+test("dragging from the plain left handle adds an edge", () => {
+  connect({ source: "b", sourceHandle: null, target: "c" });
+
+  expect(edges("b")).toHaveLength(1);
+});
+
 test("dragging from an existing edge's handle retargets it", () => {
   connect({ source: "a", sourceHandle: "go", target: "c" });
 

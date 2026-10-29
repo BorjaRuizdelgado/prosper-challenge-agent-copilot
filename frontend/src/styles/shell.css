@@ -348,10 +348,7 @@ button:disabled {
 }
 
 .node-card__in {
-  width: 8px;
-  height: 8px;
-  background: var(--control);
-  border: none;
+  left: -9px;
 }
 
 .pill {
@@ -568,8 +565,21 @@ fieldset.field {
   gap: 8px;
 }
 
-.node-card__new {
+.node-card__new--bottom {
   bottom: -9px;
+}
+
+.node-card__new--top {
+  top: -9px;
+}
+
+.node-card__new--right {
+  right: -9px;
+  top: 22px;
+}
+
+.node-card__new,
+.node-card__in {
   width: 16px;
   height: 16px;
   border: 1px dashed var(--accent);
