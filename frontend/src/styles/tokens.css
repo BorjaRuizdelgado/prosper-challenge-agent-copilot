@@ -1,0 +1,48 @@
+/* Design tokens: "framed-sheet" style — one tinted frame, one white sheet, hairlines, no shadows. */
+:root {
+  --ground: #f9fbfc;
+  --surface: #ffffff;
+  --raised: #f4f6f8;
+  --active: #ebedee;
+  --border: #e8eaec;
+  --rule: #f0f1f2;
+  --control: #cdced1;
+  --text: #131416;
+  --muted: #5d5f60;
+  --accent: #1b6c80;
+  --positive: #1e7b4f;
+  --negative: #c4242a;
+  --warning: #92400e;
+
+  --radius-card: 8px;
+  --radius-control: 6px;
+  --radius-sheet: 16px;
+  --sheet-inset: 8px;
+
+  --font-sans: "IBM Plex Sans", Inter, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--raised);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
