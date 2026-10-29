@@ -62,6 +62,12 @@ The call button requires a saved, valid agent; with a dirty working copy it offe
 
 **12. Dev topology.** Vite proxies `/api → :8000` and `/voice → :7860` to avoid CORS; production-like check via `vite build && vite preview` (same proxy config). `make dev` runs API, runner and Vite together.
 
+**Spike findings (task 1.1, pipecat-ai 1.4.0, verified by reading the runner source).**
+- `POST /start {"body": {...}}` stores `body` under a new `sessionId` (`active_sessions`). The client then posts the WebRTC offer to `/sessions/{sessionId}/api/offer`; the runner fills `request_data` with the stored body and calls `bot(runner_args)` with `runner_args.body == {"agent_id": ...}`. Decision 7/9 hold: the browser sends `agent_id` in the `/start` body and `bot.py` reads `runner_args.body["agent_id"]`. Note the bot starts at offer time, not at `/start`.
+- `PipelineWorker(enable_rtvi=True)` is the default: it adds an `RTVIProcessor` and observer itself, so transcripts and bot state events need no pipeline change.
+- Custom messages: `worker.rtvi.send_server_message(data)` (or pushing `RTVIServerMessageFrame`) delivers `data` to the client as a server message. Decision 8 holds.
+- Not run live: `onnxruntime` (a core pipecat dependency) has no wheel for macOS x86_64, so the stack cannot be installed on the development machine used for this spike. The live check (stub bot logging `agent_id`) is deferred to the first Apple Silicon/Linux run, in task 8.1.
+
 **Testing strategy (per slice, not at the end):** pytest for API/validation/bot loading helpers; Vitest for the store actions (rename cascade, delete, connect, JSON apply); a single Playwright smoke spec (create → edit → save → reload) against the real API with a temp agents dir; a manual call checklist in `docs/manual-call-test.md`. Component tests only where logic is non-trivial.
 
 ## Risks / Trade-offs
