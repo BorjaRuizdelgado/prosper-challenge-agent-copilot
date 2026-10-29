@@ -11,6 +11,8 @@ def ws(tmp_path, monkeypatch):
     workspace.write_draft("other", {})
     workspace.skill_dir().mkdir(parents=True)
     (workspace.skill_dir() / "SKILL.md").write_text("skill")
+    workspace.skill_dir(workspace.RUN_REVIEW_SKILL_NAME).mkdir()
+    (workspace.skill_dir(workspace.RUN_REVIEW_SKILL_NAME) / "SKILL.md").write_text("review")
     (tmp_path.parent / "secret.json").write_text("{}")
     return tmp_path
 
@@ -35,6 +37,13 @@ def test_skill_files_are_read_only(ws):
     assert allowed("Read", skill)
     assert not allowed("Edit", skill)
     assert not allowed("Write", workspace.skill_dir() / "new.md")
+
+
+def test_the_run_review_skill_is_read_only_too(ws):
+    skill = workspace.skill_dir(workspace.RUN_REVIEW_SKILL_NAME) / "SKILL.md"
+    assert allowed("Read", skill)
+    assert not allowed("Edit", skill)
+    assert not allowed("Write", skill)
 
 
 @pytest.mark.parametrize("tool", ["Read", "Edit", "Write"])

@@ -1,7 +1,7 @@
 #
 # The copilot's sandbox on disk. Claude Code edits one draft file per agent; the API
 # writes the editor's working copy there before each turn and reads it back after.
-# `.claude/skills/` is committed (the Prosper Blueprints skill); `drafts/` and `runs/` are scratch.
+# `.claude/skills/` is committed (the Prosper Blueprints and run review skills); `drafts/` and `runs/` are scratch.
 #
 
 import json
@@ -13,6 +13,7 @@ from copilot.runs_text import render_runs
 
 DEFAULT_WORKSPACE = Path(__file__).parent / "workspace"
 SKILL_NAME = "prosper-blueprints"
+RUN_REVIEW_SKILL_NAME = "prosper-run-review"
 
 
 def workspace_dir() -> Path:
@@ -27,8 +28,12 @@ def runs_dir() -> Path:
     return workspace_dir() / "runs"
 
 
-def skill_dir() -> Path:
-    return workspace_dir() / ".claude" / "skills" / SKILL_NAME
+def skills_dir() -> Path:
+    return workspace_dir() / ".claude" / "skills"
+
+
+def skill_dir(name: str = SKILL_NAME) -> Path:
+    return skills_dir() / name
 
 
 def draft_path(agent_id: str) -> Path:
