@@ -89,6 +89,25 @@ describe("RunsPanel", () => {
     expect(useRunsStore.getState().selected).toBeNull();
   });
 
+  it("Ask Copilot on a run prefills the input and starts no turn", async () => {
+    const streamer = vi.fn(async function* () {
+      yield { event: "done" as const };
+    });
+    const restore = setCopilotStreamer(streamer);
+    mockApi({ "GET /api/agents/demo/runs": () => json(runs) });
+    renderApp(<RunsPanel />);
+    await userEvent.click(await screen.findByText(/Hi from r-new/));
+    await userEvent.click(screen.getByRole("button", { name: "Ask Copilot" }));
+    const prefill = useCopilotStore.getState().prefill;
+    expect(prefill).toContain("Flag: Could not cancel.");
+    expect(prefill).toContain("Outcome: stuck");
+    expect(prefill?.endsWith("What went wrong: ")).toBe(true);
+    expect(useAgentStore.getState().dockTab).toBe("copilot");
+    expect(streamer).not.toHaveBeenCalled();
+    expect(chatOf(useCopilotStore.getState().chats, "demo").messages).toEqual([]);
+    restore();
+  });
+
   describe("Analyze runs", () => {
     it("opens the Copilot tab and sends the review request with the working copy, once", async () => {
       const streamer = vi.fn(async function* () {

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { ANALYZE_RUNS_MESSAGE } from "../call/askCopilot";
+import { ANALYZE_RUNS_MESSAGE, buildRunMessage } from "../call/askCopilot";
 import { describeTransition } from "../call/callStore";
 import { chatOf, useCopilotStore } from "../copilot/copilotStore";
 import type { Run, RunOutcome, RunStep } from "../model";
@@ -20,6 +20,11 @@ const notes = (path: RunStep[]) =>
 
 function RunDetail({ run }: { run: Run }) {
   const agent = useAgentStore((s) => s.agent);
+  const setDockTab = useAgentStore((s) => s.setDockTab);
+  const ask = () => {
+    useCopilotStore.getState().setPrefill(buildRunMessage(run));
+    setDockTab("copilot");
+  };
   const { missing } = agent ? runPath(run, agent) : { missing: [] as string[] };
   return (
     <div className="runs__detail">
@@ -46,6 +51,7 @@ function RunDetail({ run }: { run: Run }) {
           </span>
         ))}
       </p>
+      <button type="button" onClick={ask}>Ask Copilot</button>
     </div>
   );
 }

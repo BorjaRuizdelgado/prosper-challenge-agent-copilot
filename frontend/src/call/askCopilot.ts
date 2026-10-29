@@ -1,3 +1,4 @@
+import type { Run } from "../model";
 import type { TranscriptEntry } from "./callStore";
 
 /** Nodes the call went through, read back from the transition notes (`Started at x`, `Moved to y via z`). */
@@ -28,6 +29,23 @@ export function buildCallMessage(transcript: TranscriptEntry[]): string {
     "Transcript:",
     ...lines,
     ...(path.length ? ["", `Path: ${path.join(" -> ")}`] : []),
+    "",
+    WENT_WRONG,
+  ].join("\n");
+}
+
+/** "Ask Copilot" on one run: its transcript, path, outcome and flag, then the open question. */
+export function buildRunMessage(run: Run): string {
+  const lines = run.transcript.map((l) => `${l.speaker === "caller" ? "Caller" : "Agent"}: ${l.text}`);
+  return [
+    `Here is a production call (${run.id}) with the agent.`,
+    "",
+    `Outcome: ${run.outcome}`,
+    ...(run.flag ? [`Flag: ${run.flag}`] : []),
+    "",
+    "Transcript:",
+    ...lines,
+    ...(run.path.length ? ["", `Path: ${run.path.map((s) => s.node).join(" -> ")}`] : []),
     "",
     WENT_WRONG,
   ].join("\n");
