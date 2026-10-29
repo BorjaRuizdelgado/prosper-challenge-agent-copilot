@@ -39,6 +39,7 @@ Needs **Node 20+** in addition to the above.
 make up     # install + create .env + start everything
 make down   # stop all services
 make dev    # agents API :8000 + voice runner :7860 + Vite :5173
+make demo   # seed the three demo agents (see Layout, `backend/demo/`); re-run to reset them
 make test   # pytest + Vitest + Playwright smoke spec (the call is faked; see docs/manual-call-test.md for the real one)
 ```
 
@@ -94,6 +95,7 @@ The **Copilot** tab chats with an AI that edits the open agent (backend: `backen
 | `backend/agent_builder/` | All agent-building code. `schema.py` = the declarative `AgentConfig` / `Node` / `Edge` contract; `builder.py` = `AgentBuilder`, which loads + validates the JSON and compiles it into a Pipecat Flows graph. |
 | `backend/session.py` | Call setup helpers with no Pipecat imports: read `agent_id` from the session body, load the agent (refusing unknown ids and blocking issues), check API keys, build the `node_changed` message. |
 | `backend/api/` | FastAPI app that lists/edits agent JSON files in `backend/agents/` for the UI. |
+| `backend/demo/` | Demo data for the production-runs review: three flawed agents (`agents/`), about 8 hand-written mocked runs each (`runs/<agent id>.json`, served read-only by `GET /api/agents/{id}/runs`) and `seed.py` (`make demo`), which writes the agents into the agents store and replaces any with the same id. |
 | `frontend/` | Vite + React + TypeScript agent builder UI. `src/call/` holds the voice client wrapper and the call store (state machine, transcript, active node). `src/copilot/` holds the copilot SSE client, chat store and `diffAgents`. |
 | `frontend/e2e/` | Playwright smoke spec (`npm run e2e` in `frontend/`); starts its own API on :8100 with a temp agents dir and Vite on :5180, so it does not clash with `make dev`. |
 | `docs/` | `copilot-demo.md`: scripted run of the copilot scenarios with what was observed. |
