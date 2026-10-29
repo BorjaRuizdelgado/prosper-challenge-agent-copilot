@@ -39,7 +39,7 @@ from copilot.validate_tool import FULL_FINDINGS_TOOL_NAME, FULL_TOOL_NAME, build
 # Skill and validate_agent are allowed on purpose; the callback guards the file tools only.
 warnings.filterwarnings("ignore", category=CanUseToolShadowedWarning)
 
-Event = dict  # {"event": "step" | "text" | "draft" | "proposal" | "done" | "error", "data": {...}}
+Event = dict  # {"event": "step" | "text" | "findings" | "draft" | "proposal" | "done" | "error", "data": {...}}
 
 SETUP_MESSAGE = (
     "The copilot needs Claude Code: install the `claude` CLI and log in with it, "
@@ -129,6 +129,7 @@ async def run_turn(
     path = workspace.write_draft(agent_id, agent)
     tracker = DraftTracker(agent)
     tools: dict[str, str] = {}  # tool_use_id -> tool name
+    findings_inputs: dict[str, dict] = {}  # tool_use_id -> report_findings input
     runs_file = workspace.write_runs(agent_id, list_runs(agent_id))
     prompt = f"The agent draft is {path.relative_to(workspace.workspace_dir())}."
     if runs_file:
@@ -151,6 +152,8 @@ async def run_turn(
                         for block in msg.content:
                             if isinstance(block, ToolUseBlock):
                                 tools[block.id] = block.name
+                                if block.name == FULL_FINDINGS_TOOL_NAME:
+                                    findings_inputs[block.id] = block.input
                                 if step := step_for_tool(block.name, block.input, _read_text(agent_id)):
                                     yield _event("step", **step)
                     elif isinstance(msg, UserMessage) and isinstance(msg.content, list):
@@ -160,6 +163,8 @@ async def run_turn(
                             tool = tools.get(block.tool_use_id)
                             if tool == FULL_TOOL_NAME:
                                 yield _event("step", **validation_step(_result_text(block)))
+                            elif tool == FULL_FINDINGS_TOOL_NAME and not block.is_error:
+                                yield _event("findings", findings=findings_inputs[block.tool_use_id].get("findings", []))
                             elif tool in EDIT_TOOLS and not block.is_error:
                                 if draft := tracker.next_draft(_read_text(agent_id)):
                                     yield _event("draft", agent=draft)

@@ -85,3 +85,8 @@ def test_draft_tracker_skips_unparseable_unchanged_and_non_object_drafts():
     assert tracker.next_draft(json.dumps(changed)) == changed
     assert tracker.next_draft(json.dumps(changed)) is None  # already sent
     assert tracker.next_draft(TEXT) == AGENT  # reverting is a change from the last sent
+
+
+def test_findings_step_counts_the_findings():
+    assert step_for_tool("mcp__copilot__report_findings", {"findings": [{}, {}]}, "") == {"label": "Reporting 2 findings"}
+    assert step_for_tool("mcp__copilot__report_findings", {"findings": [{}]}, "") == {"label": "Reporting 1 finding"}

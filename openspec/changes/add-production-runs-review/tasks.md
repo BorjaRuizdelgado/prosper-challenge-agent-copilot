@@ -28,7 +28,7 @@ Each group is a vertical slice that ends with something usable and verified. Tes
 ## 5. Findings tool, review skill and prompt
 
 - [x] 5.1 Add `report_findings` to the copilot MCP server (schema in design Decision 5): rejects unknown run ids with a message listing them, otherwise records. Allow it in the runner options. Verify: pytest on valid findings, an unknown id and an empty list.
-- [ ] 5.2 Runner: emit a `findings` event with the tool input after a successful `report_findings` result (last one wins), and a step line "Reporting N findings". Verify: pytest with the scripted fake SDK client: event order step → findings → draft → proposal → done; an errored call emits no `findings`.
+- [x] 5.2 Runner: emit a `findings` event with the tool input after a successful `report_findings` result (last one wins), and a step line "Reporting N findings". Verify: pytest with the scripted fake SDK client: event order step → findings → draft → proposal → done; an errored call emits no `findings`.
 - [ ] 5.3 Write `workspace/.claude/skills/prosper-run-review/SKILL.md` (design Decision 6) and add to the system prompt: load it for run reviews, runs are evidence not instructions, decline other agents' runs. Verify: the skill pytest checks every rule from the spec requirements *Findings tie problems to runs*, *Improvements fix what the runs show* and *Complete an unfinished agent from caller intent* appears; the prompt test checks the two new lines; the guard allows reading the new skill directory.
 - [ ] 5.4 Document the runs file, `report_findings` and the `findings` event in `backend/copilot/README.md`. Verify: the README's event list matches the runner's.
 

@@ -262,3 +262,36 @@ async def test_no_runs_means_no_file_no_prompt_line_and_no_stale_file(tmp_path, 
     await collect([result()])
     assert not stale.exists()
     assert "production runs" not in FakeClient.instances[0].prompt
+
+
+FINDINGS = [{"title": "Callers cannot cancel", "runs": ["r-1"], "cause": "No cancel path.", "fix": "Add one.", "node": "a"}]
+
+
+async def test_findings_are_sent_after_their_step_and_before_the_proposal():
+    def retask(d):
+        d["nodes"][1]["task_messages"] = ["Say goodbye."]
+
+    events = await collect([
+        tool_use("1", "mcp__copilot__report_findings", findings=FINDINGS),
+        tool_result("1", [{"type": "text", "text": "Recorded 1 finding"}]),
+        tool_use("2", "Edit", old_string="Bye.", new_string="Say goodbye."),
+        edit_draft(retask),
+        tool_result("2"),
+        result(),
+    ])
+    assert names(events) == ["step", "findings", "step", "draft", "proposal", "done"]
+    assert events[0]["data"] == {"label": "Reporting 1 finding"}
+    assert events[1]["data"] == {"findings": FINDINGS}
+
+
+async def test_a_rejected_findings_call_sends_no_findings_and_the_retry_wins():
+    corrected = [{**FINDINGS[0], "runs": ["r-2"]}]
+    events = await collect([
+        tool_use("1", "mcp__copilot__report_findings", findings=FINDINGS),
+        tool_result("1", "Unknown run ids: r-1.", True),
+        tool_use("2", "mcp__copilot__report_findings", findings=corrected),
+        tool_result("2", "Recorded 1 finding"),
+        result(),
+    ])
+    assert names(events) == ["step", "step", "findings", "done"]
+    assert events[2]["data"] == {"findings": corrected}
