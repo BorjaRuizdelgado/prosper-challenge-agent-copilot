@@ -43,9 +43,9 @@ Each group is a vertical slice that ends with something usable and verified. Tes
 
 ## 8. End-to-end checks and docs
 
-- [ ] 8.1 Manual demo script against the spec scenarios: build a refill agent from pasted guidelines, a targeted edit, an ambiguous request (expect a question), an out-of-scope request (expect a refusal), Apply then Save then test call, Ask Copilot from that call and apply the fix. Verify: each scenario observed; failures fixed in the prompt or skill, or recorded as known issues.
-- [ ] 8.2 Docs: `solution.md` Phase 2 section (architecture diagram, why Claude Code embedded, draft + validate loop, review-before-apply, Blueprints, fix from call, what was left out and why) and README setup (logged-in `claude` CLI or `ANTHROPIC_API_KEY`, keep the key unset to use the subscription). Verify: following the README on a clean checkout reaches a working copilot turn.
-- [ ] 8.3 Extend the Playwright smoke spec with the Copilot tab using a stubbed `/api/copilot` route: send, see steps, apply a proposal, see the new node on the canvas. Verify: `npm run e2e` passes.
+- [x] 8.1 Manual demo script against the spec scenarios: build a refill agent from pasted guidelines, a targeted edit, an ambiguous request (expect a question), an out-of-scope request (expect a refusal), Apply then Save then test call, Ask Copilot from that call and apply the fix. Verify: each scenario observed; failures fixed in the prompt or skill, or recorded as known issues.
+- [x] 8.2 Docs: `solution.md` Phase 2 section (architecture diagram, why Claude Code embedded, draft + validate loop, review-before-apply, Blueprints, fix from call, what was left out and why) and README setup (logged-in `claude` CLI or `ANTHROPIC_API_KEY`, keep the key unset to use the subscription). Verify: following the README on a clean checkout reaches a working copilot turn.
+- [x] 8.3 Extend the Playwright smoke spec with the Copilot tab using a stubbed `/api/copilot` route: send, see steps, apply a proposal, see the new node on the canvas. Verify: `npm run e2e` passes.
 
 ## Workflow follow-up
 

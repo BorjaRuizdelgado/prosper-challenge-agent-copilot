@@ -69,6 +69,13 @@ How it works: the browser `POST`s `/voice/start` (proxied to the runner) with `{
 
 ### Copilot
 
+Setup: the copilot drives the local [Claude Code](https://docs.claude.com/en/docs/claude-code) CLI through the Claude Agent SDK, which is installed with `make install`. You need the `claude` CLI on your PATH and **either** of:
+
+- a login: run `claude` once in a terminal and sign in (uses your subscription, no per-token billing), **or**
+- `ANTHROPIC_API_KEY` in `backend/.env` (per-token billing). **Leave it unset to use the subscription**: when set, it wins over the login.
+
+Restart the API after changing either. `COPILOT_MODEL` overrides the model. Without a login or key the tab shows a setup message and the rest of the editor keeps working. The Copilot does not need the OpenAI or ElevenLabs keys; a test call does. Demo script for trying it: `docs/copilot-demo.md`.
+
 The **Copilot** tab chats with an AI that edits the open agent (backend: `backend/copilot/`, endpoints `POST /api/copilot/{id}` and `/reset`).
 
 - **Chat:** describe what you want (or pick an example); Enter sends, Shift+Enter adds a line. Each agent keeps its own conversation while the page is open; *New chat* clears it and the server-side session.
@@ -76,6 +83,7 @@ The **Copilot** tab chats with an AI that edits the open agent (backend: `backen
 - **Setup:** the copilot drives the local `claude` CLI. If there is no login and no `ANTHROPIC_API_KEY`, the panel says so and the rest of the editor keeps working.
 - **Canvas focus:** the node a step is reading or editing gets a pulsing teal outline (same colour as a call's active node) until the turn ends or is stopped.
 - **Proposal card:** when the copilot changes the agent, its reply carries a card with counts ("1 node added, 1 edge changed"), any validation issues left, a collapsed *Changes* list (expand an item for its before/after text), *Apply* and *Discard*. Apply loads the proposal into the editor as unsaved changes (you still Save), keeps the positions of nodes that stay and lets new nodes be auto-laid out; if you edited the agent after the proposal arrived it asks first. Discard leaves the editor as it was. A proposal with errors says the agent will not be callable until they are fixed.
+- **Ask Copilot (fix from a call):** when a test call has ended with a transcript, the Call tab shows *Ask Copilot*. It opens the Copilot tab with the transcript, a `Path: greeting -> collect_details -> …` line from the call's transitions and `What went wrong: ` in the input, cursor at the end. Nothing is sent until you finish the sentence and press Send; the reply is an ordinary proposal. It is not shown when nobody spoke.
 - **Live draft on the canvas:** from the copilot's first edit the canvas shows its draft instead of your working copy and redraws after every edit. Added nodes and edges are green (new nodes fade in), changed ones amber (they flash once), removed ones faded and dashed. Nodes you already had keep their positions; only new nodes are laid out. The canvas is read-only meanwhile, and clicking a node or edge opens it read-only in the Inspector. Your working copy and the unsaved marker are untouched until you Apply. A banner says *Copilot draft…* while it works and offers *Apply*, *Discard* and *Hide* when it is done (Hide shows your working copy again and keeps the proposal card pending). Stopping or an error also restores the working copy.
 
 ## Layout
@@ -86,9 +94,10 @@ The **Copilot** tab chats with an AI that edits the open agent (backend: `backen
 | `backend/agent_builder/` | All agent-building code. `schema.py` = the declarative `AgentConfig` / `Node` / `Edge` contract; `builder.py` = `AgentBuilder`, which loads + validates the JSON and compiles it into a Pipecat Flows graph. |
 | `backend/session.py` | Call setup helpers with no Pipecat imports: read `agent_id` from the session body, load the agent (refusing unknown ids and blocking issues), check API keys, build the `node_changed` message. |
 | `backend/api/` | FastAPI app that lists/edits agent JSON files in `backend/agents/` for the UI. |
-| `frontend/` | Vite + React + TypeScript agent builder UI. `src/call/` holds the voice client wrapper and the call store (state machine, transcript, active node). `src/copilot/` holds the copilot SSE client and chat store. |
+| `frontend/` | Vite + React + TypeScript agent builder UI. `src/call/` holds the voice client wrapper and the call store (state machine, transcript, active node). `src/copilot/` holds the copilot SSE client, chat store and `diffAgents`. |
 | `frontend/e2e/` | Playwright smoke spec (`npm run e2e` in `frontend/`); starts its own API on :8100 with a temp agents dir and Vite on :5180, so it does not clash with `make dev`. |
-| `docs/manual-call-test.md` | Manual checklist for the real voice path. |
+| `docs/` | `copilot-demo.md`: scripted run of the copilot scenarios with what was observed. |
+| `backend/copilot/` | The Copilot engine: Claude Code via the Agent SDK on a draft file, path guard, `validate_agent` tool, system prompt and the Prosper Blueprints skill. See its README. |
 | `solution.md` | Architecture diagram, what was built / mocked / left out, and extension points for Phase 2. |
 | `backend/example_flow.json` | The example agent **as data** — a clinic scheduler. The artifact the Phase 2 Copilot generates/edits. |
 

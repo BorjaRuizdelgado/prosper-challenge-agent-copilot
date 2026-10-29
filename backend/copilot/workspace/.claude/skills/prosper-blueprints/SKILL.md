@@ -67,7 +67,7 @@ Build it in two passes so the graph appears early on the canvas and fills in nod
 1. **Skeleton.** `Write` the whole agent once: top-level fields, every node with its `name` and a one-line stub task, and every edge with `function`, a short `description` and its `target`. Include the emergency, handoff and end nodes. No properties yet.
 2. **Fill in.** Use `Edit` on one node at a time to replace the stub with the real task messages and add the edge `properties` and `required`.
 
-Then validate. Derive the steps from the user's guidelines; do not invent policies they did not state.
+The first `Write` must stay a skeleton: every task message is a single short stub sentence, even when you already know the full text. Writing finished nodes in the first pass defeats the point, because the user watches the graph fill in. Then validate. Derive the steps from the user's guidelines; do not invent policies they did not state.
 
 ## Blueprints
 

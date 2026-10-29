@@ -16,6 +16,8 @@ REQUIRED = {
     "no save/create/delete": "save, create or delete agents",
     "declines in one sentence": "decline in one sentence",
     "voice rules": "one question at a time",
+    "vague request is a question": "no concrete goal",
+    "no narration": "no narration between tool calls",
 }
 
 
