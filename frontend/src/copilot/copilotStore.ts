@@ -31,9 +31,11 @@ export interface Chat {
   running: boolean;
   /** When the running turn was sent (ms since epoch), for the panel's timer; null when idle. */
   startedAt: number | null;
+  /** The node the copilot is reading or editing right now (`step.node`); the canvas pulses it. Null when idle. */
+  focus: string | null;
 }
 
-const emptyChat: Chat = { messages: [], running: false, startedAt: null };
+const emptyChat: Chat = { messages: [], running: false, startedAt: null, focus: null };
 
 export type Streamer = (agentId: string, message: string, agent: Agent, signal: AbortSignal) => AsyncIterable<CopilotEvent>;
 
@@ -82,6 +84,7 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
       const controller = new AbortController();
       controllers.set(agentId, controller);
       patch(agentId, (chat) => ({
+        ...chat,
         messages: [...chat.messages, { role: "user", text: message.trim() }, { role: "assistant", text: "", steps: [] }],
         running: true,
         startedAt: Date.now(),
@@ -89,7 +92,11 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
       try {
         for await (const e of streamer(agentId, message.trim(), agent, controller.signal)) {
           if (controller.signal.aborted) break;
-          if (e.event === "step") patchReply(agentId, (m) => ({ steps: [...m.steps, { label: e.label, node: e.node }] }));
+          if (e.event === "step") {
+            patchReply(agentId, (m) => ({ steps: [...m.steps, { label: e.label, node: e.node }] }));
+            // A step without a node (validating) keeps the last focus; only the end of the turn clears it.
+            if (e.node) patch(agentId, (chat) => ({ ...chat, focus: e.node! }));
+          }
           else if (e.event === "text") patchReply(agentId, (m) => ({ text: m.text + e.delta }));
           else if (e.event === "proposal")
             patchReply(agentId, () => ({ proposal: { agent: e.agent, issues: e.issues, base: agent, status: "pending" } }));
@@ -101,7 +108,7 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
       } finally {
         if (controllers.get(agentId) === controller) controllers.delete(agentId);
         if (controller.signal.aborted) patchReply(agentId, () => ({ stopped: true }));
-        patch(agentId, (chat) => ({ ...chat, running: false, startedAt: null }));
+        patch(agentId, (chat) => ({ ...chat, running: false, startedAt: null, focus: null }));
       }
     },
     stop: (agentId) => controllers.get(agentId)?.abort(),

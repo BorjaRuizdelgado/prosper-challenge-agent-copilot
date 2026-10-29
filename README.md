@@ -74,7 +74,8 @@ The **Copilot** tab chats with an AI that edits the open agent (backend: `backen
 - **Chat:** describe what you want (or pick an example); Enter sends, Shift+Enter adds a line. Each agent keeps its own conversation while the page is open; *New chat* clears it and the server-side session.
 - **Progress:** a *Working… Ns* indicator with a timer shows the moment you send, then one line per step (reading, editing a node, validating) and the reply as it is written. The input is disabled during a turn; *Stop* aborts it and keeps what was streamed.
 - **Setup:** the copilot drives the local `claude` CLI. If there is no login and no `ANTHROPIC_API_KEY`, the panel says so and the rest of the editor keeps working.
-- **Not yet in this slice:** showing and applying the proposal (draft on the canvas, Changes list, Apply/Discard) and the canvas highlight of the node being edited.
+- **Canvas focus:** the node a step is reading or editing gets a pulsing teal outline (same colour as a call's active node) until the turn ends or is stopped.
+- **Not yet in this slice:** showing and applying the proposal (draft on the canvas, Changes list, Apply/Discard).
 
 ## Layout
 

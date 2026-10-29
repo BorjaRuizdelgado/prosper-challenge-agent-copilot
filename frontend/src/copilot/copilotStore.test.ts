@@ -73,6 +73,33 @@ describe("copilotStore", () => {
     expect(chat().running).toBe(false);
   });
 
+  it("focuses the node a step names and clears it when the turn ends", async () => {
+    const c = controlled();
+    install(c.streamer);
+    const sent = useCopilotStore.getState().send("a", "go", base);
+    c.push({ event: "step", label: "Reading agent" });
+    c.push({ event: "step", label: "Editing n", node: "n" });
+    await vi.waitFor(() => expect(chat().focus).toBe("n"));
+    c.push({ event: "step", label: "Validating: 0 issues" });
+    c.push({ event: "text", delta: "x" });
+    await vi.waitFor(() => expect(reply().text).toBe("x"));
+    expect(chat().focus).toBe("n");
+    c.push({ event: "done" });
+    await sent;
+    expect(chat().focus).toBeNull();
+  });
+
+  it("clears the focus when the turn is stopped", async () => {
+    const c = controlled();
+    install(c.streamer);
+    const sent = useCopilotStore.getState().send("a", "go", base);
+    c.push({ event: "step", label: "Editing n", node: "n" });
+    await vi.waitFor(() => expect(chat().focus).toBe("n"));
+    useCopilotStore.getState().stop("a");
+    await sent;
+    expect(chat().focus).toBeNull();
+  });
+
   it("keeps conversations separate per agent", async () => {
     install(stream([{ event: "text", delta: "hi" }, { event: "done" }]));
     await useCopilotStore.getState().send("a", "one", base);
@@ -131,7 +158,7 @@ describe("copilotStore", () => {
     const sent = useCopilotStore.getState().send("a", "go", base);
     await useCopilotStore.getState().reset("a");
     await sent;
-    expect(chat()).toEqual({ messages: [], running: false, startedAt: null });
+    expect(chat()).toEqual({ messages: [], running: false, startedAt: null, focus: null });
     expect(fetchMock).toHaveBeenCalledWith("/api/copilot/a/reset", { method: "POST" });
   });
 });

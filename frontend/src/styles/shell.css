@@ -914,3 +914,24 @@ button.issues__item:hover {
   resize: vertical;
   font: inherit;
 }
+
+/* The node the copilot is reading or editing; same outline as a call's active node, but pulsing. */
+.node-card--copilot {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  animation: copilot-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes copilot-pulse {
+  50% {
+    outline-offset: 4px;
+    outline-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node-card--copilot {
+    animation: none;
+  }
+}
