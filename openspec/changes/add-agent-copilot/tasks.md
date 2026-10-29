@@ -39,7 +39,7 @@ Each group is a vertical slice that ends with something usable and verified. Tes
 
 ## 7. Fix from call
 
-- [ ] 7.1 "Ask Copilot" in the Call tab after a call ends with a transcript: build the message (transcript lines, `Path: a -> b -> c` from transition notes, a trailing `What went wrong: `), open the Copilot tab with it in the input and the cursor at the end. Verify: Vitest for the message builder and that the button is hidden with an empty transcript; manual check after a real call.
+- [x] 7.1 "Ask Copilot" in the Call tab after a call ends with a transcript: build the message (transcript lines, `Path: a -> b -> c` from transition notes, a trailing `What went wrong: `), open the Copilot tab with it in the input and the cursor at the end. Verify: Vitest for the message builder and that the button is hidden with an empty transcript; manual check after a real call.
 
 ## 8. End-to-end checks and docs
 

@@ -5,6 +5,9 @@ import { resetCallStore, setCallClientFactory } from "../call/callStore";
 import { fakeClientFactory } from "../call/fakeClient";
 import { useAgentStore } from "../store";
 import { renderApp } from "../test/helpers";
+import { Dock } from "./Dock";
+import { resetCopilotStore } from "../copilot/copilotStore";
+import type { Agent } from "../model";
 import { CallPanel } from "./CallPanel";
 
 let restore = () => {};
@@ -72,5 +75,53 @@ describe("CallPanel transcript", () => {
     expect(within(list).getByText("Moved to collect via go")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Hang up" }));
     expect(screen.getByRole("list", { name: "Transcript" })).toBeInTheDocument();
+  });
+});
+
+describe("Ask Copilot", () => {
+  const agent = { name: "a", initial_node: "greeting", nodes: [{ name: "greeting" }] } as unknown as Agent;
+
+  async function finishedCall() {
+    await userEvent.click(screen.getByRole("button", { name: "Test call" }));
+    await waitFor(() => expect(screen.getByTestId("call-state")).toHaveTextContent("Live"));
+    const ev = fake.state.events!;
+    act(() => {
+      ev.onServerMessage({ type: "node_changed", from: null, node: "greeting", via: null, args: {} });
+      ev.onBotText("Hello there.");
+      ev.onUserText("I want to book.");
+    });
+    await userEvent.click(screen.getByRole("button", { name: "Hang up" }));
+  }
+
+  beforeEach(() => {
+    resetCopilotStore();
+    useAgentStore.setState({ agent, dockTab: "call" });
+  });
+
+  it("is not offered before a call, during one, or when nobody spoke", async () => {
+    renderApp(<CallPanel />);
+    expect(screen.queryByRole("button", { name: "Ask Copilot" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Test call" }));
+    await waitFor(() => expect(screen.getByTestId("call-state")).toHaveTextContent("Live"));
+    expect(screen.queryByRole("button", { name: "Ask Copilot" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Hang up" }));
+    expect(screen.queryByRole("button", { name: "Ask Copilot" })).not.toBeInTheDocument();
+  });
+
+  it("opens the Copilot tab with the transcript in the input, cursor at the end, and sends nothing", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(new Response("[]"));
+    vi.stubGlobal("fetch", fetchSpy);
+    renderApp(<Dock />);
+    await finishedCall();
+    await userEvent.click(screen.getByRole("button", { name: "Ask Copilot" }));
+
+    const input = (await screen.findByRole("textbox", { name: "Message to the copilot" })) as HTMLTextAreaElement;
+    await waitFor(() => expect(input.value).toContain("Caller: I want to book."));
+    expect(input.value).toContain("Agent: Hello there.");
+    expect(input.value).toContain("Path: greeting");
+    expect(input.value.endsWith("What went wrong: ")).toBe(true);
+    await waitFor(() => expect(input.selectionStart).toBe(input.value.length));
+    expect(useAgentStore.getState().dockTab).toBe("copilot");
+    expect(fetchSpy.mock.calls.some(([url]) => String(url).includes("/api/copilot"))).toBe(false);
   });
 });

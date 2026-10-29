@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
+import { buildCallMessage } from "../call/askCopilot";
 import { useCallStore } from "../call/callStore";
+import { useCopilotStore } from "../copilot/copilotStore";
 import { blockingIssues, useAgentStore } from "../store";
 
 const STATE_LABEL = { idle: "Ready", connecting: "Connecting…", live: "Live", ended: "Call ended", failed: "Call failed" } as const;
@@ -11,6 +13,7 @@ export function CallPanel() {
   const saving = useAgentStore((s) => s.saveStatus === "saving");
   const blocking = useAgentStore((s) => blockingIssues(s.issues).length);
   const save = useAgentStore((s) => s.save);
+  const setDockTab = useAgentStore((s) => s.setDockTab);
   const { state, message, muted, transcript, start, hangUp, toggleMute } = useCallStore();
   const end = useRef<HTMLLIElement>(null);
   useEffect(() => end.current?.scrollIntoView?.({ block: "end" }), [transcript]);
@@ -22,6 +25,11 @@ export function CallPanel() {
     if (!agentId) return;
     if (dirty && !(await save())) return;
     await start(agentId);
+  };
+
+  const askCopilot = () => {
+    useCopilotStore.getState().setPrefill(buildCallMessage(transcript));
+    setDockTab("copilot");
   };
 
   return (
@@ -49,6 +57,13 @@ export function CallPanel() {
         <div className="call__controls">
           <button type="button" className="primary" disabled={!agentId || saving || !!blockedReason} onClick={() => void call()}>
             {state === "failed" ? "Retry" : dirty ? "Save and call" : "Test call"}
+          </button>
+        </div>
+      )}
+      {state === "ended" && transcript.length > 0 && (
+        <div className="call__controls">
+          <button type="button" onClick={askCopilot}>
+            Ask Copilot
           </button>
         </div>
       )}

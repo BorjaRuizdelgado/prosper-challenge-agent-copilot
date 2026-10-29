@@ -57,6 +57,9 @@ export function setCopilotStreamer(next: Streamer) {
 
 export interface CopilotStore {
   chats: Record<string, Chat>;
+  /** Text waiting to be dropped into the panel's input (e.g. from a finished call); the panel takes it and clears it. */
+  prefill: string | null;
+  setPrefill: (text: string | null) => void;
   /** Sends an instruction with the current working copy; resolves when the turn has ended. */
   send: (agentId: string, message: string, agent: Agent) => Promise<void>;
   /** Aborts the running turn; its output so far stays, and it yields no proposal. */
@@ -88,6 +91,8 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
 
   return {
     chats: {},
+    prefill: null,
+    setPrefill: (prefill) => set({ prefill }),
     send: async (agentId, message, agent) => {
       if (chatOf(get().chats, agentId).running || !message.trim()) return;
       const controller = new AbortController();
@@ -150,5 +155,5 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
 export const resetCopilotStore = () => {
   controllers.forEach((c) => c.abort());
   controllers.clear();
-  useCopilotStore.setState({ chats: {} });
+  useCopilotStore.setState({ chats: {}, prefill: null });
 };

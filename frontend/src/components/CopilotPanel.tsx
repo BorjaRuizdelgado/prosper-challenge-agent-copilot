@@ -58,6 +58,20 @@ export function CopilotPanel() {
   const chat = useCopilotStore((s) => chatOf(s.chats, agentId));
   const { send, stop, reset } = useCopilotStore.getState();
   const [draft, setDraft] = useState("");
+  const prefill = useCopilotStore((s) => s.prefill);
+  const input = useRef<HTMLTextAreaElement>(null);
+  // "Ask Copilot" from the Call tab: take the text, put the cursor at its end so the user can finish it.
+  useEffect(() => {
+    if (prefill === null) return;
+    setDraft(prefill);
+    useCopilotStore.getState().setPrefill(null);
+    requestAnimationFrame(() => {
+      const el = input.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(prefill.length, prefill.length);
+    });
+  }, [prefill]);
   const elapsed = useElapsed(chat.startedAt);
   const end = useRef<HTMLLIElement>(null);
   useEffect(() => {
@@ -121,6 +135,7 @@ export function CopilotPanel() {
         }}
       >
         <textarea
+          ref={input}
           aria-label="Message to the copilot"
           rows={3}
           value={draft}
