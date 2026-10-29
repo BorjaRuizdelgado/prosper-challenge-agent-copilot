@@ -78,7 +78,7 @@ Restart the API after changing either. The model defaults to Haiku (cheapest); s
 
 The **Copilot** tab chats with an AI that edits the open agent (backend: `backend/copilot/`, endpoints `POST /api/copilot/{id}` and `/reset`).
 
-- **Chat:** describe what you want (or pick an example); Enter sends, Shift+Enter adds a line. Each agent keeps its own conversation while the page is open; *New chat* clears it and the server-side session.
+- **Chat:** describe what you want (or pick an example); Enter sends, Shift+Enter adds a line. Each agent keeps its own conversation, also across a page reload (kept in the browser's local storage; a turn cut off by the reload shows as *Stopped*, and a pending proposal comes back with its draft on the canvas); *New chat* clears it and the server-side session.
 - **Progress:** a *Working… Ns* indicator with a timer shows the moment you send, then one line per step (reading, editing a node, validating) and the reply as it is written. The input is disabled during a turn; *Stop* aborts it and keeps what was streamed.
 - **Setup:** the copilot drives the local `claude` CLI. If there is no login and no `ANTHROPIC_API_KEY`, the panel says so and the rest of the editor keeps working.
 - **Canvas focus:** the node a step is reading or editing gets a pulsing teal outline (same colour as a call's active node) until the turn ends or is stopped.

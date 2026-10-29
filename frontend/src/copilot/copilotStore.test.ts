@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Agent } from "../model";
 import type { CopilotEvent } from "./client";
-import { chatOf, resetCopilotStore, setCopilotStreamer, type Streamer, useCopilotStore } from "./copilotStore";
+import { chatOf, loadChats, resetCopilotStore, setCopilotStreamer, type Streamer, useCopilotStore } from "./copilotStore";
 
 const base = { name: "a", initial_node: "n", nodes: [{ name: "n" }] } as unknown as Agent;
 const proposed = { ...base, name: "b" } as Agent;
@@ -53,6 +53,19 @@ describe("copilotStore", () => {
     c.push({ event: "done" });
     await sent;
     expect(chat()).toMatchObject({ running: false, startedAt: null });
+  });
+
+  it("drops text streamed before a tool step: it is narration, not the reply", async () => {
+    install(
+      stream([
+        { event: "text", delta: "Now filling in the nodes." },
+        { event: "step", label: "Editing n", node: "n" },
+        { event: "text", delta: "Done." },
+        { event: "done" },
+      ]),
+    );
+    await useCopilotStore.getState().send("a", "go", base);
+    expect(reply().text).toBe("Done.");
   });
 
   it("accumulates steps, text deltas and the proposal with its base", async () => {
@@ -218,5 +231,35 @@ describe("copilotStore", () => {
       useCopilotStore.getState().hideReview("a");
       expect(status()).toBe("pending");
     });
+  });
+});
+
+describe("persistence across a page reload", () => {
+  it("keeps the conversation and brings back a pending proposal's draft", async () => {
+    install(stream([{ event: "text", delta: "Added it." }, { event: "proposal", agent: proposed, issues: [] }, { event: "done" }]));
+    await useCopilotStore.getState().send("a", "add a goodbye", base);
+    const reloaded = loadChats().a;
+    expect(reloaded.messages).toEqual(chat().messages);
+    expect(reloaded).toMatchObject({ running: false, review: { base, agent: proposed } });
+  });
+
+  it("shows a turn the reload cut off as stopped", async () => {
+    const c = controlled();
+    install(c.streamer);
+    const turn = useCopilotStore.getState().send("a", "go", base);
+    c.push({ event: "text", delta: "Working" });
+    await vi.waitFor(() => expect(reply().text).toBe("Working"));
+    const reloaded = loadChats().a;
+    expect(reloaded.running).toBe(false);
+    expect(reloaded.messages[1]).toMatchObject({ text: "Working", stopped: true });
+    c.push({ event: "done" });
+    await turn;
+  });
+
+  it("forgets the conversation on reset", async () => {
+    install(stream([{ event: "text", delta: "hi" }, { event: "done" }]));
+    await useCopilotStore.getState().send("a", "go", base);
+    await useCopilotStore.getState().reset("a");
+    expect(loadChats()).toEqual({});
   });
 });

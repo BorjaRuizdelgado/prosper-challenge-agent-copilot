@@ -194,7 +194,7 @@ test("saving from the editor updates the agent's name and node count in the side
   await userEvent.clear(name);
   await userEvent.type(name, "Front desk");
   await userEvent.click(screen.getByRole("button", { name: "Add node" }));
-  expect(screen.getByRole("link", { name: /Scheduler/ })).toHaveTextContent("1 nodes");
+  expect(screen.getByRole("link", { name: /Scheduler/ })).toHaveTextContent("1 node");
 
   await userEvent.click(screen.getByRole("button", { name: "Save" }));
   const link = await screen.findByRole("link", { name: /Front desk/ });

@@ -29,6 +29,8 @@ export interface AgentDiff {
   addedEdges: string[];
   removedEdges: string[];
   changedEdges: EdgeChange[];
+  /** Agent-level settings (persona, voice, model, name). */
+  changedSettings: FieldChange[];
 }
 
 const text = (value: unknown): string => (value === undefined || value === null ? "" : typeof value === "string" ? value : JSON.stringify(value));
@@ -39,6 +41,13 @@ const NODE_FIELDS: Array<[string, (n: AgentNode) => unknown]> = [
   ["pre_actions", (n) => (n.pre_actions?.length ? n.pre_actions : undefined)],
   ["post_actions", (n) => (n.post_actions?.length ? n.post_actions : undefined)],
   ["end", (n) => (n.end ? true : undefined)],
+];
+
+const SETTING_FIELDS: Array<[string, (a: Agent) => unknown]> = [
+  ["name", (a) => a.name],
+  ["persona", (a) => a.persona],
+  ["voice", (a) => a.voice_id],
+  ["model", (a) => a.model],
 ];
 
 const EDGE_FIELDS: Array<[string, (e: Edge) => unknown]> = [
@@ -60,7 +69,7 @@ const edgesOf = (agent: Agent) =>
 
 /**
  * Compares two versions of an agent by node name and edge id (`node::function`). A renamed node shows up
- * as one removed plus one added node. The initial node, layout and agent-level settings are not compared.
+ * as one removed plus one added node. The initial node and layout are not compared.
  */
 export function diffAgents(before: Agent, after: Agent): AgentDiff {
   const nodesBefore = new Map(before.nodes.map((n) => [n.name, n]));
@@ -88,8 +97,9 @@ export function diffAgents(before: Agent, after: Agent): AgentDiff {
     addedEdges: [...edgesAfter.keys()].filter((id) => !edgesBefore.has(id)),
     removedEdges: [...edgesBefore.keys()].filter((id) => !edgesAfter.has(id)),
     changedEdges,
+    changedSettings: fieldChanges(before, after, SETTING_FIELDS),
   };
 }
 
 export const isEmptyDiff = (d: AgentDiff) =>
-  !(d.addedNodes.length || d.removedNodes.length || d.changedNodes.length || d.addedEdges.length || d.removedEdges.length || d.changedEdges.length);
+  !(d.addedNodes.length || d.removedNodes.length || d.changedNodes.length || d.addedEdges.length || d.removedEdges.length || d.changedEdges.length || d.changedSettings.length);

@@ -14,6 +14,7 @@ export function summarize(d: AgentDiff): string {
     [d.addedEdges.length, "edge", "added"],
     [d.removedEdges.length, "edge", "removed"],
     [d.changedEdges.length, "edge", "changed"],
+    [d.changedSettings.length, "setting", "changed"],
   ] as const;
   const text = parts.filter(([n]) => n > 0).map(([n, noun, what]) => `${plural(n, noun)} ${what}`);
   return text.length ? text.join(", ") : "No changes";
@@ -50,6 +51,14 @@ function Changes({ diff }: { diff: AgentDiff }) {
         ))}
         {diff.addedEdges.map((id) => <li key={`+${id}`}>Added edge <code>{id}</code></li>)}
         {diff.removedEdges.map((id) => <li key={`-${id}`}>Removed edge <code>{id}</code></li>)}
+        {diff.changedSettings.length > 0 && (
+          <li>
+            <details>
+              <summary>Changed agent settings</summary>
+              <Fields fields={diff.changedSettings} />
+            </details>
+          </li>
+        )}
         {diff.changedEdges.map((c) => (
           <li key={`~${c.id}`}>
             <details>

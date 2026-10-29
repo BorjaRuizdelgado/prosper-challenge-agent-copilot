@@ -31,7 +31,7 @@ function FitOnResize() {
   return null;
 }
 
-/** Refits the view when the copilot's draft gains or loses nodes, so new ones are never off screen. */
+/** Refits the view when the graph gains or loses nodes (a copilot draft, Apply, Add node), so new ones are never off screen. */
 function FitOnDraftChange({ count }: { count: number }) {
   const { fitView } = useReactFlow();
   const seen = useRef(count);
@@ -83,7 +83,7 @@ export function GraphCanvas({ agent, positions }: { agent: Agent; positions: Rec
           minZoom={0.2}
         >
           <FitOnResize />
-          {readOnly && <FitOnDraftChange count={nodes.length} />}
+          <FitOnDraftChange count={nodes.length} />
           <Background gap={20} color="var(--control)" />
           <Controls showInteractive={false} />
         </ReactFlow>

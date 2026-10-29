@@ -83,3 +83,10 @@ test("layout and an empty actions list are not changes", () => {
   after.nodes[1].post_actions = [];
   expect(isEmptyDiff(diffAgents(base, after))).toBe(true);
 });
+
+test("a persona change counts as a changed setting", () => {
+  const before = { name: "A", persona: "Be brief.", initial_node: "n", nodes: [{ name: "n", task_messages: [] }] } as Agent;
+  const diff = diffAgents(before, { ...before, persona: "Speak formal Spanish." });
+  expect(diff.changedSettings).toEqual([{ field: "persona", before: "Be brief.", after: "Speak formal Spanish." }]);
+  expect(isEmptyDiff(diff)).toBe(false);
+});

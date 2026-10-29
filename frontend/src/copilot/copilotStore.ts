@@ -74,6 +74,48 @@ export interface CopilotStore {
 
 const controllers = new Map<string, AbortController>();
 
+const STORAGE_KEY = "copilot-chats-v1";
+
+/** The part of a chat worth keeping across a page reload (the rest is live state). */
+interface SavedChat {
+  messages: ChatMessage[];
+  /** A turn was in flight when it was saved; the reload cut it off. */
+  running: boolean;
+}
+
+/** Set when the page starts unloading: the browser then aborts the stream, and that error must not be saved. */
+let unloading = false;
+if (typeof window !== "undefined") window.addEventListener("pagehide", () => (unloading = true));
+
+function saveChats(chats: Record<string, Chat>) {
+  if (unloading) return;
+  try {
+    const saved: Record<string, SavedChat> = {};
+    for (const [id, c] of Object.entries(chats)) if (c.messages.length) saved[id] = { messages: c.messages, running: c.running };
+    if (Object.keys(saved).length) localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+    else localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // storage full or unavailable: the conversation just won't survive a reload
+  }
+}
+
+/** Conversations saved by `saveChats`. A turn the reload cut off is shown as stopped; a pending proposal puts its draft back on the canvas. */
+export function loadChats(): Record<string, Chat> {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}") as Record<string, SavedChat>;
+    return Object.fromEntries(
+      Object.entries(saved).map(([id, { messages, running }]) => {
+        const msgs = messages.map((m, i) => (running && i === messages.length - 1 && m.role === "assistant" ? { ...m, stopped: true } : m));
+        const last = msgs[msgs.length - 1];
+        const pending = last?.role === "assistant" && last.proposal?.status === "pending" ? last.proposal : null;
+        return [id, { ...emptyChat, messages: msgs, review: pending ? { base: pending.base, agent: pending.agent } : null }];
+      }),
+    );
+  } catch {
+    return {};
+  }
+}
+
 export const chatOf = (chats: Record<string, Chat>, agentId: string | null): Chat =>
   (agentId && chats[agentId]) || emptyChat;
 
@@ -90,7 +132,7 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
     });
 
   return {
-    chats: {},
+    chats: loadChats(),
     prefill: null,
     setPrefill: (prefill) => set({ prefill }),
     send: async (agentId, message, agent) => {
@@ -107,7 +149,8 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
         for await (const e of streamer(agentId, message.trim(), agent, controller.signal)) {
           if (controller.signal.aborted) break;
           if (e.event === "step") {
-            patchReply(agentId, (m) => ({ steps: [...m.steps, { label: e.label, node: e.node }] }));
+            // Text streamed before a tool call is narration, not the reply: drop it.
+            patchReply(agentId, (m) => ({ text: "", steps: [...m.steps, { label: e.label, node: e.node }] }));
             // A step without a node (validating) keeps the last focus; only the end of the turn clears it.
             if (e.node) patch(agentId, (chat) => ({ ...chat, focus: e.node! }));
           }
@@ -150,6 +193,10 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
       await resetCopilot(agentId).catch(() => {});
     },
   };
+});
+
+useCopilotStore.subscribe((state, prev) => {
+  if (state.chats !== prev.chats) saveChats(state.chats);
 });
 
 export const resetCopilotStore = () => {
