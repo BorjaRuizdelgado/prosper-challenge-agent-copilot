@@ -13,9 +13,20 @@ dependencies = [
     "pipecat-ai[runner,webrtc,silero,elevenlabs,openai]>=1.4.0,<2",
     # Pipecat Flows: node-graph conversations (used by the agent builder + bot).
     "pipecat-ai-flows>=1.3.0,<2",
+    "fastapi>=0.138.2",
 ]
 
 [tool.uv]
 # This is an application (flat modules: bot.py + agent_builder/), not a
 # distributable library — manage the environment, don't build/install a package.
 package = false
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.2.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
