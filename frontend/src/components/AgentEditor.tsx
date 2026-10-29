@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { useAgentStore } from "../store";
 import { Dock } from "./Dock";
 import { GraphCanvas } from "./GraphCanvas";
+import { SaveBar } from "./SaveBar";
 
 export function AgentEditor() {
   const { id } = useParams();
@@ -30,6 +31,7 @@ export function AgentEditor() {
       <header className="editor__bar">
         <h1 className="editor__title">{agent.name}</h1>
         <span className="editor__meta">{agent.nodes.length} nodes</span>
+        <SaveBar />
       </header>
       <div className="editor__body">
         <GraphCanvas agent={agent} positions={positions} />

@@ -497,3 +497,25 @@ fieldset.field {
 .messages__row select {
   flex: 1;
 }
+
+.save-bar {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.save-bar__status {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.save-bar__status--dirty {
+  color: var(--warning);
+}
+
+.save-bar__status--failed,
+.save-bar__error {
+  color: var(--negative);
+  font-size: 12px;
+}

@@ -1,6 +1,6 @@
 import { render } from "@testing-library/react";
 import type { ReactElement } from "react";
-import { MemoryRouter } from "react-router-dom";
+import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { vi } from "vitest";
 import { AgentsProvider } from "../agents";
 import { ToastProvider } from "../components/Toasts";
@@ -28,11 +28,19 @@ export function mockApi(routes: Record<string, () => Response>) {
   return fn;
 }
 
-export const renderApp = (ui: ReactElement, route = "/") =>
-  render(
-    <MemoryRouter initialEntries={[route]}>
-      <ToastProvider>
-        <AgentsProvider>{ui}</AgentsProvider>
-      </ToastProvider>
-    </MemoryRouter>,
+export function renderApp(ui: ReactElement, route = "/") {
+  const router = createMemoryRouter(
+    [
+      {
+        path: "*",
+        element: (
+          <ToastProvider>
+            <AgentsProvider>{ui}</AgentsProvider>
+          </ToastProvider>
+        ),
+      },
+    ],
+    { initialEntries: [route] },
   );
+  return { router, ...render(<RouterProvider router={router} />) };
+}

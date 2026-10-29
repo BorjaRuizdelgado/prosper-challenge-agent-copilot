@@ -6,6 +6,7 @@ import type { Agent, AgentNode, Position } from "./model";
 export type Selection = { kind: "node"; node: string } | { kind: "edge"; node: string; function: string } | null;
 
 type Status = "idle" | "loading" | "ready" | "error";
+export type SaveStatus = "idle" | "saving" | "failed";
 
 export type RenameResult = { ok: true } | { ok: false; reason: "blank" | "duplicate" | "unknown" };
 
@@ -23,6 +24,8 @@ export interface AgentState {
   selection: Selection;
   /** True when the working copy differs from what was last loaded or saved. */
   dirty: boolean;
+  saveStatus: SaveStatus;
+  saveError: string | null;
   /** Active dock tab id (see dock registry). */
   dockTab: string;
   select: (selection: Selection) => void;
@@ -30,6 +33,8 @@ export interface AgentState {
   updateNode: (name: string, patch: NodePatch) => void;
   /** Renames a node and rewrites every reference to it; refuses blank or duplicate names. */
   renameNode: (from: string, to: string) => RenameResult;
+  /** Persists the working copy with its positions; on failure it stays dirty so the user can retry. */
+  save: () => Promise<boolean>;
   load: (id: string) => Promise<void>;
   reset: () => void;
 }
@@ -42,6 +47,8 @@ const empty = {
   positions: {},
   selection: null as Selection,
   dirty: false,
+  saveStatus: "idle" as SaveStatus,
+  saveError: null as string | null,
   dockTab: "inspector",
 };
 
@@ -91,6 +98,22 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       selection: selection && selection.node === from ? { ...selection, node: to } : selection,
     });
     return { ok: true };
+  },
+  async save() {
+    const { agentId, agent, positions, saveStatus } = get();
+    if (!agentId || !agent || saveStatus === "saving") return false;
+    set({ saveStatus: "saving", saveError: null });
+    try {
+      await api.saveAgent(agentId, { ...agent, layout: positions });
+      if (get().agentId !== agentId) return true;
+      // Edits made while the request was in flight are not saved yet, so only clear dirty if untouched.
+      const untouched = get().agent === agent && get().positions === positions;
+      set({ saveStatus: "idle", agent: untouched ? { ...agent, layout: positions } : get().agent, dirty: !untouched });
+      return true;
+    } catch (e) {
+      if (get().agentId === agentId) set({ saveStatus: "failed", saveError: (e as Error).message });
+      return false;
+    }
   },
   select: (selection) => set(selection ? { selection, dockTab: "inspector" } : { selection }),
   setDockTab: (dockTab) => set({ dockTab }),

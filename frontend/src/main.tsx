@@ -7,19 +7,27 @@ import "./styles/shell.css";
 
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AgentsProvider } from "./agents";
 import { App } from "./App";
 import { ToastProvider } from "./components/Toasts";
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <BrowserRouter>
+// A data router is required for useBlocker (unsaved-changes guard).
+const router = createBrowserRouter([
+  {
+    path: "*",
+    element: (
       <ToastProvider>
         <AgentsProvider>
           <App />
         </AgentsProvider>
       </ToastProvider>
-    </BrowserRouter>
+    ),
+  },
+]);
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <RouterProvider router={router} />
   </StrictMode>,
 );

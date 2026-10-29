@@ -25,7 +25,7 @@ Each group is a vertical slice that ends with something usable and verified in t
 
 - [x] 4.1 Store actions `updateNode`, `renameNode` (cascades to edge targets, `initial_node`, `layout`; rejects blank/duplicate), dirty tracking, and unit tests for each. Verify: `npm test` covers the rename cascade and duplicate refusal.
 - [x] 4.2 Inspector node form: name, task messages (add/remove/reorder, role+content), role override, terminal toggle, pre/post actions as validated JSON blocks. Verify: Vitest form tests; manual check in the browser.
-- [ ] 4.3 Save flow: Save button + status (saved/unsaved/saving/failed), `PUT` with positions, keyboard shortcut, `beforeunload` and router-leave warning, failure keeps dirty state with retry. Verify: manual check that edit, save and reload persist text and position, and that stopping the API shows the failure state.
+- [x] 4.3 Save flow: Save button + status (saved/unsaved/saving/failed), `PUT` with positions, keyboard shortcut, `beforeunload` and router-leave warning, failure keeps dirty state with retry. Verify: manual check that edit, save and reload persist text and position, and that stopping the API shows the failure state.
 
 ## 5. Edit edges and collected parameters
 
