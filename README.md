@@ -74,7 +74,7 @@ Setup: the copilot drives the local [Claude Code](https://docs.claude.com/en/doc
 - a login: run `claude` once in a terminal and sign in (uses your subscription, no per-token billing), **or**
 - `ANTHROPIC_API_KEY` in `backend/.env` (per-token billing). **Leave it unset to use the subscription**: when set, it wins over the login.
 
-Restart the API after changing either. `COPILOT_MODEL` overrides the model. Without a login or key the tab shows a setup message and the rest of the editor keeps working. The Copilot does not need the OpenAI or ElevenLabs keys; a test call does. Demo script for trying it: `docs/copilot-demo.md`.
+Restart the API after changing either. The model defaults to Haiku (cheapest); set `COPILOT_MODEL` (e.g. `sonnet`) to override. Without a login or key the tab shows a setup message and the rest of the editor keeps working. The Copilot does not need the OpenAI or ElevenLabs keys; a test call does. Demo script for trying it: `docs/copilot-demo.md`.
 
 The **Copilot** tab chats with an AI that edits the open agent (backend: `backend/copilot/`, endpoints `POST /api/copilot/{id}` and `/reset`).
 

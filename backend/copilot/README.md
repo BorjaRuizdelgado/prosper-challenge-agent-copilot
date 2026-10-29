@@ -23,7 +23,7 @@ Served by `api/copilot.py` (the `run_turn` seam is injected, so tests use a fake
 
 When the client disconnects the stream is closed, which closes `run_turn` (it interrupts Claude Code) and frees the agent for the next turn.
 
-Auth is whatever the `claude` CLI uses: its login, or `ANTHROPIC_API_KEY` if set (leave it unset to use the subscription). `COPILOT_MODEL` overrides the model.
+Auth is whatever the `claude` CLI uses: its login, or `ANTHROPIC_API_KEY` if set (leave it unset to use the subscription). The model defaults to Haiku (cheapest); set `COPILOT_MODEL` (e.g. `sonnet`) to override.
 
 Backend tests never call Claude (`tests/test_copilot_*.py`). To watch a real turn:
 

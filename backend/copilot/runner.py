@@ -28,6 +28,9 @@ from claude_agent_sdk import (
 
 from agent_builder.validation import validate_as_dicts
 from copilot import workspace
+
+# Cheapest tier by default; the CLI resolves the alias to the current Haiku. COPILOT_MODEL overrides it.
+DEFAULT_MODEL = "haiku"
 from copilot.events import DraftTracker, step_for_tool, validation_step
 from copilot.guard import check_path
 from copilot.validate_tool import FULL_TOOL_NAME, build_server
@@ -45,7 +48,7 @@ SETUP_ERRORS = {"authentication_failed", "billing_error"}
 FILE_TOOLS = "Read|Edit|Write"
 EDIT_TOOLS = {"Edit", "Write"}
 # Claude Code tools the copilot never gets, even if the CLI's defaults change.
-DISALLOWED_TOOLS = ["Bash", "BashOutput", "KillShell", "Glob", "Grep", "WebFetch", "WebSearch", "Task", "NotebookEdit", "TodoWrite"]
+DISALLOWED_TOOLS = ["Bash", "BashOutput", "KillShell", "Glob", "Grep", "WebFetch", "WebSearch", "Task", "NotebookEdit", "TodoWrite", "advisor"]
 
 # agent id -> SDK session id, so a follow-up turn resumes the conversation (design Decision 7).
 _sessions: dict[str, str] = {}
@@ -86,7 +89,7 @@ def _options(agent_id: str) -> ClaudeAgentOptions:
         hooks={"PreToolUse": [HookMatcher(matcher=FILE_TOOLS, hooks=[guard_hook])]},
         include_partial_messages=True,
         resume=_sessions.get(agent_id),
-        model=os.environ.get("COPILOT_MODEL") or None,
+        model=os.environ.get("COPILOT_MODEL") or DEFAULT_MODEL,
     )
 
 

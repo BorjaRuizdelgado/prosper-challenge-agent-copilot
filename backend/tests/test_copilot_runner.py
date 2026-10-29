@@ -229,3 +229,10 @@ async def test_permission_callback_and_hook_apply_the_guard():
     assert await hook({"tool_name": "Read", "tool_input": {"file_path": draft}}, None, None) == {}
     denied = await hook({"tool_name": "Read", "tool_input": {"file_path": "/etc/passwd"}}, None, None)
     assert denied["hookSpecificOutput"]["permissionDecision"] == "deny"
+
+
+def test_model_defaults_to_haiku_and_can_be_overridden(monkeypatch):
+    monkeypatch.delenv("COPILOT_MODEL", raising=False)
+    assert runner._options("demo").model == "haiku"
+    monkeypatch.setenv("COPILOT_MODEL", "sonnet")
+    assert runner._options("demo").model == "sonnet"
