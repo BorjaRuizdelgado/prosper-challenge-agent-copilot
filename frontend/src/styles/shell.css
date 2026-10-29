@@ -244,6 +244,17 @@ button:disabled {
   font-size: 12px;
 }
 
+.editor__tools {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.node-actions__row {
+  display: flex;
+  gap: 8px;
+}
+
 .canvas {
   flex: 1;
   min-height: 0;
@@ -499,7 +510,7 @@ fieldset.field {
 }
 
 .save-bar {
-  margin-left: auto;
+  margin-left: 8px;
   display: flex;
   align-items: center;
   gap: 12px;

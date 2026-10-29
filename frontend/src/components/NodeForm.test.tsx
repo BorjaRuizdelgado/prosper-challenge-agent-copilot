@@ -106,3 +106,37 @@ test("valid action JSON is written to the node; invalid JSON is flagged and not 
   fireEvent.change(pre, { target: { value: '{"a":1}' } });
   expect(screen.getByRole("alert")).toHaveTextContent("Expected a JSON array.");
 });
+
+test("deleting a targeted node states how many edges go and removes them on confirm", async () => {
+  act(() => useAgentStore.getState().select({ kind: "node", node: "confirm" }));
+
+  await userEvent.click(screen.getByRole("button", { name: "Delete node" }));
+  expect(screen.getByRole("dialog")).toHaveTextContent("1 edge leads here and will be removed too.");
+
+  await userEvent.click(screen.getAllByRole("button", { name: "Delete node" }).at(-1)!);
+
+  expect(useAgentStore.getState().agent!.nodes.map((n) => n.name)).toEqual(["greeting"]);
+  expect(node().edges).toEqual([]);
+});
+
+test("cancelling the delete confirmation keeps the node", async () => {
+  act(() => useAgentStore.getState().select({ kind: "node", node: "confirm" }));
+
+  await userEvent.click(screen.getByRole("button", { name: "Delete node" }));
+  await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+  expect(useAgentStore.getState().agent!.nodes).toHaveLength(2);
+});
+
+test("the initial node cannot be deleted until another is set as initial", async () => {
+  expect(screen.getByRole("button", { name: "Delete node" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Initial node" })).toBeDisabled();
+  expect(screen.getByText(/Set another node as initial before deleting it/)).toBeInTheDocument();
+
+  act(() => useAgentStore.getState().select({ kind: "node", node: "confirm" }));
+  await userEvent.click(screen.getByRole("button", { name: "Set as initial" }));
+  expect(useAgentStore.getState().agent!.initial_node).toBe("confirm");
+
+  act(() => useAgentStore.getState().select({ kind: "node", node: "greeting" }));
+  expect(screen.getByRole("button", { name: "Delete node" })).toBeEnabled();
+});

@@ -7,7 +7,7 @@ import { SaveBar } from "./SaveBar";
 
 export function AgentEditor() {
   const { id } = useParams();
-  const { status, error, agent, positions, load, reset } = useAgentStore();
+  const { status, error, agent, positions, load, reset, addNode } = useAgentStore();
 
   useEffect(() => {
     if (id) void load(id);
@@ -31,6 +31,11 @@ export function AgentEditor() {
       <header className="editor__bar">
         <h1 className="editor__title">{agent.name}</h1>
         <span className="editor__meta">{agent.nodes.length} nodes</span>
+        <div className="editor__tools">
+          <button type="button" onClick={() => addNode()}>
+            Add node
+          </button>
+        </div>
         <SaveBar />
       </header>
       <div className="editor__body">

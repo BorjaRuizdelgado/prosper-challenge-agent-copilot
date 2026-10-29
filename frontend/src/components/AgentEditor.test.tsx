@@ -91,3 +91,15 @@ test("an edge selection shows function, target and parameters", async () => {
   expect(screen.getByLabelText("Function")).toHaveValue("choose_intent");
   expect(screen.getByLabelText("Target")).toHaveValue("confirm");
 });
+
+test("Add node puts a new card on the canvas, selects it and marks the agent unsaved", async () => {
+  mockApi(routes());
+  renderApp(<App />, "/agents/s-1");
+  const canvas = await screen.findByTestId("canvas");
+
+  fireEvent.click(screen.getByRole("button", { name: "Add node" }));
+
+  expect(await within(canvas).findByText("new_node", { selector: ".node-card__name" })).toBeInTheDocument();
+  expect(screen.getByLabelText("Name")).toHaveValue("new_node");
+  expect(screen.getByTestId("save-status")).toHaveTextContent("Unsaved changes");
+});

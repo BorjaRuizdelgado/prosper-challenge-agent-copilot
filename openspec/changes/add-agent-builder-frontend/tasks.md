@@ -35,7 +35,7 @@ Each group is a vertical slice that ends with something usable and verified in t
 
 ## 6. Structural graph editing and layout
 
-- [ ] 6.1 Add node (toolbar, with unique default name) and delete node with confirmation stating how many incoming edges go; block deleting the initial node until another is chosen; "Set as initial". Verify: Vitest for cascade and guards; manual check in the browser.
+- [x] 6.1 Add node (toolbar, with unique default name) and delete node with confirmation stating how many incoming edges go; block deleting the initial node until another is chosen; "Set as initial". Verify: Vitest for cascade and guards; manual check in the browser.
 - [ ] 6.2 Persist dragged positions in `layout`, "Auto layout" button, unlayouted nodes (e.g. added via JSON) are laid out on load. Verify: manual check that a moved node keeps its position after save and reload, and auto layout resets it.
 
 ## 7. Agent settings, validation feedback and JSON view

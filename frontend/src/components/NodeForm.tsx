@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { AgentNode, TaskMessage } from "../model";
-import { useAgentStore } from "../store";
+import { incomingEdgeCount, useAgentStore } from "../store";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 const ROLES = ["developer", "system", "user", "assistant"];
 
@@ -134,6 +135,52 @@ function ActionsField({ node, field, label }: { node: AgentNode; field: "pre_act
   );
 }
 
+/** Make this node the entry point, or delete it (after confirming the edges that go with it). */
+function NodeActions({ node }: { node: AgentNode }) {
+  const agent = useAgentStore((s) => s.agent)!;
+  const setInitialNode = useAgentStore((s) => s.setInitialNode);
+  const removeNode = useAgentStore((s) => s.removeNode);
+  const [confirming, setConfirming] = useState(false);
+  const initial = agent.initial_node === node.name;
+  const only = agent.nodes.length === 1;
+  const incoming = incomingEdgeCount(agent, node.name);
+  const blocked = only
+    ? "An agent needs at least one node."
+    : initial
+      ? "This is the initial node. Set another node as initial before deleting it."
+      : null;
+
+  return (
+    <div className="field node-actions">
+      <div className="node-actions__row">
+        <button type="button" disabled={initial} onClick={() => setInitialNode(node.name)}>
+          {initial ? "Initial node" : "Set as initial"}
+        </button>
+        <button type="button" className="danger" disabled={blocked !== null} onClick={() => setConfirming(true)}>
+          Delete node
+        </button>
+      </div>
+      {blocked && <p className="field__hint">{blocked}</p>}
+      {confirming && (
+        <ConfirmDialog
+          title={`Delete ${node.name}?`}
+          message={
+            incoming === 0
+              ? "No other node leads here."
+              : `${incoming} ${incoming === 1 ? "edge leads" : "edges lead"} here and will be removed too.`
+          }
+          confirmLabel="Delete node"
+          onConfirm={() => {
+            setConfirming(false);
+            removeNode(node.name);
+          }}
+          onClose={() => setConfirming(false)}
+        />
+      )}
+    </div>
+  );
+}
+
 export function NodeForm({ node }: { node: AgentNode }) {
   const updateNode = useAgentStore((s) => s.updateNode);
   return (
@@ -156,6 +203,7 @@ export function NodeForm({ node }: { node: AgentNode }) {
       </div>
       <ActionsField node={node} field="pre_actions" label="Pre-actions (JSON)" />
       <ActionsField node={node} field="post_actions" label="Post-actions (JSON)" />
+      <NodeActions node={node} />
     </form>
   );
 }
