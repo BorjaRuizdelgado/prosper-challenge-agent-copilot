@@ -18,6 +18,9 @@ export type EdgeResult = { ok: true } | { ok: false; reason: "blank" | "duplicat
 /** Fields of an edge that `updateEdge` may change; the function name goes through `renameEdge`. */
 export type EdgePatch = Partial<Omit<Edge, "function">>;
 
+/** Agent-level fields the settings form may change. */
+export type SettingsPatch = Partial<Pick<Agent, "name" | "persona" | "voice_id" | "model">>;
+
 /** First `base`, `base_2`, `base_3`... not already used as a function name on the node. */
 export function uniqueFunction(node: AgentNode, base: string): string {
   const used = new Set((node.edges ?? []).map((e) => e.function));
@@ -86,6 +89,8 @@ export interface AgentState {
   /** Deletes a node and every edge targeting it; the initial node and the last node are protected. */
   removeNode: (name: string) => RemoveNodeResult;
   setInitialNode: (name: string) => void;
+  /** Changes agent-level settings (name, persona, voice, model). */
+  updateSettings: (patch: SettingsPatch) => void;
   /** Records where the user dragged an edge label, relative to the middle of its edge. */
   moveLabel: (id: string, offset: Position) => void;
   /** Records where the user dragged a node; saved with the agent as its `layout`. */
@@ -309,6 +314,11 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     const { agent } = get();
     if (!agent || agent.initial_node === name || !agent.nodes.some((n) => n.name === name)) return;
     set({ dirty: true, agent: { ...agent, initial_node: name } });
+  },
+  updateSettings(patch) {
+    const { agent } = get();
+    if (!agent) return;
+    set({ dirty: true, agent: { ...agent, ...patch } });
   },
   async save() {
     const { agentId, agent, positions, labelOffsets, saveStatus } = get();

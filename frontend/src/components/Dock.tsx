@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import { useAgentStore } from "../store";
 import { Inspector } from "./Inspector";
+import { SettingsForm } from "./SettingsForm";
 
 interface DockTab {
   id: string;
@@ -9,7 +10,9 @@ interface DockTab {
 }
 
 /** Register a component here to add a dock tab (JSON, Issues, Call, Copilot…). */
-export const DOCK_TABS: DockTab[] = [{ id: "inspector", label: "Inspector", component: Inspector }];
+export const DOCK_TABS: DockTab[] = [{ id: "inspector", label: "Inspector", component: Inspector },
+  { id: "settings", label: "Settings", component: SettingsForm },
+];
 
 export function Dock() {
   const active = useAgentStore((s) => s.dockTab);
