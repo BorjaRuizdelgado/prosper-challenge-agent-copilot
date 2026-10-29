@@ -67,6 +67,15 @@ The **Call** tab talks to the agent you are editing, from the browser (needs `OP
 
 How it works: the browser `POST`s `/voice/start` (proxied to the runner) with `{"body": {"agent_id": ...}}`, the Pipecat client then connects over SmallWebRTC, and `bot.py` loads that agent. Transitions travel as an RTVI server message `{"type": "node_changed", "from", "node", "via", "args"}` (`backend/session.py`). `docs/manual-call-test.md` is the checklist for the parts that need a mic and paid keys.
 
+### Copilot
+
+The **Copilot** tab chats with an AI that edits the open agent (backend: `backend/copilot/`, endpoints `POST /api/copilot/{id}` and `/reset`).
+
+- **Chat:** describe what you want (or pick an example); Enter sends, Shift+Enter adds a line. Each agent keeps its own conversation while the page is open; *New chat* clears it and the server-side session.
+- **Progress:** a *Working… Ns* indicator with a timer shows the moment you send, then one line per step (reading, editing a node, validating) and the reply as it is written. The input is disabled during a turn; *Stop* aborts it and keeps what was streamed.
+- **Setup:** the copilot drives the local `claude` CLI. If there is no login and no `ANTHROPIC_API_KEY`, the panel says so and the rest of the editor keeps working.
+- **Not yet in this slice:** showing and applying the proposal (draft on the canvas, Changes list, Apply/Discard) and the canvas highlight of the node being edited.
+
 ## Layout
 
 | Path | Responsibility |
