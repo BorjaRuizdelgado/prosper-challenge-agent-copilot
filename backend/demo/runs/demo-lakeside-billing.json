@@ -1,0 +1,318 @@
+[
+  {
+    "id": "r-3001",
+    "started_at": "2026-10-12T09:30:00Z",
+    "duration_s": 52,
+    "outcome": "completed",
+    "transcript": [
+      {
+        "speaker": "agent",
+        "text": "Thanks for calling Lakeside Medical Group billing. I can answer general billing and insurance questions. How can I help?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Do you take Blue Cross?"
+      },
+      {
+        "speaker": "agent",
+        "text": "We accept most major insurance plans. Please bring your card to the visit. Anything else I can help with?"
+      },
+      {
+        "speaker": "caller",
+        "text": "No, thanks."
+      },
+      {
+        "speaker": "agent",
+        "text": "Thank you for calling. Goodbye."
+      }
+    ],
+    "path": [
+      {
+        "node": "greeting"
+      },
+      {
+        "node": "answer_general",
+        "via": "general_question",
+        "args": {}
+      },
+      {
+        "node": "wrap_up",
+        "via": "question_answered",
+        "args": {}
+      },
+      {
+        "node": "goodbye",
+        "via": "finish_call",
+        "args": {}
+      }
+    ]
+  },
+  {
+    "id": "r-3002",
+    "started_at": "2026-10-13T10:45:00Z",
+    "duration_s": 48,
+    "outcome": "completed",
+    "transcript": [
+      {
+        "speaker": "agent",
+        "text": "Thanks for calling Lakeside Medical Group billing. I can answer general billing and insurance questions. How can I help?"
+      },
+      {
+        "speaker": "caller",
+        "text": "When is the billing office open?"
+      },
+      {
+        "speaker": "agent",
+        "text": "The billing office is open weekdays from nine to five. Anything else I can help with?"
+      },
+      {
+        "speaker": "caller",
+        "text": "No, thanks."
+      },
+      {
+        "speaker": "agent",
+        "text": "Thank you for calling. Goodbye."
+      }
+    ],
+    "path": [
+      {
+        "node": "greeting"
+      },
+      {
+        "node": "answer_general",
+        "via": "general_question",
+        "args": {}
+      },
+      {
+        "node": "wrap_up",
+        "via": "question_answered",
+        "args": {}
+      },
+      {
+        "node": "goodbye",
+        "via": "finish_call",
+        "args": {}
+      }
+    ]
+  },
+  {
+    "id": "r-3003",
+    "started_at": "2026-10-14T13:10:00Z",
+    "duration_s": 55,
+    "outcome": "completed",
+    "transcript": [
+      {
+        "speaker": "agent",
+        "text": "Thanks for calling Lakeside Medical Group billing. I can answer general billing and insurance questions. How can I help?"
+      },
+      {
+        "speaker": "caller",
+        "text": "How can I pay?"
+      },
+      {
+        "speaker": "agent",
+        "text": "You can pay by card or cash at the time of the visit. Anything else I can help with?"
+      },
+      {
+        "speaker": "caller",
+        "text": "No, thanks."
+      },
+      {
+        "speaker": "agent",
+        "text": "Thank you for calling. Goodbye."
+      }
+    ],
+    "path": [
+      {
+        "node": "greeting"
+      },
+      {
+        "node": "answer_general",
+        "via": "general_question",
+        "args": {}
+      },
+      {
+        "node": "wrap_up",
+        "via": "question_answered",
+        "args": {}
+      },
+      {
+        "node": "goodbye",
+        "via": "finish_call",
+        "args": {}
+      }
+    ]
+  },
+  {
+    "id": "r-3004",
+    "started_at": "2026-10-15T09:05:00Z",
+    "duration_s": 40,
+    "outcome": "transferred",
+    "transcript": [
+      {
+        "speaker": "agent",
+        "text": "Thanks for calling Lakeside Medical Group billing. I can answer general billing and insurance questions. How can I help?"
+      },
+      {
+        "speaker": "caller",
+        "text": "I think I was charged twice for my last visit."
+      },
+      {
+        "speaker": "agent",
+        "text": "I am connecting you with the billing team. Please stay on the line."
+      }
+    ],
+    "path": [
+      {
+        "node": "greeting"
+      },
+      {
+        "node": "handoff",
+        "via": "account_question",
+        "args": {}
+      }
+    ]
+  },
+  {
+    "id": "r-3005",
+    "started_at": "2026-10-16T11:50:00Z",
+    "duration_s": 37,
+    "outcome": "transferred",
+    "transcript": [
+      {
+        "speaker": "agent",
+        "text": "Thanks for calling Lakeside Medical Group billing. I can answer general billing and insurance questions. How can I help?"
+      },
+      {
+        "speaker": "caller",
+        "text": "What is my balance?"
+      },
+      {
+        "speaker": "agent",
+        "text": "I am connecting you with the billing team. Please stay on the line."
+      }
+    ],
+    "path": [
+      {
+        "node": "greeting"
+      },
+      {
+        "node": "handoff",
+        "via": "account_question",
+        "args": {}
+      }
+    ]
+  },
+  {
+    "id": "r-3006",
+    "started_at": "2026-10-19T15:25:00Z",
+    "duration_s": 44,
+    "outcome": "transferred",
+    "transcript": [
+      {
+        "speaker": "agent",
+        "text": "Thanks for calling Lakeside Medical Group billing. I can answer general billing and insurance questions. How can I help?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Where is my insurance claim for August?"
+      },
+      {
+        "speaker": "agent",
+        "text": "I am connecting you with the billing team. Please stay on the line."
+      }
+    ],
+    "path": [
+      {
+        "node": "greeting"
+      },
+      {
+        "node": "handoff",
+        "via": "account_question",
+        "args": {}
+      }
+    ]
+  },
+  {
+    "id": "r-3007",
+    "started_at": "2026-10-20T10:12:00Z",
+    "duration_s": 51,
+    "outcome": "completed",
+    "transcript": [
+      {
+        "speaker": "agent",
+        "text": "Thanks for calling Lakeside Medical Group billing. I can answer general billing and insurance questions. How can I help?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Do I pay before or after the visit?"
+      },
+      {
+        "speaker": "agent",
+        "text": "Payment is due at the time of the visit. Anything else I can help with?"
+      },
+      {
+        "speaker": "caller",
+        "text": "No, thanks."
+      },
+      {
+        "speaker": "agent",
+        "text": "Thank you for calling. Goodbye."
+      }
+    ],
+    "path": [
+      {
+        "node": "greeting"
+      },
+      {
+        "node": "answer_general",
+        "via": "general_question",
+        "args": {}
+      },
+      {
+        "node": "wrap_up",
+        "via": "question_answered",
+        "args": {}
+      },
+      {
+        "node": "goodbye",
+        "via": "finish_call",
+        "args": {}
+      }
+    ]
+  },
+  {
+    "id": "r-3008",
+    "started_at": "2026-10-21T16:02:00Z",
+    "duration_s": 63,
+    "outcome": "abandoned",
+    "flag": "Caller asked for a person and was told the agent could not help.",
+    "transcript": [
+      {
+        "speaker": "agent",
+        "text": "Thanks for calling Lakeside Medical Group billing. I can answer general billing and insurance questions. How can I help?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Can I talk to a person, please?"
+      },
+      {
+        "speaker": "agent",
+        "text": "I can help with general billing and insurance questions. What would you like to know?"
+      },
+      {
+        "speaker": "caller",
+        "text": "No, I want a real person."
+      },
+      {
+        "speaker": "agent",
+        "text": "I can help with general billing questions."
+      }
+    ],
+    "path": [
+      {
+        "node": "greeting"
+      }
+    ]
+  }
+]
