@@ -3,7 +3,7 @@
 
 PROJECT := backend
 
-.PHONY: help install run api frontend dev up down test clean
+.PHONY: help install run api frontend dev up down demo test clean
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -40,6 +40,9 @@ down: ## Stop the API, voice runner and frontend (by process and by port)
 			pids=$$(lsof -ti tcp:$$port -sTCP:LISTEN); \
 			if [ -n "$$pids" ]; then kill -9 $$pids; fi; \
 		done; echo "Stopped."
+
+demo: ## Seed the demo agents into the agents directory, resetting them if they exist
+	uv run --directory $(PROJECT) python -m demo.seed
 
 test: ## Run backend (pytest), frontend (Vitest) and the Playwright smoke spec
 	uv run --directory $(PROJECT) pytest
