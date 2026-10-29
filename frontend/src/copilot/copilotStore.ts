@@ -56,6 +56,8 @@ export interface CopilotStore {
   send: (agentId: string, message: string, agent: Agent) => Promise<void>;
   /** Aborts the running turn; its output so far stays, and it yields no proposal. */
   stop: (agentId: string) => void;
+  /** Sets the status of the proposal on the assistant message at `index` (Apply and Discard). */
+  setProposalStatus: (agentId: string, index: number, status: Proposal["status"]) => void;
   /** Clears the conversation and the server-side session. */
   reset: (agentId: string) => Promise<void>;
 }
@@ -112,6 +114,13 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
       }
     },
     stop: (agentId) => controllers.get(agentId)?.abort(),
+    setProposalStatus: (agentId, index, status) =>
+      patch(agentId, (chat) => ({
+        ...chat,
+        messages: chat.messages.map((m, i) =>
+          i === index && m.role === "assistant" && m.proposal ? { ...m, proposal: { ...m.proposal, status } } : m,
+        ),
+      })),
     reset: async (agentId) => {
       controllers.get(agentId)?.abort();
       controllers.delete(agentId);

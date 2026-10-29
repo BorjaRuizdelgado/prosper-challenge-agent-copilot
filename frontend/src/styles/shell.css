@@ -935,3 +935,58 @@ button.issues__item:hover {
     animation: none;
   }
 }
+
+/* ---- copilot proposal card ---- */
+.proposal {
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid var(--control);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.proposal--discarded {
+  opacity: 0.6;
+}
+
+.proposal__summary {
+  margin: 0;
+  font-weight: 600;
+}
+
+.proposal__issues,
+.proposal__changes ul,
+.proposal__fields {
+  margin: 4px 0 0;
+  padding-left: 16px;
+}
+
+.proposal__issue--error,
+.proposal__warn {
+  color: var(--negative);
+}
+
+.proposal__warn {
+  margin: 4px 0 0;
+}
+
+.proposal__changes {
+  margin-top: 6px;
+}
+
+.proposal__before,
+.proposal__after {
+  margin: 2px 0;
+  white-space: pre-wrap;
+}
+
+.proposal__before {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.proposal__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}

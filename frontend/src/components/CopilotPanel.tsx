@@ -1,6 +1,7 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { chatOf, type ChatMessage, useCopilotStore } from "../copilot/copilotStore";
 import { useAgentStore } from "../store";
+import { ProposalCard } from "./ProposalCard";
 
 export const EXAMPLES = [
   "Build an agent from these call guidelines: …",
@@ -23,7 +24,7 @@ function useElapsed(startedAt: number | null): number {
   return startedAt === null ? 0 : Math.max(0, Math.floor((now - startedAt) / 1000));
 }
 
-function Reply({ message, running, elapsed }: { message: Extract<ChatMessage, { role: "assistant" }>; running: boolean; elapsed: number }) {
+function Reply({ agentId, index, message, running, elapsed }: { agentId: string; index: number; message: Extract<ChatMessage, { role: "assistant" }>; running: boolean; elapsed: number }) {
   return (
     <li className="copilot__msg copilot__msg--assistant">
       {message.steps.length > 0 && (
@@ -39,6 +40,7 @@ function Reply({ message, running, elapsed }: { message: Extract<ChatMessage, { 
           Working… {elapsed}s
         </p>
       )}
+      {message.proposal && <ProposalCard agentId={agentId} index={index} proposal={message.proposal} />}
       {message.stopped && <p className="copilot__note">Stopped.</p>}
       {message.error && (
         <p className="copilot__error" role="alert">
@@ -105,7 +107,7 @@ export function CopilotPanel() {
                 {m.text}
               </li>
             ) : (
-              <Reply key={i} message={m} running={chat.running && i === chat.messages.length - 1} elapsed={elapsed} />
+              <Reply key={i} agentId={agentId} index={i} message={m} running={chat.running && i === chat.messages.length - 1} elapsed={elapsed} />
             ),
           )}
           <li ref={end} aria-hidden />

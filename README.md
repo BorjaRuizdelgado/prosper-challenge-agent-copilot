@@ -75,7 +75,8 @@ The **Copilot** tab chats with an AI that edits the open agent (backend: `backen
 - **Progress:** a *Working… Ns* indicator with a timer shows the moment you send, then one line per step (reading, editing a node, validating) and the reply as it is written. The input is disabled during a turn; *Stop* aborts it and keeps what was streamed.
 - **Setup:** the copilot drives the local `claude` CLI. If there is no login and no `ANTHROPIC_API_KEY`, the panel says so and the rest of the editor keeps working.
 - **Canvas focus:** the node a step is reading or editing gets a pulsing teal outline (same colour as a call's active node) until the turn ends or is stopped.
-- **Not yet in this slice:** showing and applying the proposal (draft on the canvas, Changes list, Apply/Discard).
+- **Proposal card:** when the copilot changes the agent, its reply carries a card with counts ("1 node added, 1 edge changed"), any validation issues left, a collapsed *Changes* list (expand an item for its before/after text), *Apply* and *Discard*. Apply loads the proposal into the editor as unsaved changes (you still Save), keeps the positions of nodes that stay and lets new nodes be auto-laid out; if you edited the agent after the proposal arrived it asks first. Discard leaves the editor as it was. A proposal with errors says the agent will not be callable until they are fixed.
+- **Not yet in this slice:** the live draft on the canvas while the copilot works.
 
 ## Layout
 
