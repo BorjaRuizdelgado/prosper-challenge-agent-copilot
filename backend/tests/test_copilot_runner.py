@@ -211,7 +211,7 @@ async def test_options_confine_the_copilot():
     options = FakeClient.instances[0].options
     assert options.setting_sources == ["project"]
     assert options.cwd == str(workspace.workspace_dir())
-    assert options.allowed_tools == ["Skill", "mcp__copilot__validate_agent"]
+    assert options.allowed_tools == ["Skill", "mcp__copilot__validate_agent", "mcp__copilot__report_findings"]
     assert "Bash" in options.disallowed_tools
     assert options.include_partial_messages is True
 

@@ -34,7 +34,7 @@ from copilot import workspace
 DEFAULT_MODEL = "haiku"
 from copilot.events import DraftTracker, step_for_tool, validation_step
 from copilot.guard import check_path
-from copilot.validate_tool import FULL_TOOL_NAME, build_server
+from copilot.validate_tool import FULL_FINDINGS_TOOL_NAME, FULL_TOOL_NAME, build_server
 
 # Skill and validate_agent are allowed on purpose; the callback guards the file tools only.
 warnings.filterwarnings("ignore", category=CanUseToolShadowedWarning)
@@ -84,7 +84,7 @@ def _options(agent_id: str) -> ClaudeAgentOptions:
         system_prompt=workspace.system_prompt(),
         mcp_servers={"copilot": build_server(agent_id)},
         # Read/Edit/Write must stay out of allowed_tools: those are auto-approved before any guard.
-        allowed_tools=["Skill", FULL_TOOL_NAME],
+        allowed_tools=["Skill", FULL_TOOL_NAME, FULL_FINDINGS_TOOL_NAME],
         disallowed_tools=DISALLOWED_TOOLS,
         can_use_tool=can_use_tool,
         hooks={"PreToolUse": [HookMatcher(matcher=FILE_TOOLS, hooks=[guard_hook])]},
