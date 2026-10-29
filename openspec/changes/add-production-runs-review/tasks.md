@@ -42,8 +42,8 @@ Each group is a vertical slice that ends with something usable and verified. Tes
 ## 7. Demo run and integration
 
 - [x] 7.1 Extend the Playwright smoke spec: stub `/api/agents/{id}/runs` and `/api/copilot` (canned stream with a `findings` event and a proposal); open Runs, select a run (canvas highlight), Analyze, see the findings card, click a run link, Apply, see the new node. Verify: `npm run e2e` passes.
-- [ ] 7.2 Write `docs/production-runs-demo.md` and run it against the real CLI after `make demo`: the scheduler (cancel/reschedule paths, split intake, booking path unchanged), the refill line (missing flow built, pharmacist handoff, emergency exit, no invented policy), the billing line (one edge changed), Ask Copilot on one run, and asking about another agent's runs (declined). Record what was observed with `COPILOT_MODEL=sonnet` and with the default Haiku. Verify: each scenario observed; failures fixed in the skill or prompt, or recorded as known issues.
-- [ ] 7.3 README (demo section: `make demo`, Runs tab, Analyze runs) and `solution.md` (production iteration: mocked runs, review skill, findings, what is left out and why). Verify: following the README from `make demo` reaches an Analyze runs proposal.
+- [x] 7.2 Write `docs/production-runs-demo.md` and run it against the real CLI after `make demo`: the scheduler (cancel/reschedule paths, split intake, booking path unchanged), the refill line (missing flow built, pharmacist handoff, emergency exit, no invented policy), the billing line (one edge changed), Ask Copilot on one run, and asking about another agent's runs (declined). Record what was observed with `COPILOT_MODEL=sonnet` and with the default Haiku. Verify: each scenario observed; failures fixed in the skill or prompt, or recorded as known issues.
+- [x] 7.3 README (demo section: `make demo`, Runs tab, Analyze runs) and `solution.md` (production iteration: mocked runs, review skill, findings, what is left out and why). Verify: following the README from `make demo` reaches an Analyze runs proposal.
 
 ## Workflow follow-up
 
