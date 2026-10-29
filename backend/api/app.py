@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from agent_builder.validation import validate_as_dicts
 
 from . import store
+from .copilot import router as copilot_router
 
 
 @asynccontextmanager
@@ -18,6 +19,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="Agent builder API", lifespan=lifespan)
+app.include_router(copilot_router)
 
 
 @app.get("/api/agents")

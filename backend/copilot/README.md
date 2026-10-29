@@ -12,6 +12,17 @@ Backend for the Agent Copilot (OpenSpec change `add-agent-copilot`). Claude Code
 | `events.py` | Pure helpers: step labels, node name of an edit, which drafts are worth a `draft` event. |
 | `runner.py` | `run_turn(agent_id, message, agent)`: yields `step`, `text`, `draft`, `proposal`, `done` or `error` events; keeps the session id per agent (`reset_session`). |
 
+## HTTP API
+
+Served by `api/copilot.py` (the `run_turn` seam is injected, so tests use a fake runner).
+
+| Endpoint | Behaviour |
+| --- | --- |
+| `POST /api/copilot/{agent_id}` | Body `{message, agent}` (the editor's working copy). Responds `text/event-stream` with `step`, `text`, `draft`, `proposal`, `done` or `error` events. `409` if that agent already has a turn running, `400` for an invalid id, `422` for a bad body. A runner crash becomes an `error` event. |
+| `POST /api/copilot/{agent_id}/reset` | Forgets the agent's conversation (`204`). |
+
+When the client disconnects the stream is closed, which closes `run_turn` (it interrupts Claude Code) and frees the agent for the next turn.
+
 Auth is whatever the `claude` CLI uses: its login, or `ANTHROPIC_API_KEY` if set (leave it unset to use the subscription). `COPILOT_MODEL` overrides the model.
 
 Backend tests never call Claude (`tests/test_copilot_*.py`). To watch a real turn:
