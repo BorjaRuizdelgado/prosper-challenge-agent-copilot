@@ -281,6 +281,23 @@ button:disabled {
   border-color: var(--accent);
 }
 
+/* The node a live call is in; colour is reserved for this, the primary button and status. */
+.node-card--active {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.react-flow__edge-path.edge--taken {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.edge-label--taken {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .node-card__head {
   display: flex;
   align-items: center;
