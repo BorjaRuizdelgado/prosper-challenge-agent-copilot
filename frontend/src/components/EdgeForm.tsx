@@ -6,6 +6,7 @@ const TYPES = ["string", "number", "integer", "boolean"];
 
 const FUNCTION_ERRORS = {
   blank: "An edge needs a function name.",
+  invalid: "Use only letters, digits, _ and - (up to 64), e.g. book_appointment.",
   duplicate: "Another edge on this node already uses this name.",
   unknown: "This edge no longer exists.",
 };

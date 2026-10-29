@@ -33,7 +33,7 @@ The voice runner (Pipecat pipeline, ElevenLabs STT/TTS, OpenAI LLM, Pipecat Flow
 
 | Change | Why |
 | --- | --- |
-| `agent_builder/validation.py` | Returns structured issues (code, severity, node, edge) instead of raising on the first problem. `AgentBuilder` now calls it and refuses to build on any error; the API exposes the same function, so the UI and the runner apply the same rules. |
+| `agent_builder/validation.py` | Returns structured issues (code, severity, node, edge) instead of raising on the first problem. `AgentBuilder` now calls it and refuses to build on any error; the API exposes the same function, so the UI and the runner apply the same rules. Errors cover everything the runtime would reject later (missing fields, function names OpenAI does not accept as tool names), so an agent with no errors can always start a call. |
 | `on_transition` callback in `AgentBuilder` | Lets `bot.py` send a `node_changed` RTVI message on every edge taken, so the UI can highlight the active node during a call. |
 | `layout` field in `AgentConfig` | Stores node positions in the agent JSON. Ignored at runtime. |
 | `session.py` | Picks the agent from `agent_id` in the session body (was a hard-coded `example_flow.json`), checks API keys and blocking issues before the call starts. |
@@ -41,7 +41,7 @@ The voice runner (Pipecat pipeline, ElevenLabs STT/TTS, OpenAI LLM, Pipecat Flow
 ### Decisions
 
 - **Files, not a database.** Single-user local tool. Writes are atomic (temp file + rename), so a failed save leaves the previous version. Ids must be a lowercase slug, so a path cannot escape the directory.
-- **One validator.** Rules live in one Python function used by the runner and the API. The UI does not reimplement them; it debounces calls to `/validate` and renders the result.
+- **One validator.** Rules live in one Python function used by the runner and the API. The UI does not reimplement them; it debounces calls to `/validate` and renders the result. Two small UI-side checks exist only for immediate feedback: the JSON tab refuses documents the canvas cannot draw, and the edge form refuses invalid function names as you type.
 - **Layout in the agent JSON.** Positions travel with the agent (duplicate, export, Copilot edits). Nodes without a position are auto-laid out.
 
 ## How it was built
@@ -78,6 +78,26 @@ Delivered as stacked PRs, one per slice in `tasks.md`:
 | Settings, validation, JSON | Persona / voice / model settings; server validation with clickable issues and canvas markers; raw JSON view with *Apply*. |
 | Test call | Mic permission, connect, mute, hang up; live transcript with transitions; active node and last edge highlighted on the canvas. |
 | Polish | Fit-to-view zoom cap, agent list hover fix, Playwright smoke spec, docs. |
+
+### Built, mocked and left out
+
+| | What | Why |
+| --- | --- | --- |
+| **Built** | Agent CRUD, graph editing (nodes, edges, parameters, layout), settings, live validation, raw JSON editing, test call with transcript and active-node highlight. | The minimum for a deployment engineer to build an agent and hear it, which is what the Copilot will automate. |
+| **Mocked** | The voice client in automated tests (`frontend/src/call/fakeClient.ts`). | A real call needs a microphone and paid keys; it is covered by `docs/manual-call-test.md` instead. |
+| **Left out** | Auth and multi-user editing (last write wins, no ETags). | Single-user local tool; the API already returns `updated_at`, so `If-Match` can be added without a schema change. |
+| | Undo/redo and version history. | Not needed to edit by hand; it becomes necessary once the Copilot proposes changes, so it belongs to Phase 2. |
+| | A form for pre/post actions and custom tools (webhooks, calendar lookups). | Edited as JSON; the provided runtime has no tool integrations to configure yet. |
+| | Changes to the provided runtime and example agent (`bot.py`, `AgentBuilder`, `schema.py`, `example_flow.json`). | Treated as given; only the hooks listed above were added. |
+| | Mobile layouts, theming, i18n. | Laptop-only internal tool. |
+
+### Extension points for the Copilot
+
+- **Agent JSON contract** (`agent_builder/schema.py`, `frontend/src/model.ts`): the Copilot reads and writes the same document as the editor and the runner. Nodes without a `layout` position are auto-laid out, so generated agents need no coordinates.
+- **Validation** (`POST /api/agents/validate`): structured issues with node and edge locations, so generated or edited agents can be checked and fixed in a loop before a human sees them.
+- **Store actions** (`frontend/src/store.ts`): `replaceAgent`, `updateNode`, `addEdge`, `renameNode`... apply changes with the same cascades and dirty tracking as manual edits.
+- **Dock registry** (`frontend/src/components/Dock.tsx`): a Copilot panel is one more registered tab next to Inspector, Issues, JSON, Settings and Call.
+- **Call events** (`node_changed` RTVI messages, transcript in `frontend/src/call/callStore.ts`): which nodes a call went through and what was said, the raw material for spotting issues in calls.
 
 ## Phase 2
 

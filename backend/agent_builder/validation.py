@@ -4,8 +4,12 @@
 # AgentBuilder raises on any error, and the UI shows the same issues via the API.
 #
 
+import re
 from dataclasses import asdict, dataclass
 from typing import Optional
+
+# Edges become LLM tools; OpenAI rejects tool names outside this pattern mid-call.
+FUNCTION_NAME_RE = re.compile(r"^[a-zA-Z0-9_-]{1,64}$")
 
 
 @dataclass
@@ -25,30 +29,84 @@ def _warning(code: str, message: str, **where) -> Issue:
     return Issue("warning", code, message, **where)
 
 
+def _is_text(value) -> bool:
+    return isinstance(value, str) and value.strip() != ""
+
+
+def _edge_issues(name: str, edge: dict) -> list[Issue]:
+    """Problems inside one edge that would break building it or calling it as an LLM tool."""
+    function = edge.get("function") if _is_text(edge.get("function")) else None
+    where = {"node": name, "edge": function}
+    label = f"Edge '{function}' in node '{name}'" if function else f"An edge in node '{name}'"
+    issues: list[Issue] = []
+    for key in ("function", "description", "target"):
+        if not _is_text(edge.get(key)):
+            issues.append(_error("missing-field", f"{label} needs a non-empty '{key}'.", **where))
+    if function and not FUNCTION_NAME_RE.fullmatch(function):
+        issues.append(
+            _error(
+                "bad-function-name",
+                f"{label} has an invalid function name: use only letters, digits, '_' and '-' (max 64).",
+                **where,
+            )
+        )
+
+    properties, required = edge.get("properties", {}), edge.get("required", [])
+    if not isinstance(properties, dict) or not isinstance(required, list):
+        issues.append(
+            _error("bad-parameters", f"{label} needs 'properties' as an object and 'required' as a list.", **where)
+        )
+        return issues
+    for param in required:
+        if param not in properties:
+            issues.append(
+                _warning("unknown-required", f"{label} requires '{param}', which is not one of its parameters.", **where)
+            )
+    for param, spec in properties.items():
+        if not isinstance(spec, dict) or not spec.get("type"):
+            issues.append(_warning("untyped-parameter", f"Parameter '{param}' of {label.lower()} has no type.", **where))
+    return issues
+
+
 def validate(data: dict) -> list[Issue]:
     nodes = [n for n in (data.get("nodes") or []) if isinstance(n, dict)]
     if not nodes:
         return [_error("no-nodes", "The agent has no nodes.")]
 
     issues: list[Issue] = []
+    if not isinstance(data.get("name"), str):
+        issues.append(_error("missing-field", "The agent needs a 'name'."))
+
     names: set[str] = set()
     for node in nodes:
         name = node.get("name")
+        if not _is_text(name):
+            issues.append(_error("missing-field", "Every node needs a non-empty 'name'."))
+            continue
         if name in names:
             issues.append(_error("duplicate-node", f"Node name '{name}' is used more than once.", node=name))
         names.add(name)
 
     initial = data.get("initial_node")
-    if initial not in names:
+    if not isinstance(initial, str) or initial not in names:
         issues.append(_error("bad-initial", f"initial_node '{initial}' is not a defined node."))
 
     reachable_from: dict[str, list[str]] = {}
     for node in nodes:
         name = node.get("name")
+        if not _is_text(name):
+            continue
+        tasks = node.get("task_messages", [])
+        if not isinstance(tasks, list):
+            issues.append(_error("bad-tasks", f"Node '{name}' needs 'task_messages' as a list.", node=name))
+        elif not tasks:
+            issues.append(_warning("no-task", f"Node '{name}' has no task messages, so the agent has no instructions there.", node=name))
         edges = [e for e in (node.get("edges") or []) if isinstance(e, dict)]
         seen_functions: set[str] = set()
         for edge in edges:
-            function = edge.get("function")
+            issues.extend(_edge_issues(name, edge))
+            # Missing or non-string fields were reported by _edge_issues; skip the checks that need them.
+            function = edge.get("function") if _is_text(edge.get("function")) else None
             if function in seen_functions:
                 issues.append(
                     _error(
@@ -58,8 +116,11 @@ def validate(data: dict) -> list[Issue]:
                         edge=function,
                     )
                 )
-            seen_functions.add(function)
+            if function:
+                seen_functions.add(function)
             target = edge.get("target")
+            if not _is_text(target):
+                continue
             if target not in names:
                 issues.append(
                     _error(
@@ -76,7 +137,7 @@ def validate(data: dict) -> list[Issue]:
                 _warning("dead-end", f"Node '{name}' is not terminal and has no edges out.", node=name)
             )
 
-    if initial in names:
+    if isinstance(initial, str) and initial in names:
         visited, stack = set(), [initial]
         while stack:
             current = stack.pop()
@@ -84,7 +145,7 @@ def validate(data: dict) -> list[Issue]:
                 continue
             visited.add(current)
             stack.extend(reachable_from.get(current, []))
-        for name in sorted(n for n in names if n not in visited and isinstance(n, str)):
+        for name in sorted(n for n in names if n not in visited):
             issues.append(_warning("unreachable", f"Node '{name}' cannot be reached from the initial node.", node=name))
 
     if not any(n.get("end") for n in nodes):

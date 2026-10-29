@@ -46,6 +46,12 @@ export interface Agent {
 
 export const edgeId = (node: string, fn: string) => `${node}::${fn}`;
 
+/** Edges are LLM tools, so their names must fit OpenAI's tool-name rule (same check as backend validation). */
+export const FUNCTION_NAME_RE = /^[a-zA-Z0-9_-]{1,64}$/;
+
+/** `raw` with every character a tool name cannot hold replaced by `_`, cut to 64. */
+export const toFunctionName = (raw: string) => raw.replace(/[^a-zA-Z0-9_-]+/g, "_").slice(0, 64);
+
 /** Edge label offsets live in `layout` beside node positions, under the edge id (`node::function`). */
 export const isEdgeKey = (key: string) => key.includes("::");
 

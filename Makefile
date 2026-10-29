@@ -12,7 +12,7 @@ help: ## Show available targets
 install: ## Create the venv and install dependencies (from uv.lock)
 	uv sync --directory $(PROJECT)
 
-run: ## Run the voice agent (then open http://localhost:7860/client)
+run: ## Run the voice runner on :7860 (calls are started from the builder UI)
 	uv run --directory $(PROJECT) python bot.py
 
 api: ## Run the agents API on :8000

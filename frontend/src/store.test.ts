@@ -143,6 +143,19 @@ describe("edge actions", () => {
     expect(edges().map((e) => e.function)).toEqual(["pick", "to_confirm"]);
   });
 
+  test("renameEdge refuses names an LLM tool cannot have", () => {
+    for (const bad of ["go to confirm", "book-appt!", "f".repeat(65)]) {
+      expect(state().renameEdge("greeting", "choose", bad)).toEqual({ ok: false, reason: "invalid" });
+    }
+    expect(state().agent!.nodes[0].edges![0].function).toBe("choose");
+    expect(state().renameEdge("greeting", "choose", "book-appt_2")).toEqual({ ok: true });
+  });
+
+  test("addEdge derives a valid function name from a target name with spaces", () => {
+    state().renameNode("confirm", "check insurance");
+    expect(state().addEdge("greeting", "check insurance")).toBe("to_check_insurance");
+  });
+
   test("the same function name is allowed on different nodes", () => {
     expect(state().renameEdge("greeting", "choose", "back")).toEqual({ ok: true });
     expect(edges("confirm")[0].function).toBe("back");

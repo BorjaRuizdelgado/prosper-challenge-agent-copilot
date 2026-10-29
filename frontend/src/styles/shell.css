@@ -140,6 +140,19 @@ button:disabled {
   display: flex;
 }
 
+/* The actions take the meta line's place while shown, instead of crowding it. */
+.agent-list__row:hover .agent-list__meta,
+.agent-list__row:focus-within .agent-list__meta {
+  visibility: hidden;
+}
+
+/* Keep React Flow's attribution, but quiet, in the corner of the canvas. */
+.canvas .react-flow__attribution {
+  background: transparent;
+  font-size: 10px;
+  opacity: 0.6;
+}
+
 .agent-list__actions button {
   padding: 0 6px;
   font-size: 11px;

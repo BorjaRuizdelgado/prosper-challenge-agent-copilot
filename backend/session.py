@@ -35,12 +35,17 @@ def load_agent(agent_id: str) -> AgentBuilder:
     except json.JSONDecodeError:
         raise SessionError(f"Agent '{agent_id}' is not valid JSON.") from None
 
+    if not isinstance(data, dict):
+        raise SessionError(f"Agent '{agent_id}' must be a JSON object.")
     errors = [i for i in validate(data) if i.severity == "error"]
     if errors:
         raise SessionError(
             f"Agent '{agent_id}' has blocking issues: " + " ".join(i.message for i in errors)
         )
-    return AgentBuilder.from_dict(data)
+    try:
+        return AgentBuilder.from_dict(data)
+    except Exception as e:  # anything validation missed must still fail as a session error
+        raise SessionError(f"Agent '{agent_id}' could not be built: {type(e).__name__}: {e}") from None
 
 
 def check_keys() -> None:

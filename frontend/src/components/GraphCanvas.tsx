@@ -1,6 +1,6 @@
-import { Background, ConnectionMode, Controls, ReactFlow, ReactFlowProvider } from "@xyflow/react";
+import { Background, ConnectionMode, Controls, ReactFlow, ReactFlowProvider, useReactFlow, useStore } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { connect, deleteEdges, reconnect } from "../canvasActions";
 import { toFlow } from "../graph";
 import { useAgentStore } from "../store";
@@ -10,6 +10,25 @@ import { NodeCard } from "./NodeCard";
 
 const nodeTypes = { card: NodeCard };
 const edgeTypes = { labelled: LabelEdge };
+const FIT = { padding: 0.2, maxZoom: 1 };
+
+/** Refits the graph when the canvas changes size (window resize), so no node ends up behind the dock. */
+function FitOnResize() {
+  const { fitView } = useReactFlow();
+  const width = useStore((s) => s.width);
+  const height = useStore((s) => s.height);
+  const sized = useRef(false);
+  useEffect(() => {
+    if (!width || !height) return;
+    // The first real size is handled by the `fitView` prop; only later changes need a refit.
+    if (!sized.current) {
+      sized.current = true;
+      return;
+    }
+    void fitView(FIT);
+  }, [width, height, fitView]);
+  return null;
+}
 
 export function GraphCanvas({ agent, positions }: { agent: Agent; positions: Record<string, Position> }) {
   const selection = useAgentStore((s) => s.selection);
@@ -27,7 +46,7 @@ export function GraphCanvas({ agent, positions }: { agent: Agent; positions: Rec
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           fitView
-          fitViewOptions={{ padding: 0.2, maxZoom: 1 }}
+          fitViewOptions={FIT}
           onNodeClick={(_, n) => select({ kind: "node", node: n.id })}
           onEdgeClick={(_, e) => select({ kind: "edge", node: e.source, function: e.sourceHandle! })}
           onPaneClick={() => select(null)}
@@ -43,8 +62,8 @@ export function GraphCanvas({ agent, positions }: { agent: Agent; positions: Rec
           onBeforeDelete={async ({ edges }) => ({ nodes: [], edges })}
           onEdgesDelete={deleteEdges}
           minZoom={0.2}
-          proOptions={{ hideAttribution: true }}
         >
+          <FitOnResize />
           <Background gap={20} color="var(--control)" />
           <Controls showInteractive={false} />
         </ReactFlow>

@@ -34,6 +34,28 @@ def test_refuses_blocking_issues(agents_dir):
         load_agent("broken")
 
 
+def test_refuses_edges_the_runtime_cannot_build(agents_dir):
+    # No description: AgentBuilder would raise KeyError and crash the bot instead of failing the session.
+    broken = starter_agent("Broken")
+    broken["nodes"][0]["edges"] = [{"function": "go", "target": "greeting"}]
+    save(agents_dir, "broken", broken)
+    with pytest.raises(SessionError, match="blocking issues: .*'description'"):
+        load_agent("broken")
+
+
+def test_refuses_non_object_documents(agents_dir):
+    save(agents_dir, "list", [1, 2])
+    with pytest.raises(SessionError, match="must be a JSON object"):
+        load_agent("list")
+
+
+def test_build_failures_become_session_errors(agents_dir, monkeypatch):
+    save(agents_dir, "ok", starter_agent("Ok"))
+    monkeypatch.setattr("session.AgentBuilder.from_dict", lambda data: (_ for _ in ()).throw(KeyError("x")))
+    with pytest.raises(SessionError, match="could not be built: KeyError"):
+        load_agent("ok")
+
+
 def test_unparseable_file(agents_dir):
     (agents_dir / "bad.json").write_text("{")
     with pytest.raises(SessionError, match="not valid JSON"):

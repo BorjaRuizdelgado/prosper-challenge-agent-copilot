@@ -1,7 +1,17 @@
 import { create } from "zustand";
 import * as api from "./api";
 import { autoLayout, NODE_HEIGHT, resolveLayout } from "./layout";
-import { type Agent, type AgentNode, type Edge, edgeId, isEdgeKey, type Issue, type Position } from "./model";
+import {
+  type Agent,
+  type AgentNode,
+  type Edge,
+  edgeId,
+  FUNCTION_NAME_RE,
+  isEdgeKey,
+  type Issue,
+  type Position,
+  toFunctionName,
+} from "./model";
 
 export type Selection = { kind: "node"; node: string } | { kind: "edge"; node: string; function: string } | null;
 
@@ -13,7 +23,7 @@ export type RenameResult = { ok: true } | { ok: false; reason: "blank" | "duplic
 /** Fields of a node that `updateNode` may change; the name goes through `renameNode`. */
 export type NodePatch = Partial<Omit<AgentNode, "name">>;
 
-export type EdgeResult = { ok: true } | { ok: false; reason: "blank" | "duplicate" | "unknown" };
+export type EdgeResult = { ok: true } | { ok: false; reason: "blank" | "invalid" | "duplicate" | "unknown" };
 
 /** Fields of an edge that `updateEdge` may change; the function name goes through `renameEdge`. */
 export type EdgePatch = Partial<Omit<Edge, "function">>;
@@ -110,7 +120,7 @@ export interface AgentState {
   /** Adds an edge from `from` to `target` with a unique function name, selects it and returns the name. */
   addEdge: (from: string, target: string) => string | null;
   updateEdge: (from: string, fn: string, patch: EdgePatch) => void;
-  /** Renames an edge's function; refuses blank names and names already used on the same node. */
+  /** Renames an edge's function; refuses blank or invalid tool names and names already used on the same node. */
   renameEdge: (from: string, fn: string, to: string) => EdgeResult;
   removeEdge: (from: string, fn: string) => void;
   /** Points an existing edge at another node. */
@@ -193,7 +203,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     const { agent } = get();
     const node = agent?.nodes.find((n) => n.name === from);
     if (!agent || !node || !agent.nodes.some((n) => n.name === target)) return null;
-    const fn = uniqueFunction(node, `to_${target}`);
+    // Node names may hold spaces; the default function name must still be a valid tool name.
+    const fn = uniqueFunction(node, toFunctionName(`to_${target}`).slice(0, 60));
     const edge: Edge = { function: fn, description: `Go to ${target}.`, target };
     set({
       dirty: true,
@@ -225,6 +236,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     if (!agent || !node?.edges?.some((e) => e.function === fn)) return { ok: false, reason: "unknown" };
     if (!to) return { ok: false, reason: "blank" };
     if (to === fn) return { ok: true };
+    if (!FUNCTION_NAME_RE.test(to)) return { ok: false, reason: "invalid" };
     if (node.edges.some((e) => e.function === to)) return { ok: false, reason: "duplicate" };
     set({
       dirty: true,
