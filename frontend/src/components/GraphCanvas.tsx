@@ -27,7 +27,7 @@ export function GraphCanvas({ agent, positions }: { agent: Agent; positions: Rec
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           fitView
-          fitViewOptions={{ padding: 0.2 }}
+          fitViewOptions={{ padding: 0.2, maxZoom: 1 }}
           onNodeClick={(_, n) => select({ kind: "node", node: n.id })}
           onEdgeClick={(_, e) => select({ kind: "edge", node: e.source, function: e.sourceHandle! })}
           onPaneClick={() => select(null)}

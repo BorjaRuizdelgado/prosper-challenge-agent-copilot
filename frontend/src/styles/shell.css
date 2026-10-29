@@ -130,7 +130,7 @@ button:disabled {
 .agent-list__actions {
   display: none;
   position: absolute;
-  top: 4px;
+  bottom: 2px;
   right: 4px;
   gap: 2px;
 }
@@ -141,8 +141,9 @@ button:disabled {
 }
 
 .agent-list__actions button {
-  padding: 1px 6px;
-  font-size: 12px;
+  padding: 0 6px;
+  font-size: 11px;
+  line-height: 16px;
 }
 
 .dialog-backdrop {
