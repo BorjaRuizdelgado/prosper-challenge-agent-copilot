@@ -79,3 +79,28 @@ export interface Issue {
   node?: string | null;
   edge?: string | null;
 }
+
+export type RunOutcome = "completed" | "transferred" | "abandoned" | "stuck";
+
+export interface RunLine {
+  speaker: "agent" | "caller";
+  text: string;
+}
+
+/** One visited node; `via` is the edge taken from the previous node, with the data it collected. */
+export interface RunStep {
+  node: string;
+  via?: string;
+  args?: Record<string, unknown>;
+}
+
+/** A (mocked) production call of an agent. `flag` is a note from the client. */
+export interface Run {
+  id: string;
+  started_at: string;
+  duration_s: number;
+  outcome: RunOutcome;
+  flag?: string;
+  transcript: RunLine[];
+  path: RunStep[];
+}

@@ -11,7 +11,7 @@ Each group is a vertical slice that ends with something usable and verified. Tes
 ## 2. Runs API
 
 - [x] 2.1 Add a runs module (`RUNS_DIR`, default `backend/demo/runs/`; `list_runs(agent_id)` newest first, empty list when there is no file) and `GET /api/agents/{id}/runs`. Verify: pytest for a demo agent (sorted, full shape), an agent without runs (`[]`), an invalid id (`400`), and that a test-call session does not touch the runs.
-- [ ] 2.2 Add the `Run` type to `frontend/src/model.ts` and `listRuns(agentId)` to `api.ts`. Verify: `npm run typecheck` (or `tsc --noEmit`) passes.
+- [x] 2.2 Add the `Run` type to `frontend/src/model.ts` and `listRuns(agentId)` to `api.ts`. Verify: `npm run typecheck` (or `tsc --noEmit`) passes.
 
 ## 3. Runs tab and trace on the canvas
 
