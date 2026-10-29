@@ -91,3 +91,124 @@
   background: var(--surface);
   cursor: pointer;
 }
+
+button {
+  font: inherit;
+  padding: 4px 10px;
+  border: 1px solid var(--control);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+button.danger {
+  background: var(--negative);
+  border-color: var(--negative);
+  color: #fff;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.agent-list__new {
+  margin: 0 8px;
+}
+
+.agent-list__row {
+  position: relative;
+}
+
+.agent-list__actions {
+  display: none;
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  gap: 2px;
+}
+
+.agent-list__row:hover .agent-list__actions,
+.agent-list__row:focus-within .agent-list__actions {
+  display: flex;
+}
+
+.agent-list__actions button {
+  padding: 1px 6px;
+  font-size: 12px;
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgb(19 20 22 / 0.3);
+}
+
+.dialog {
+  width: 360px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sheet);
+}
+
+.dialog__title {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.dialog__message {
+  margin: 0;
+  color: var(--muted);
+}
+
+.dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.field input {
+  font: inherit;
+  font-size: 14px;
+  padding: 6px 8px;
+  border: 1px solid var(--control);
+  border-radius: var(--radius-control);
+  color: var(--text);
+}
+
+.toasts {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  padding: 8px 12px;
+  background: var(--text);
+  color: #fff;
+  border-radius: var(--radius-control);
+  font-size: 13px;
+}
