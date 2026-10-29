@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Agent, Run } from "../model";
 import { resetRunsStore, runPath, useRunsStore } from "./runsStore";
+import { useAgentStore } from "../store";
 
 const agent: Agent = {
   name: "A",
@@ -68,5 +69,16 @@ describe("runPath", () => {
   it("skips an edge that was renamed", () => {
     const r = run("r", [{ node: "greeting" }, { node: "collect", via: "renamed" }]);
     expect(runPath(r, agent).edges).toEqual([]);
+  });
+});
+
+describe("closing the open run", () => {
+  it("clears it when the dock leaves the Runs tab, not when it arrives", () => {
+    useAgentStore.setState({ agentId: "a", dockTab: "copilot" });
+    useRunsStore.getState().select("a", "r-1");
+    useAgentStore.getState().setDockTab("runs");
+    expect(useRunsStore.getState().selected).toEqual({ agentId: "a", runId: "r-1" });
+    useAgentStore.getState().setDockTab("copilot");
+    expect(useRunsStore.getState().selected).toBeNull();
   });
 });

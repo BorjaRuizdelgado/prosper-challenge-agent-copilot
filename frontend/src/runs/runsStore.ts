@@ -36,6 +36,12 @@ export const useRunsStore = create<RunsStore>((set) => ({
   clear: () => set({ selected: null }),
 }));
 
+// Leaving the Runs tab or switching agent closes the open run. Done here and not in a panel effect, because a
+// run opened from a finding is selected before the tab mounts and StrictMode's mount/cleanup would clear it.
+useAgentStore.subscribe((s, prev) => {
+  if (s.agentId !== prev.agentId || (s.dockTab !== prev.dockTab && s.dockTab !== "runs")) useRunsStore.getState().clear();
+});
+
 export const resetRunsStore = () => useRunsStore.setState({ byAgent: {}, selected: null });
 
 /** What a run did, set against the agent as it is now. */

@@ -82,10 +82,10 @@ describe("RunsPanel", () => {
 
   it("closes the open run when the tab is left", async () => {
     mockApi({ "GET /api/agents/demo/runs": () => json(runs) });
-    const { unmount } = renderApp(<RunsPanel />);
+    renderApp(<RunsPanel />);
     await userEvent.click(await screen.findByRole("button", { name: /Hi from r-mid/ }));
     expect(useRunsStore.getState().selected).not.toBeNull();
-    act(() => unmount());
+    act(() => useAgentStore.getState().setDockTab("copilot"));
     expect(useRunsStore.getState().selected).toBeNull();
   });
 

@@ -86,8 +86,6 @@ export function RunsPanel() {
   useEffect(() => {
     if (agentId && !useRunsStore.getState().byAgent[agentId]) void load(agentId);
   }, [agentId, load]);
-  // Leaving the tab (or switching agent) closes the open run, which also clears the canvas.
-  useEffect(() => clear, [agentId, clear]);
 
   if (!agentId || !state || state.status === "loading") return <p className="field__hint">Loading runs…</p>;
   if (state.status === "error") {
