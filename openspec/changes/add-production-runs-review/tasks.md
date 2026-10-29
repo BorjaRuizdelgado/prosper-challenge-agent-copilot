@@ -15,7 +15,7 @@ Each group is a vertical slice that ends with something usable and verified. Tes
 
 ## 3. Runs tab and trace on the canvas
 
-- [ ] 3.1 `runs/runsStore.ts`: per-agent load state, `selectedRunId`, `load`, `select`, `clear`; a `runPath(run, agent)` helper returning visited nodes, taken edges, the last node and the path entries whose node is missing. Verify: Vitest for load success/failure, select/clear, and `runPath` on a normal run, a stuck run and a run with a removed node.
+- [x] 3.1 `runs/runsStore.ts`: per-agent load state, `selectedRunId`, `load`, `select`, `clear`; a `runPath(run, agent)` helper returning visited nodes, taken edges, the last node and the path entries whose node is missing. Verify: Vitest for load success/failure, select/clear, and `runPath` on a normal run, a stuck run and a run with a removed node.
 - [ ] 3.2 `RunsPanel` registered in `DOCK_TABS` after Call: summary counts per outcome and flagged, list newest first (outcome chip, time, duration, first caller line, flag), empty state without Analyze, error with Retry; selecting a run expands its transcript with transition notes and the path line (missing nodes labelled). Verify: Vitest for summary counts, ordering, flag shown, empty state, error + Retry, and expanding a run.
 - [ ] 3.3 Canvas highlight for the selected run (visited nodes, taken edges, last node marked) using the call highlight's render path with its own style; precedence copilot review > live call > run; cleared when leaving the tab or switching agent. Verify: Vitest that selecting a run sets the classes on the right nodes and edges, that leaving the tab clears them, and that a live copilot draft hides them; manual check in the browser on a stuck refill run.
 
