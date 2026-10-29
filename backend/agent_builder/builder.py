@@ -9,21 +9,29 @@
 # compile + validation here means bot.py never touches the graph internals.
 #
 
+import inspect
 import json
+from dataclasses import asdict
 from pathlib import Path
-from typing import Union
+from typing import Awaitable, Callable, Optional, Union
 
 from loguru import logger
 from pipecat_flows import FlowManager, FlowsFunctionSchema, NodeConfig
 
 from .schema import AgentConfig, Edge, Node
+from .validation import validate
+
+# (from_node, to_node, via_function, collected_args); may be sync or async.
+TransitionCallback = Callable[[str, str, str, dict], Union[None, Awaitable[None]]]
 
 
 class AgentBuilder:
     """Builds a runnable Pipecat Flows graph from a declarative AgentConfig."""
 
-    def __init__(self, config: AgentConfig):
+    def __init__(self, config: AgentConfig, on_transition: Optional[TransitionCallback] = None):
         self.config = config
+        # Settable after construction: bot.py only has the worker to report through later.
+        self.on_transition = on_transition
         self._nodes_by_name = {n.name: n for n in config.nodes}
         self._validate()
 
@@ -39,20 +47,9 @@ class AgentBuilder:
 
     # ---- validation --------------------------------------------------------
     def _validate(self) -> None:
-        names = set(self._nodes_by_name)
-        if not names:
-            raise ValueError("Agent has no nodes.")
-        if self.config.initial_node not in names:
-            raise ValueError(
-                f"initial_node '{self.config.initial_node}' is not a defined node."
-            )
-        for node in self.config.nodes:
-            for edge in node.edges:
-                if edge.target not in names:
-                    raise ValueError(
-                        f"Edge '{edge.function}' in node '{node.name}' targets "
-                        f"unknown node '{edge.target}'."
-                    )
+        errors = [i for i in validate(asdict(self.config)) if i.severity == "error"]
+        if errors:
+            raise ValueError(" ".join(i.message for i in errors))
 
     # ---- compilation -------------------------------------------------------
     def build_initial_node(self) -> NodeConfig:
@@ -64,7 +61,7 @@ class AgentBuilder:
             "name": node.name,
             "role_message": node.role_message or self.config.persona,
             "task_messages": node.task_messages,
-            "functions": [self._make_edge_function(edge) for edge in node.edges],
+            "functions": [self._make_edge_function(node, edge) for edge in node.edges],
         }
         if node.pre_actions:
             node_config["pre_actions"] = node.pre_actions
@@ -75,11 +72,15 @@ class AgentBuilder:
             node_config["post_actions"] = [{"type": "end_conversation"}]
         return node_config
 
-    def _make_edge_function(self, edge: Edge) -> FlowsFunctionSchema:
+    def _make_edge_function(self, node: Node, edge: Edge) -> FlowsFunctionSchema:
         async def handler(args: dict, flow_manager: FlowManager):
             # Persist what the caller gave us so later nodes can use it.
             flow_manager.state.update(args)
             logger.info(f"[{edge.function}] -> {edge.target} | collected: {args}")
+            if self.on_transition:
+                result = self.on_transition(node.name, edge.target, edge.function, args)
+                if inspect.isawaitable(result):
+                    await result
             next_node = self._make_node(self._nodes_by_name[edge.target])
             return {"status": "success", **args}, next_node
 
