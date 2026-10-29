@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from "vitest";
 import type { Agent } from "./model";
-import { useAgentStore } from "./store";
+import { incomingEdgeCount, useAgentStore } from "./store";
 
 const agent = (): Agent => ({
   name: "Scheduler",
@@ -162,5 +162,77 @@ describe("edge actions", () => {
 
     state().retargetEdge("greeting", "choose", "nope");
     expect(edges()[0].target).toBe("greeting");
+  });
+});
+
+describe("addNode", () => {
+  test("adds an empty node with a unique name below the others, selects it and marks dirty", () => {
+    expect(state().addNode()).toBe("new_node");
+    expect(state().addNode()).toBe("new_node_2");
+
+    const a = state().agent!;
+    expect(a.nodes.map((n) => n.name)).toEqual(["greeting", "confirm", "new_node", "new_node_2"]);
+    expect(a.nodes[2]).toEqual({ name: "new_node", task_messages: [], edges: [] });
+    expect(state().positions.new_node.y).toBeGreaterThan(state().positions.greeting.y);
+    expect(state().positions.new_node_2.y).toBeGreaterThan(state().positions.new_node.y);
+    expect(state().selection).toEqual({ kind: "node", node: "new_node_2" });
+    expect(state().dirty).toBe(true);
+  });
+});
+
+describe("removeNode", () => {
+  test("removes the node, edges targeting it, its layout and its selection", () => {
+    state().select({ kind: "edge", node: "greeting", function: "choose" });
+
+    expect(state().removeNode("confirm")).toEqual({ ok: true });
+
+    const a = state().agent!;
+    expect(a.nodes.map((n) => n.name)).toEqual(["greeting"]);
+    expect(a.nodes[0].edges).toEqual([]);
+    expect(a.layout).toEqual({ greeting: { x: 0, y: 0 } });
+    expect(state().positions).toEqual({ greeting: { x: 0, y: 0 } });
+    expect(state().selection).toBeNull();
+    expect(state().dirty).toBe(true);
+  });
+
+  test("refuses the initial node while others exist", () => {
+    expect(state().removeNode("greeting")).toEqual({ ok: false, reason: "initial" });
+
+    expect(state().agent).toEqual(agent());
+    expect(state().dirty).toBe(false);
+  });
+
+  test("the initial node can go once another is chosen", () => {
+    state().setInitialNode("confirm");
+
+    expect(state().removeNode("greeting")).toEqual({ ok: true });
+    expect(state().agent!.initial_node).toBe("confirm");
+  });
+
+  test("refuses the only node and unknown nodes", () => {
+    state().removeNode("confirm");
+    state().setInitialNode("greeting");
+
+    expect(state().removeNode("greeting")).toEqual({ ok: false, reason: "last" });
+    expect(state().removeNode("nope")).toEqual({ ok: false, reason: "unknown" });
+  });
+});
+
+describe("incomingEdgeCount", () => {
+  test("counts edges from other nodes only", () => {
+    // confirm -> confirm is its own edge and goes with the node anyway
+    expect(incomingEdgeCount(agent(), "confirm")).toBe(1);
+    expect(incomingEdgeCount(agent(), "greeting")).toBe(0);
+  });
+});
+
+describe("setInitialNode", () => {
+  test("changes the initial node and marks dirty; unknown names are ignored", () => {
+    state().setInitialNode("nope");
+    expect(state().dirty).toBe(false);
+
+    state().setInitialNode("confirm");
+    expect(state().agent!.initial_node).toBe("confirm");
+    expect(state().dirty).toBe(true);
   });
 });

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import * as api from "./api";
-import { resolveLayout } from "./layout";
+import { NODE_HEIGHT, resolveLayout } from "./layout";
 import type { Agent, AgentNode, Edge, Position } from "./model";
 
 export type Selection = { kind: "node"; node: string } | { kind: "edge"; node: string; function: string } | null;
@@ -27,6 +27,29 @@ export function uniqueFunction(node: AgentNode, base: string): string {
   return `${base}_${i}`;
 }
 
+export type RemoveNodeResult = { ok: true } | { ok: false; reason: "unknown" | "initial" | "last" };
+
+/** First `base`, `base_2`, `base_3`... not already used as a node name. */
+export function uniqueNodeName(agent: Agent, base: string): string {
+  const used = new Set(agent.nodes.map((n) => n.name));
+  if (!used.has(base)) return base;
+  let i = 2;
+  while (used.has(`${base}_${i}`)) i++;
+  return `${base}_${i}`;
+}
+
+/** Edges from other nodes that point at `name`; these are the ones deleting it takes along. */
+export function incomingEdgeCount(agent: Agent, name: string): number {
+  return agent.nodes.filter((n) => n.name !== name).reduce((sum, n) => sum + (n.edges ?? []).filter((e) => e.target === name).length, 0);
+}
+
+/** True when the selected edge is one that points at `target`. */
+function selectedEdgeTargets(agent: Agent, selection: NonNullable<Selection>, target: string): boolean {
+  if (selection.kind !== "edge") return false;
+  const edge = agent.nodes.find((n) => n.name === selection.node)?.edges?.find((e) => e.function === selection.function);
+  return edge?.target === target;
+}
+
 export interface AgentState {
   agentId: string | null;
   status: Status;
@@ -47,6 +70,11 @@ export interface AgentState {
   updateNode: (name: string, patch: NodePatch) => void;
   /** Renames a node and rewrites every reference to it; refuses blank or duplicate names. */
   renameNode: (from: string, to: string) => RenameResult;
+  /** Adds an empty node with a unique name below the existing ones, selects it and returns its name. */
+  addNode: () => string | null;
+  /** Deletes a node and every edge targeting it; the initial node and the last node are protected. */
+  removeNode: (name: string) => RemoveNodeResult;
+  setInitialNode: (name: string) => void;
   /** Adds an edge from `from` to `target` with a unique function name, selects it and returns the name. */
   addEdge: (from: string, target: string) => string | null;
   updateEdge: (from: string, fn: string, patch: EdgePatch) => void;
@@ -189,6 +217,48 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   },
   retargetEdge(from, fn, target) {
     get().updateEdge(from, fn, { target });
+  },
+  addNode() {
+    const { agent, positions } = get();
+    if (!agent) return null;
+    const name = uniqueNodeName(agent, "new_node");
+    const spots = Object.values(positions);
+    const position = spots.length
+      ? { x: Math.min(...spots.map((p) => p.x)), y: Math.max(...spots.map((p) => p.y)) + NODE_HEIGHT + 48 }
+      : { x: 0, y: 0 };
+    set({
+      dirty: true,
+      agent: { ...agent, nodes: [...agent.nodes, { name, task_messages: [], edges: [] }] },
+      positions: { ...positions, [name]: position },
+      selection: { kind: "node", node: name },
+      dockTab: "inspector",
+    });
+    return name;
+  },
+  removeNode(name) {
+    const { agent, positions, selection } = get();
+    if (!agent || !agent.nodes.some((n) => n.name === name)) return { ok: false, reason: "unknown" };
+    if (agent.nodes.length === 1) return { ok: false, reason: "last" };
+    if (agent.initial_node === name) return { ok: false, reason: "initial" };
+    const without = <T,>(map?: Record<string, T>) => map && Object.fromEntries(Object.entries(map).filter(([k]) => k !== name));
+    set({
+      dirty: true,
+      agent: {
+        ...agent,
+        layout: without(agent.layout),
+        nodes: agent.nodes
+          .filter((n) => n.name !== name)
+          .map((n) => (n.edges?.some((e) => e.target === name) ? { ...n, edges: n.edges.filter((e) => e.target !== name) } : n)),
+      },
+      positions: without(positions)!,
+      selection: selection && (selection.node === name || selectedEdgeTargets(agent, selection, name)) ? null : selection,
+    });
+    return { ok: true };
+  },
+  setInitialNode(name) {
+    const { agent } = get();
+    if (!agent || agent.initial_node === name || !agent.nodes.some((n) => n.name === name)) return;
+    set({ dirty: true, agent: { ...agent, initial_node: name } });
   },
   async save() {
     const { agentId, agent, positions, saveStatus } = get();
