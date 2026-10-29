@@ -3,7 +3,7 @@
 
 PROJECT := backend
 
-.PHONY: help install run api frontend dev test clean
+.PHONY: help install run api frontend dev up test clean
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -24,6 +24,13 @@ frontend: ## Run the Vite dev server on :5173 (proxies /api and /voice)
 dev: ## Run API, voice runner and frontend together (open http://localhost:5173)
 	@trap 'kill 0' INT TERM EXIT; \
 		$(MAKE) api & $(MAKE) run & $(MAKE) frontend & wait
+
+up: install ## One command: install everything, create backend/.env if missing, run all services
+	@test -f $(PROJECT)/.env || { cp $(PROJECT)/.env.example $(PROJECT)/.env; \
+		echo ">> Created $(PROJECT)/.env — add your OPENAI_API_KEY and ELEVENLABS_API_KEY for voice calls."; }
+	cd frontend && npm install
+	@echo ">> Open http://localhost:5173"
+	@$(MAKE) dev
 
 test: ## Run backend (pytest) and frontend (Vitest) tests
 	uv run --directory $(PROJECT) pytest

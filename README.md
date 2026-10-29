@@ -36,6 +36,7 @@ Remember to update the `.env` file accordingly.
 Needs **Node 20+** in addition to the above.
 
 ```bash
+make up     # install + create .env + start everything
 make dev    # agents API :8000 + voice runner :7860 + Vite :5173
 make test   # pytest + Vitest
 ```
