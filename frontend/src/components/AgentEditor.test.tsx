@@ -62,11 +62,11 @@ test("clicking nodes shows them in the Inspector", async () => {
   expect(dock).toHaveTextContent("Select a node or an edge");
 
   fireEvent.click(await within(canvas).findByText("Greet the caller."));
-  expect(within(dock).getByLabelText("Node")).toHaveTextContent("greeting");
-  expect(within(dock).getByLabelText("Node")).toHaveTextContent("Greet the caller.");
+  expect(within(dock).getByLabelText("Name")).toHaveValue("greeting");
+  expect(within(dock).getByLabelText("Content of message 1")).toHaveValue("Greet the caller.");
 
   fireEvent.click(within(canvas).getByText("confirm", { selector: ".node-card__name" }));
-  expect(within(dock).getByLabelText("Node")).toHaveTextContent("Ends the callYes");
+  expect(within(dock).getByLabelText("Ends the call")).toBeChecked();
 });
 
 test("selecting an element switches the dock back to the Inspector tab", () => {

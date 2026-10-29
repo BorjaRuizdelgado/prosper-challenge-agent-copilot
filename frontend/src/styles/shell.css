@@ -188,7 +188,9 @@ button:disabled {
   color: var(--muted);
 }
 
-.field input {
+.field input:not([type="checkbox"]),
+.field textarea,
+.field select {
   font: inherit;
   font-size: 14px;
   padding: 6px 8px;
@@ -419,4 +421,79 @@ button:disabled {
 
 .mono {
   font-family: var(--font-mono);
+}
+
+.node-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+fieldset.field {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.field textarea,
+.messages__item textarea,
+.messages__item select {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid var(--control);
+  border-radius: var(--radius-control);
+  color: var(--text);
+  background: var(--surface);
+  resize: vertical;
+}
+
+.messages__item textarea {
+  width: 100%;
+}
+
+.field textarea.mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.field--check {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.field__error {
+  margin: 0;
+  color: var(--negative);
+}
+
+.field__hint {
+  margin: 0;
+  color: var(--muted);
+}
+
+[aria-invalid="true"] {
+  border-color: var(--negative) !important;
+}
+
+.messages {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.messages__row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.messages__row select {
+  flex: 1;
 }

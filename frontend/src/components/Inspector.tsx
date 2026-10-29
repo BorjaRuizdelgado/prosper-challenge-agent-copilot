@@ -1,4 +1,5 @@
 import { useAgentStore } from "../store";
+import { NodeForm } from "./NodeForm";
 
 function Field({ label, value, mono }: { label: string; value?: string | null; mono?: boolean }) {
   return (
@@ -9,7 +10,7 @@ function Field({ label, value, mono }: { label: string; value?: string | null; m
   );
 }
 
-/** Read-only for now; editing arrives with the store actions. */
+/** Nodes are editable; edges stay read-only until the edge form lands. */
 export function Inspector() {
   const agent = useAgentStore((s) => s.agent);
   const selection = useAgentStore((s) => s.selection);
@@ -18,19 +19,7 @@ export function Inspector() {
   const node = agent.nodes.find((n) => n.name === selection.node);
   if (!node) return <p className="dock__empty">Select a node or an edge to inspect it.</p>;
 
-  if (selection.kind === "node") {
-    return (
-      <dl className="inspector" aria-label="Node">
-        <Field label="Name" value={node.name} mono />
-        <Field label="Start node" value={agent.initial_node === node.name ? "Yes" : "No"} />
-        <Field label="Ends the call" value={node.end ? "Yes" : "No"} />
-        <Field label="Role override" value={node.role_message} />
-        {(node.task_messages ?? []).map((m, i) => (
-          <Field key={i} label={`Task message ${i + 1} (${m.role})`} value={m.content} />
-        ))}
-      </dl>
-    );
-  }
+  if (selection.kind === "node") return <NodeForm key={node.name} node={node} />;
 
   const edge = (node.edges ?? []).find((e) => e.function === selection.function);
   if (!edge) return <p className="dock__empty">Select a node or an edge to inspect it.</p>;
