@@ -3,7 +3,7 @@
 
 PROJECT := backend
 
-.PHONY: help install run api frontend dev up test clean
+.PHONY: help install run api frontend dev up down test clean
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -22,7 +22,7 @@ frontend: ## Run the Vite dev server on :5173 (proxies /api and /voice)
 	cd frontend && npm install && npm run dev
 
 dev: ## Run API, voice runner and frontend together (open http://localhost:5173)
-	@trap 'kill 0' INT TERM EXIT; \
+	@trap 'kill $$(jobs -p) 2>/dev/null' INT TERM EXIT; \
 		$(MAKE) api & $(MAKE) run & $(MAKE) frontend & wait
 
 up: install ## One command: install everything, create backend/.env if missing, run all services
@@ -31,6 +31,15 @@ up: install ## One command: install everything, create backend/.env if missing, 
 	cd frontend && npm install
 	@echo ">> Open http://localhost:5173"
 	@$(MAKE) dev
+
+down: ## Stop the API, voice runner and frontend (by process and by port)
+	@pkill -f "[u]vicorn api.app" 2>/dev/null; \
+		pkill -f "[p]ython bot.py" 2>/dev/null; pkill -f "[f]rontend/node_modules/.bin/vite" 2>/dev/null; \
+		sleep 1; \
+		for port in 8000 7860 5173; do \
+			pids=$$(lsof -ti tcp:$$port -sTCP:LISTEN); \
+			if [ -n "$$pids" ]; then kill -9 $$pids; fi; \
+		done; echo "Stopped."
 
 test: ## Run backend (pytest) and frontend (Vitest) tests
 	uv run --directory $(PROJECT) pytest
