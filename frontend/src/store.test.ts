@@ -99,3 +99,68 @@ describe("renameNode", () => {
     expect(state().renameNode("nope", "x")).toEqual({ ok: false, reason: "unknown" });
   });
 });
+
+describe("edge actions", () => {
+  const edges = (name = "greeting") => state().agent!.nodes.find((n) => n.name === name)!.edges ?? [];
+
+  test("addEdge appends an edge with a unique function name and selects it", () => {
+    expect(state().addEdge("greeting", "confirm")).toBe("to_confirm");
+    expect(state().addEdge("greeting", "confirm")).toBe("to_confirm_2");
+
+    expect(edges().map((e) => e.function)).toEqual(["choose", "to_confirm", "to_confirm_2"]);
+    expect(edges()[1]).toMatchObject({ target: "confirm" });
+    expect(state().selection).toEqual({ kind: "edge", node: "greeting", function: "to_confirm_2" });
+    expect(state().dirty).toBe(true);
+  });
+
+  test("addEdge ignores unknown source or target", () => {
+    expect(state().addEdge("nope", "confirm")).toBeNull();
+    expect(state().addEdge("greeting", "nope")).toBeNull();
+    expect(state().agent).toEqual(agent());
+    expect(state().dirty).toBe(false);
+  });
+
+  test("updateEdge patches description and parameters only on that edge", () => {
+    state().updateEdge("greeting", "choose", { description: "New", properties: { name: { type: "string" } }, required: ["name"] });
+
+    expect(edges()[0]).toMatchObject({ function: "choose", description: "New", required: ["name"] });
+    expect(edges("confirm")).toEqual(agent().nodes[1].edges);
+    expect(state().dirty).toBe(true);
+  });
+
+  test("renameEdge renames and keeps the selection; refuses blank and duplicate names", () => {
+    state().addEdge("greeting", "confirm");
+    state().select({ kind: "edge", node: "greeting", function: "choose" });
+
+    expect(state().renameEdge("greeting", "choose", "pick")).toEqual({ ok: true });
+    expect(edges().map((e) => e.function)).toEqual(["pick", "to_confirm"]);
+    expect(state().selection).toEqual({ kind: "edge", node: "greeting", function: "pick" });
+
+    expect(state().renameEdge("greeting", "pick", "  ")).toEqual({ ok: false, reason: "blank" });
+    expect(state().renameEdge("greeting", "pick", "to_confirm")).toEqual({ ok: false, reason: "duplicate" });
+    expect(state().renameEdge("greeting", "nope", "x")).toEqual({ ok: false, reason: "unknown" });
+    expect(edges().map((e) => e.function)).toEqual(["pick", "to_confirm"]);
+  });
+
+  test("the same function name is allowed on different nodes", () => {
+    expect(state().renameEdge("greeting", "choose", "back")).toEqual({ ok: true });
+    expect(edges("confirm")[0].function).toBe("back");
+  });
+
+  test("removeEdge deletes the edge and clears its selection", () => {
+    state().select({ kind: "edge", node: "greeting", function: "choose" });
+    state().removeEdge("greeting", "choose");
+
+    expect(edges()).toEqual([]);
+    expect(state().selection).toBeNull();
+    expect(state().dirty).toBe(true);
+  });
+
+  test("retargetEdge points the edge at another node and refuses unknown targets", () => {
+    state().retargetEdge("greeting", "choose", "greeting");
+    expect(edges()[0].target).toBe("greeting");
+
+    state().retargetEdge("greeting", "choose", "nope");
+    expect(edges()[0].target).toBe("greeting");
+  });
+});

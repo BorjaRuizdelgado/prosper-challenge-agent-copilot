@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import * as api from "./api";
 import { resolveLayout } from "./layout";
-import type { Agent, AgentNode, Position } from "./model";
+import type { Agent, AgentNode, Edge, Position } from "./model";
 
 export type Selection = { kind: "node"; node: string } | { kind: "edge"; node: string; function: string } | null;
 
@@ -12,6 +12,20 @@ export type RenameResult = { ok: true } | { ok: false; reason: "blank" | "duplic
 
 /** Fields of a node that `updateNode` may change; the name goes through `renameNode`. */
 export type NodePatch = Partial<Omit<AgentNode, "name">>;
+
+export type EdgeResult = { ok: true } | { ok: false; reason: "blank" | "duplicate" | "unknown" };
+
+/** Fields of an edge that `updateEdge` may change; the function name goes through `renameEdge`. */
+export type EdgePatch = Partial<Omit<Edge, "function">>;
+
+/** First `base`, `base_2`, `base_3`... not already used as a function name on the node. */
+export function uniqueFunction(node: AgentNode, base: string): string {
+  const used = new Set((node.edges ?? []).map((e) => e.function));
+  if (!used.has(base)) return base;
+  let i = 2;
+  while (used.has(`${base}_${i}`)) i++;
+  return `${base}_${i}`;
+}
 
 export interface AgentState {
   agentId: string | null;
@@ -33,6 +47,14 @@ export interface AgentState {
   updateNode: (name: string, patch: NodePatch) => void;
   /** Renames a node and rewrites every reference to it; refuses blank or duplicate names. */
   renameNode: (from: string, to: string) => RenameResult;
+  /** Adds an edge from `from` to `target` with a unique function name, selects it and returns the name. */
+  addEdge: (from: string, target: string) => string | null;
+  updateEdge: (from: string, fn: string, patch: EdgePatch) => void;
+  /** Renames an edge's function; refuses blank names and names already used on the same node. */
+  renameEdge: (from: string, fn: string, to: string) => EdgeResult;
+  removeEdge: (from: string, fn: string) => void;
+  /** Points an existing edge at another node. */
+  retargetEdge: (from: string, fn: string, target: string) => void;
   /** Persists the working copy with its positions; on failure it stays dirty so the user can retry. */
   save: () => Promise<boolean>;
   load: (id: string) => Promise<void>;
@@ -98,6 +120,75 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       selection: selection && selection.node === from ? { ...selection, node: to } : selection,
     });
     return { ok: true };
+  },
+  addEdge(from, target) {
+    const { agent } = get();
+    const node = agent?.nodes.find((n) => n.name === from);
+    if (!agent || !node || !agent.nodes.some((n) => n.name === target)) return null;
+    const fn = uniqueFunction(node, `to_${target}`);
+    const edge: Edge = { function: fn, description: `Go to ${target}.`, target };
+    set({
+      dirty: true,
+      agent: { ...agent, nodes: agent.nodes.map((n) => (n === node ? { ...n, edges: [...(n.edges ?? []), edge] } : n)) },
+      selection: { kind: "edge", node: from, function: fn },
+      dockTab: "inspector",
+    });
+    return fn;
+  },
+  updateEdge(from, fn, patch) {
+    const { agent } = get();
+    if (!agent) return;
+    const known = agent.nodes.find((n) => n.name === from)?.edges?.some((e) => e.function === fn);
+    if (!known || (patch.target !== undefined && !agent.nodes.some((n) => n.name === patch.target))) return;
+    set({
+      dirty: true,
+      agent: {
+        ...agent,
+        nodes: agent.nodes.map((n) =>
+          n.name === from ? { ...n, edges: n.edges!.map((e) => (e.function === fn ? { ...e, ...patch } : e)) } : n,
+        ),
+      },
+    });
+  },
+  renameEdge(from, fn, raw) {
+    const { agent, selection } = get();
+    const to = raw.trim();
+    const node = agent?.nodes.find((n) => n.name === from);
+    if (!agent || !node?.edges?.some((e) => e.function === fn)) return { ok: false, reason: "unknown" };
+    if (!to) return { ok: false, reason: "blank" };
+    if (to === fn) return { ok: true };
+    if (node.edges.some((e) => e.function === to)) return { ok: false, reason: "duplicate" };
+    set({
+      dirty: true,
+      agent: {
+        ...agent,
+        nodes: agent.nodes.map((n) =>
+          n === node ? { ...n, edges: n.edges!.map((e) => (e.function === fn ? { ...e, function: to } : e)) } : n,
+        ),
+      },
+      selection:
+        selection?.kind === "edge" && selection.node === from && selection.function === fn
+          ? { ...selection, function: to }
+          : selection,
+    });
+    return { ok: true };
+  },
+  removeEdge(from, fn) {
+    const { agent, selection } = get();
+    if (!agent?.nodes.find((n) => n.name === from)?.edges?.some((e) => e.function === fn)) return;
+    set({
+      dirty: true,
+      agent: {
+        ...agent,
+        nodes: agent.nodes.map((n) =>
+          n.name === from ? { ...n, edges: n.edges!.filter((e) => e.function !== fn) } : n,
+        ),
+      },
+      selection: selection?.kind === "edge" && selection.node === from && selection.function === fn ? null : selection,
+    });
+  },
+  retargetEdge(from, fn, target) {
+    get().updateEdge(from, fn, { target });
   },
   async save() {
     const { agentId, agent, positions, saveStatus } = get();
