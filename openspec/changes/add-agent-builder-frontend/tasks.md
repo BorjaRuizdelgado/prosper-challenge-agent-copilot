@@ -17,7 +17,7 @@ Each group is a vertical slice that ends with something usable and verified in t
 
 ## 3. Read-only graph of an agent
 
-- [ ] 3.1 Backend: structured validation `validate(data) -> issues` in `agent_builder` (codes in design Decision 3), used by `AgentBuilder` (raises if any error) and `POST /api/agents/validate`; `schema.py` preserves an optional `layout`. Verify: pytest table of invalid agents → expected issue codes; example_flow yields none.
+- [x] 3.1 Backend: structured validation `validate(data) -> issues` in `agent_builder` (codes in design Decision 3), used by `AgentBuilder` (raises if any error) and `POST /api/agents/validate`; `schema.py` preserves an optional `layout`. Verify: pytest table of invalid agents → expected issue codes; example_flow yields none.
 - [ ] 3.2 Frontend: typed `Agent` model, API client, Zustand agent store loading the working copy, dagre auto layout, React Flow canvas with custom Node card (name, task summary, initial/terminal marks, handle per edge) and labelled edges, fit-to-view, zoom/minimap controls. Verify: Vitest for layout (no overlaps, saved positions respected); manual check in the browser.
 - [ ] 3.3 Selection: clicking a node or edge selects it and opens the dock Inspector (read-only fields for now); dock tab registry in place with `Inspector` only. Verify: Vitest that selection updates the dock; manual check in the browser.
 

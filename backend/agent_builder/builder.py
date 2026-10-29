@@ -10,6 +10,7 @@
 #
 
 import json
+from dataclasses import asdict
 from pathlib import Path
 from typing import Union
 
@@ -17,6 +18,7 @@ from loguru import logger
 from pipecat_flows import FlowManager, FlowsFunctionSchema, NodeConfig
 
 from .schema import AgentConfig, Edge, Node
+from .validation import validate
 
 
 class AgentBuilder:
@@ -39,20 +41,9 @@ class AgentBuilder:
 
     # ---- validation --------------------------------------------------------
     def _validate(self) -> None:
-        names = set(self._nodes_by_name)
-        if not names:
-            raise ValueError("Agent has no nodes.")
-        if self.config.initial_node not in names:
-            raise ValueError(
-                f"initial_node '{self.config.initial_node}' is not a defined node."
-            )
-        for node in self.config.nodes:
-            for edge in node.edges:
-                if edge.target not in names:
-                    raise ValueError(
-                        f"Edge '{edge.function}' in node '{node.name}' targets "
-                        f"unknown node '{edge.target}'."
-                    )
+        errors = [i for i in validate(asdict(self.config)) if i.severity == "error"]
+        if errors:
+            raise ValueError(" ".join(i.message for i in errors))
 
     # ---- compilation -------------------------------------------------------
     def build_initial_node(self) -> NodeConfig:

@@ -6,6 +6,8 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from agent_builder.validation import validate_as_dicts
+
 from . import store
 
 
@@ -21,6 +23,11 @@ app = FastAPI(title="Agent builder API", lifespan=lifespan)
 @app.get("/api/agents")
 def list_agents() -> list[dict]:
     return store.list_agents()
+
+
+@app.post("/api/agents/validate")
+def validate_agent(agent: dict) -> list[dict]:
+    return validate_as_dicts(agent)
 
 
 class NewAgent(BaseModel):

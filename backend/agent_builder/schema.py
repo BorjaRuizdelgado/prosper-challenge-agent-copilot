@@ -72,6 +72,8 @@ class AgentConfig:
     persona: str = ""                    # global role_message, applied to every node
     voice_id: str = DEFAULT_VOICE_ID
     model: str = DEFAULT_MODEL
+    # Editor-only node positions {name: {x, y}}; ignored at runtime, round-tripped.
+    layout: dict = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, d: dict) -> "AgentConfig":
@@ -82,4 +84,5 @@ class AgentConfig:
             persona=d.get("persona", ""),
             voice_id=d.get("voice_id", DEFAULT_VOICE_ID),
             model=d.get("model", DEFAULT_MODEL),
+            layout=d.get("layout", {}),
         )
