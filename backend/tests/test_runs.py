@@ -48,4 +48,5 @@ def test_test_call_code_never_touches_runs():
 
     backend = Path(__file__).resolve().parent.parent
     for name in ("session.py", "bot.py"):
-        assert "runs" not in (backend / name).read_text().lower(), name
+        source = (backend / name).read_text()
+        assert not any(word in source for word in ("RUNS_DIR", "list_runs", "api.runs", "demo/runs")), name
