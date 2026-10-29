@@ -31,7 +31,7 @@ Each group is a vertical slice that ends with something usable and verified in t
 
 - [x] 5.1 Store actions for `addEdge`, `updateEdge`, `removeEdge`, `retargetEdge` (unique function names) with unit tests. Verify: `npm test`.
 - [x] 5.2 Inspector edge form: function, description, target select, parameter rows (name, type, description, enum values, required) writing `properties`/`required`. Verify: Vitest produces the expected JSON for a string+enum required parameter; manual check in the browser.
-- [ ] 5.3 Canvas interactions: drag handle-to-node to connect, drag edge end to retarget, delete key on selected edge. Verify: manual check in the browser.
+- [x] 5.3 Canvas interactions: drag handle-to-node to connect, drag edge end to retarget, delete key on selected edge. Verify: manual check in the browser.
 
 ## 6. Structural graph editing and layout
 

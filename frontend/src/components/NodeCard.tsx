@@ -1,5 +1,6 @@
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import type { CardNode } from "../graph";
+import { NEW_EDGE_HANDLE } from "../canvasActions";
 import { NODE_WIDTH } from "../layout";
 
 const summary = (messages: { content: string }[] = []) => messages[0]?.content ?? "No task yet";
@@ -33,6 +34,13 @@ export function NodeCard({ data, selected }: NodeProps<CardNode>) {
           </li>
         ))}
       </ul>
+      <Handle
+        type="source"
+        id={NEW_EDGE_HANDLE}
+        position={Position.Bottom}
+        className="node-card__new"
+        title="Drag to another node to add an edge"
+      />
     </div>
   );
 }

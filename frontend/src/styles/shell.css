@@ -556,3 +556,12 @@ fieldset.field {
   align-items: center;
   gap: 8px;
 }
+
+.node-card__new {
+  bottom: -9px;
+  width: 16px;
+  height: 16px;
+  border: 1px dashed var(--accent);
+  background: var(--surface);
+  cursor: crosshair;
+}

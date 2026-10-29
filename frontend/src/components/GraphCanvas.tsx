@@ -1,6 +1,7 @@
 import { Background, Controls, ReactFlow, ReactFlowProvider } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useMemo } from "react";
+import { connect, deleteEdges, reconnect } from "../canvasActions";
 import { toFlow } from "../graph";
 import { useAgentStore } from "../store";
 import type { Agent, Position } from "../model";
@@ -25,7 +26,14 @@ export function GraphCanvas({ agent, positions }: { agent: Agent; positions: Rec
           onEdgeClick={(_, e) => select({ kind: "edge", node: e.source, function: e.sourceHandle! })}
           onPaneClick={() => select(null)}
           nodesDraggable={false}
-          nodesConnectable={false}
+          nodesConnectable
+          edgesReconnectable
+          onConnect={(c) => connect(c)}
+          onReconnect={(old, c) => reconnect(old, c)}
+          deleteKeyCode={["Backspace", "Delete"]}
+          // Only edges are deletable from the keyboard; nodes go through the confirmed delete flow.
+          onBeforeDelete={async ({ edges }) => ({ nodes: [], edges })}
+          onEdgesDelete={deleteEdges}
           minZoom={0.2}
           proOptions={{ hideAttribution: true }}
         >
