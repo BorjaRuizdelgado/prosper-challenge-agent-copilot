@@ -348,7 +348,17 @@ button:disabled {
 }
 
 .node-card__in {
+  left: -5px;
+  width: 8px;
+  height: 8px;
+  background: var(--control);
+  border: none;
+  pointer-events: none;
+}
+
+.node-card__new--left {
   left: -9px;
+  top: 22px;
 }
 
 .pill {
@@ -578,8 +588,7 @@ fieldset.field {
   top: 22px;
 }
 
-.node-card__new,
-.node-card__in {
+.node-card__new {
   width: 16px;
   height: 16px;
   border: 1px dashed var(--accent);

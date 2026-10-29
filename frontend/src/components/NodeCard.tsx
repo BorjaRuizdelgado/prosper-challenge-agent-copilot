@@ -11,9 +11,11 @@ export function NodeCard({ data, selected }: NodeProps<CardNode>) {
   const kind = node.end ? "end" : edges.some((e) => Object.keys(e.properties ?? {}).length) ? "collect" : "greeting";
   return (
     <div className={`node-card${selected ? " node-card--selected" : ""}`} style={{ width: NODE_WIDTH }}>
-      {/* Loose connection mode lets every handle start or receive a connection: left is the plain
-          target, the other three sides get a "new edge" handle. */}
-      <Handle type="target" position={Position.Left} className="node-card__in" title="Drag to another node to add an edge" />
+      {/* Loose connection mode lets every handle start or receive a connection. The centre of the left
+          side is where edges end, so that handle only receives and lets the edge's own drag anchor
+          (retargeting) through; every side has a separate "new edge" handle for starting edges. */}
+      <Handle type="target" position={Position.Left} className="node-card__in" isConnectableStart={false} />
+      <Handle type="source" id={`${NEW_EDGE_HANDLE}_left`} position={Position.Left} className="node-card__new node-card__new--left" title="Drag to another node to add an edge" />
       <Handle type="source" id={`${NEW_EDGE_HANDLE}_top`} position={Position.Top} className="node-card__new node-card__new--top" title="Drag to another node to add an edge" />
       <Handle type="source" id={`${NEW_EDGE_HANDLE}_right`} position={Position.Right} className="node-card__new node-card__new--right" title="Drag to another node to add an edge" />
       <header className="node-card__head">
