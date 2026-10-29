@@ -1,3 +1,5 @@
+import type { Agent } from "./model";
+
 export interface AgentSummary {
   id: string;
   name: string;
@@ -7,7 +9,7 @@ export interface AgentSummary {
 
 export interface AgentRecord {
   id: string;
-  agent: Record<string, unknown> & { name: string; nodes: unknown[] };
+  agent: Agent;
   updated_at: string;
 }
 
@@ -37,7 +39,7 @@ export const duplicateAgent = (id: string) =>
 export const deleteAgent = (id: string) =>
   request<void>(`/api/agents/${id}`, { method: "DELETE" }, "Could not delete the agent");
 
-export const saveAgent = (id: string, agent: AgentRecord["agent"]) =>
+export const saveAgent = (id: string, agent: Agent) =>
   request<AgentRecord>(`/api/agents/${id}`, sendJson("PUT", agent), "Could not save the agent");
 
 /** Rename by re-saving the stored document with a new name. */
