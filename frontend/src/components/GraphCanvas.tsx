@@ -1,4 +1,4 @@
-import { Background, Controls, MiniMap, ReactFlow, ReactFlowProvider } from "@xyflow/react";
+import { Background, Controls, ReactFlow, ReactFlowProvider } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useMemo } from "react";
 import { toFlow } from "../graph";
@@ -31,7 +31,6 @@ export function GraphCanvas({ agent, positions }: { agent: Agent; positions: Rec
         >
           <Background gap={20} color="var(--control)" />
           <Controls showInteractive={false} />
-          <MiniMap pannable zoomable />
         </ReactFlow>
       </ReactFlowProvider>
     </div>

@@ -151,6 +151,7 @@ button:disabled {
   display: grid;
   place-items: center;
   background: rgb(19 20 22 / 0.3);
+  z-index: 100; /* above React Flow's panels and controls */
 }
 
 .dialog {
@@ -249,7 +250,6 @@ button:disabled {
 .canvas .react-flow {
   --xy-edge-stroke: var(--control);
   --xy-edge-stroke-selected: var(--accent);
-  --xy-minimap-background-color: var(--surface);
   --xy-controls-button-background-color: var(--surface);
   --xy-controls-button-border-color: var(--border);
   font-family: var(--font-sans);
