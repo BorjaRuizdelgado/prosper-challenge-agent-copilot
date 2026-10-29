@@ -5,12 +5,14 @@
 #
 
 import os
+import warnings
 from typing import Any, AsyncIterator, Callable
 
 from claude_agent_sdk import (
     AssistantMessage,
     ClaudeAgentOptions,
     ClaudeSDKClient,
+    CanUseToolShadowedWarning,
     CLIConnectionError,
     CLINotFoundError,
     HookMatcher,
@@ -29,6 +31,9 @@ from copilot import workspace
 from copilot.events import DraftTracker, step_for_tool, validation_step
 from copilot.guard import check_path
 from copilot.validate_tool import FULL_TOOL_NAME, build_server
+
+# Skill and validate_agent are allowed on purpose; the callback guards the file tools only.
+warnings.filterwarnings("ignore", category=CanUseToolShadowedWarning)
 
 Event = dict  # {"event": "step" | "text" | "draft" | "proposal" | "done" | "error", "data": {...}}
 

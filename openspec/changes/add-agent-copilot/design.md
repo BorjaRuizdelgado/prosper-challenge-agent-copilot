@@ -103,7 +103,9 @@ Step labels are derived on the server from tool-use blocks (Edit: find the node 
 - `step.node` feeds a `copilotFocus` value that the canvas renders as a pulsing outline, using the same mechanism as the active node during a test call.
 - `draft` events (Decision 8) make the canvas itself show progress: the graph changes while the copilot works, not after.
 
-The SDK call sits behind a `run_turn(...) -> AsyncIterator[Event]` seam so endpoint tests use a fake runner and need no Claude login.
+The SDK call sits behind a `run_turn(...) -> AsyncIterator[Event]` seam so endpoint tests use a fake runner and need no Claude login. `run_turn` also takes a `client_factory` (default `ClaudeSDKClient`), so the message-to-event mapping is tested with a scripted fake client.
+
+*Task 2.5 manual run* (real CLI login, `example_flow.json`, "add a goodbye sentence to the end node"): events arrived as `step` (Reading agent), `step` (Editing confirm, `node: confirm`), `draft`, `step` (Validating: 0 issues), `text`, `proposal`, `done`. Because the reply comes after the tool calls, `text` deltas arrive at the end of a turn; the steps carry the progress before that.
 
 ### 7. Sessions: in-memory map of agent id to SDK session id
 
