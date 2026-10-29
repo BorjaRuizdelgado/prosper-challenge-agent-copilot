@@ -1,94 +1,84 @@
 # Overview of the Solution
 
-An agent is a **graph of nodes** (Pipecat Flows) stored as declarative JSON. One JSON contract is shared by everything: the editor UI edits it, the validator checks it, `AgentBuilder` compiles it into a runnable voice pipeline, and (Phase 2) the Copilot will generate and modify it.
+An agent is a graph of nodes (Pipecat Flows) stored as a JSON document. The editor edits that JSON, the API stores and validates it, and the provided voice runner compiles it with `AgentBuilder` and runs it. Phase 2 (the Copilot) will generate and modify the same JSON.
 
-## Architecture Overview
+## Architecture
 
 ```mermaid
 flowchart LR
-    subgraph Browser["Browser — frontend/ (Vite + React + TS)"]
-        direction TB
-        List["Agent list<br/>create / rename / duplicate / delete"]
-        Canvas["Graph canvas<br/>React Flow + dagre"]
-        Dock["Dock (tab registry)<br/>Inspector · Issues · JSON · Settings · Call"]
-        Store[("Zustand agent store<br/>working copy + actions")]
-        CallStore[("Call store<br/>state machine, transcript, active node")]
-        List --> Store
-        Canvas <--> Store
-        Dock <--> Store
-        Dock <--> CallStore
-        CallStore -- "active node / last edge" --> Canvas
-    end
+    UI["Editor UI<br/>frontend/"]
+    API["Agents API<br/>backend/api · :8000"]
+    Files[("backend/agents/*.json")]
+    Runner["Voice runner (provided)<br/>bot.py + AgentBuilder · :7860"]
 
-    subgraph API["agents API — backend/api (FastAPI :8000)"]
-        direction TB
-        Routes["/api/agents CRUD<br/>/api/agents/validate"]
-        Files[("backend/agents/*.json<br/>atomic writes")]
-        Routes --> Files
-    end
+    UI -- "REST /api/agents" --> API
+    API --> Files
+    Runner -- "load by agent_id" --> Files
+    UI -- "WebRTC call with agent_id" --> Runner
+    Runner -- "RTVI: transcript, node_changed" --> UI
 
-    subgraph Voice["voice runner — backend/bot.py (Pipecat :7860)"]
-        direction TB
-        Session["session.py<br/>agent_id, key + issue checks"]
-        Builder["agent_builder<br/>schema · validation · AgentBuilder"]
-        Pipeline["WebRTC → ElevenLabs STT → OpenAI LLM<br/>→ ElevenLabs TTS → WebRTC<br/>+ Pipecat Flows"]
-        Session --> Builder --> Pipeline
-    end
-
-    Store -- "REST via Vite proxy /api" --> Routes
-    Routes -- "validate()" --> Builder
-    Builder -- "reads" --> Files
-    CallStore -- "POST /voice/start {agent_id}<br/>SmallWebRTC audio" --> Session
-    Pipeline -- "RTVI: transcripts,<br/>node_changed" --> CallStore
+    classDef provided stroke-dasharray: 5 5
+    class Runner provided
 ```
 
-Key points:
+The voice runner (Pipecat pipeline, ElevenLabs STT/TTS, OpenAI LLM, Pipecat Flows, `AgentBuilder`) was provided and is used as is, apart from the small hooks listed below. The work in this repo is the editor UI, the agents API, and the glue between them and the runner.
 
-- **One contract, one validator.** `agent_builder/validation.py` produces structured issues (code, severity, node/edge). `AgentBuilder` refuses to build an agent with errors, the API exposes the same function at `POST /api/agents/validate`, and the UI shows the result in the Issues tab and on the canvas.
-- **Files, not a database.** Agents are `backend/agents/<id>.json`, seeded from `example_flow.json`. Writes are atomic (write temp, rename) so a failed save leaves the old file intact. Ids are validated (lowercase slug) so the path can never escape the directory.
-- **The runner has no graph logic.** `bot.py` only wires the pipeline; the agent it runs is chosen per session by the `agent_id` in the `/start` body.
-- **UI layout is data.** Node positions and edge-label offsets are saved in an optional `layout` key in the same JSON; nodes without a position are auto-laid-out (dagre, left to right).
+### Components
 
-## Phase 1 — the agent builder
+- **Editor UI** (`frontend/`, Vite + React + TypeScript). Agent list, graph canvas (React Flow, dagre auto-layout) and a dock with Inspector, Issues, JSON, Settings and Call tabs. All edits go through actions on one Zustand store that holds the working copy of the agent. A separate call store holds the call state, transcript and active node.
+- **Agents API** (`backend/api/`, FastAPI). CRUD on `/api/agents` plus `POST /api/agents/validate`. Agents are files in `backend/agents/<id>.json`, seeded from `example_flow.json`.
+- **Voice runner** (`backend/bot.py`, provided). Started by the Call tab with `{agent_id}` in the session body; loads that agent and runs it.
 
-What was built, in the order it was delivered (each step shipped as its own stacked PR):
+### Changes to the provided backend
 
-| Slice | What you get |
+| Change | Why |
 | --- | --- |
-| Skeleton | FastAPI app, Vite/React shell, agent list with loading / empty / error+retry states, `make dev` / `make up`. |
-| Agent management | Create (starter agent), rename, duplicate, delete with confirmation, toasts, navigation. |
-| Read-only graph | Typed model, API client, store, auto layout, custom node cards, labelled edges, fit-to-view, minimap. |
-| Node editing | Inspector form (name with rename cascade, task messages, role override, pre/post actions), save with dirty tracking, Cmd/Ctrl+S, leave-without-saving guard. |
-| Edge editing | Connect, retarget and delete edges by dragging; edge form for the function, description and collected parameters; draggable labels. |
-| Structure & layout | Add / delete node, set initial node, drag-to-place positions persisted as `layout`, auto layout. |
-| Settings, validation, JSON | Persona / voice / model settings; debounced server validation with clickable issues and canvas markers; raw JSON view with safe *Apply*. |
-| Test call | Call tab: mic permission, connect, mute, hang up; live transcript with transition notes; active node and last edge highlighted on the canvas. |
-| Polish & hand-off | Fit-to-view zoom cap, hover-action fix in the agent list, Playwright smoke spec, docs. |
+| `agent_builder/validation.py` | Returns structured issues (code, severity, node, edge) instead of raising on the first problem. `AgentBuilder` now calls it and refuses to build on any error; the API exposes the same function, so the UI and the runner apply the same rules. |
+| `on_transition` callback in `AgentBuilder` | Lets `bot.py` send a `node_changed` RTVI message on every edge taken, so the UI can highlight the active node during a call. |
+| `layout` field in `AgentConfig` | Stores node positions in the agent JSON. Ignored at runtime. |
+| `session.py` | Picks the agent from `agent_id` in the session body (was a hard-coded `example_flow.json`), checks API keys and blocking issues before the call starts. |
 
-### Testing
+### Decisions
 
-- **pytest** (backend): API routes, id rejection, atomic saves, validation issue codes, session helpers.
-- **Vitest** (frontend): store actions (rename cascade, delete, connect, JSON apply, layout), form and dialog behaviour, call store driven by a fake client and mocked RTVI events.
-- **Playwright**: one smoke spec against the real API with a throwaway agents directory — create → add a node → save → reload → open the seeded agent → open the Call tab, failing on any console error. `make test` runs all three.
-- **Manual**: `docs/manual-call-test.md`, for the part that needs a microphone and paid API keys.
+- **Files, not a database.** Single-user local tool. Writes are atomic (temp file + rename), so a failed save leaves the previous version. Ids must be a lowercase slug, so a path cannot escape the directory.
+- **One validator.** Rules live in one Python function used by the runner and the API. The UI does not reimplement them; it debounces calls to `/validate` and renders the result.
+- **Layout in the agent JSON.** Positions travel with the agent (duplicate, export, Copilot edits). Nodes without a position are auto-laid out.
 
-### What is mocked or left out, and why
+## How it was built
 
-| Item | Status | Why |
-| --- | --- | --- |
-| Real voice call | Implemented, **tested only with a fake client** in CI | Needs `OPENAI_API_KEY` and `ELEVENLABS_API_KEY` and a mic; covered by the manual checklist. |
-| Auth, multi-user, versioning | Left out | Single-user local tool; files in `backend/agents/` are the store. |
-| Mobile / small screens | Left out | Authoring a graph is a laptop task; checked at 1440 and 1280 px only. |
-| Undo / redo | Left out | The JSON tab and the unsaved-changes guard cover recovery for now. |
-| Call setup errors in the UI | Limited | The runner cannot report them before a session exists, so the UI shows a timeout and the runner log has the cause. |
+The implementation was done with Claude Code, driven by an [OpenSpec](https://github.com/Fission-AI/OpenSpec) change instead of free-form prompts. The spec is in `openspec/changes/add-agent-builder-frontend/`:
 
-### Extension points for Phase 2 (the Copilot)
+| File | Contents |
+| --- | --- |
+| `proposal.md` | Why the change is needed and what it adds (frontend, agents API, validation, `agent_id` per call). |
+| `design.md` | Goals, non-goals, decisions (libraries, storage, validation codes, Pipecat runner contract) and trade-offs. |
+| `specs/*/spec.md` | 17 requirements with scenarios across 4 capabilities: agent management, graph editor, agent configuration, test call. |
+| `tasks.md` | 30 tasks in 9 vertical slices. Each task names its verification step (a test or a manual check in the browser). |
 
-- **Store actions** (`frontend/src/store.ts`): every edit goes through a named action (`updateNode`, `addEdge`, `renameNode`, `replaceAgent`, …). The Copilot can call these directly, so its changes get the same dirty tracking and validation as manual edits.
-- **Dock registry** (`DOCK_TABS` in `frontend/src/components/Dock.tsx`): add a `{id, label, component}` entry for a Copilot chat tab.
-- **Agent JSON contract** (`backend/agent_builder/schema.py`, `validation.py`): the Copilot generates JSON and gets back structured issues from `POST /api/agents/validate` to self-correct before anything is saved.
-- **RTVI messages** (`backend/session.py`): `node_changed` `{from, node, via, args}` already travels to the UI; further server messages can reuse the channel.
+The process:
+
+1. Give the Phase 1 requirements to the `openspec-propose` skill (`.claude/skills/`), which produced the proposal, design, specs and tasks. Review and edit them before any code.
+2. Use the `openspec-apply-change` skill to have the agent implement `tasks.md` one task at a time, run the task's verification, tick the checkbox and commit with the task number (e.g. `(task 1.2)`).
+3. When something did not hold (e.g. task 1.1, the live stub-bot check could not run locally), update the spec or leave the task open rather than diverge from it silently.
+
+The spec is the source of truth for scope: anything not in `tasks.md` was not built, and the "left out" list below matches the design's non-goals.
+
+## Phase 1: the agent builder
+
+Delivered as stacked PRs, one per slice in `tasks.md`:
+
+| Slice | Contents |
+| --- | --- |
+| Skeleton | FastAPI app, Vite/React shell, agent list with loading / empty / error states, `make dev` / `make up`. |
+| Agent management | Create, rename, duplicate, delete with confirmation, toasts. |
+| Read-only graph | Typed model, API client, store, auto layout, node cards, labelled edges, fit-to-view, minimap. |
+| Node editing | Inspector form (name with rename cascade, task messages, role override, pre/post actions), save with dirty tracking, Cmd/Ctrl+S, unsaved-changes guard. |
+| Edge editing | Connect, retarget and delete edges by dragging; edge form for function, description and collected parameters; draggable labels. |
+| Structure and layout | Add / delete node, set initial node, persisted positions, auto layout. |
+| Settings, validation, JSON | Persona / voice / model settings; server validation with clickable issues and canvas markers; raw JSON view with *Apply*. |
+| Test call | Mic permission, connect, mute, hang up; live transcript with transitions; active node and last edge highlighted on the canvas. |
+| Polish | Fit-to-view zoom cap, agent list hover fix, Playwright smoke spec, docs. |
 
 ## Phase 2
 
-The AI Composer: generate and iterate on agents from natural language, using the extension points above. Not started.
+Agent Copilot. Not started.
