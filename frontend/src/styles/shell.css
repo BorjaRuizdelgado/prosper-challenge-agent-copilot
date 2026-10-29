@@ -718,3 +718,33 @@ button.issues__item:hover {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* ---- call ---- */
+.call {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.call__state {
+  margin: 0;
+  font-weight: 500;
+}
+
+.call__state--live {
+  color: var(--positive);
+}
+
+.call__state--failed {
+  color: var(--negative);
+}
+
+.call__message {
+  margin: 0;
+  color: var(--negative);
+}
+
+.call__controls {
+  display: flex;
+  gap: 8px;
+}

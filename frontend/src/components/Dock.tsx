@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import { useAgentStore } from "../store";
+import { CallPanel } from "./CallPanel";
 import { Inspector } from "./Inspector";
 import { JsonPanel } from "./JsonPanel";
 import { IssuesPanel } from "./IssuesPanel";
@@ -16,6 +17,7 @@ export const DOCK_TABS: DockTab[] = [{ id: "inspector", label: "Inspector", comp
   { id: "issues", label: "Issues", component: IssuesPanel },
   { id: "json", label: "JSON", component: JsonPanel },
   { id: "settings", label: "Settings", component: SettingsForm },
+  { id: "call", label: "Call", component: CallPanel },
 ];
 
 export function Dock() {
