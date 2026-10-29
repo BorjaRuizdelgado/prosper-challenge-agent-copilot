@@ -4,7 +4,7 @@ Each group is a vertical slice that ends with something usable and verified. Tes
 
 ## 1. Demo agents, mocked runs and seeding
 
-- [ ] 1.1 Write the three demo agents in `backend/demo/agents/` with the flaws in design Decision 3 (`demo-riverside-scheduler`, `demo-sunrise-refills`, `demo-lakeside-billing`). Verify: a pytest loads each through the validator and expects no errors, and expects the planted warnings (dead end / no end node) on the refill agent.
+- [x] 1.1 Write the three demo agents in `backend/demo/agents/` with the flaws in design Decision 3 (`demo-riverside-scheduler`, `demo-sunrise-refills`, `demo-lakeside-billing`). Verify: a pytest loads each through the validator and expects no errors, and expects the planted warnings (dead end / no end node) on the refill agent.
 - [ ] 1.2 Write about 8 runs per agent in `backend/demo/runs/<id>.json` (shape in design Decision 1) covering the outcomes and flags in Decision 3, with short spoken transcripts. Verify: a pytest checks unique run ids, allowed outcomes, ISO start times, alternating speakers, and that every `node` and `via` in a path exists in that agent (the edge on the previous node).
 - [ ] 1.3 Add `demo/seed.py` (writes each demo agent into the agents directory under its id, atomically, replacing an existing one, leaving other agents alone) and a `make demo` target. Verify: pytest with a temp `AGENTS_DIR` covers first seed, re-seed after a change (file restored) and an unrelated agent untouched; `make demo` then the editor's agent list shows the three agents.
 
