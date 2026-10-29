@@ -49,3 +49,8 @@ def check_keys() -> None:
         raise SessionError(
             f"Missing API keys in backend/.env: {', '.join(missing)}. Add them and restart the runner."
         )
+
+
+def node_changed_message(from_node: Optional[str], node: str, via: Optional[str], args: dict) -> dict:
+    """The RTVI server message the editor listens to for highlighting the active node."""
+    return {"type": "node_changed", "from": from_node, "node": node, "via": via, "args": args}

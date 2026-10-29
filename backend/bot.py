@@ -35,7 +35,7 @@ from pipecat.workers.runner import WorkerRunner
 from pipecat_flows import FlowManager
 
 from agent_builder import AgentBuilder
-from session import SessionError, agent_id_from_body, check_keys, load_agent
+from session import SessionError, agent_id_from_body, check_keys, load_agent, node_changed_message
 
 # Load .env next to this file, so the bot runs the same from the repo root or backend/.
 load_dotenv(Path(__file__).parent / ".env", override=True)
@@ -90,9 +90,16 @@ async def run_bot(
         transport=transport,
     )
 
+    async def announce(from_node, node, via, args):
+        logger.info(f"node_changed: {from_node} -> {node} via {via} {args}")
+        await worker.rtvi.send_server_message(node_changed_message(from_node, node, via, args))
+
+    builder.on_transition = announce
+
     @transport.event_handler("on_client_connected")
     async def on_client_connected(transport, client):
         logger.info("Client connected — starting flow at initial node")
+        await announce(None, config.initial_node, None, {})
         await flow_manager.initialize(builder.build_initial_node())
 
     @transport.event_handler("on_client_disconnected")
