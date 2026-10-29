@@ -519,3 +519,40 @@ fieldset.field {
   color: var(--negative);
   font-size: 12px;
 }
+
+.params {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.params__item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--control);
+  border-radius: var(--radius-control);
+}
+
+.params__item input:not([type="checkbox"]),
+.params__item select,
+.field select,
+.field input[readonly] {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid var(--control);
+  border-radius: var(--radius-control);
+  color: var(--text);
+  background: var(--surface);
+}
+
+.params__item .field--check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

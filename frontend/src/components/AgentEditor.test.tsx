@@ -87,7 +87,7 @@ test("an edge selection shows function, target and parameters", async () => {
 
   act(() => useAgentStore.getState().select({ kind: "edge", node: "greeting", function: "choose_intent" }));
 
-  const panel = screen.getByLabelText("Edge");
-  expect(panel).toHaveTextContent("choose_intent");
-  expect(panel).toHaveTextContent("confirm");
+  expect(screen.getByRole("form", { name: "Edge" })).toBeInTheDocument();
+  expect(screen.getByLabelText("Function")).toHaveValue("choose_intent");
+  expect(screen.getByLabelText("Target")).toHaveValue("confirm");
 });
