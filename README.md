@@ -75,7 +75,7 @@ How it works: the browser `POST`s `/voice/start` (proxied to the runner) with `{
 | `backend/agent_builder/` | All agent-building code. `schema.py` = the declarative `AgentConfig` / `Node` / `Edge` contract; `builder.py` = `AgentBuilder`, which loads + validates the JSON and compiles it into a Pipecat Flows graph. |
 | `backend/session.py` | Call setup helpers with no Pipecat imports: read `agent_id` from the session body, load the agent (refusing unknown ids and blocking issues), check API keys, build the `node_changed` message. |
 | `backend/api/` | FastAPI app that lists/edits agent JSON files in `backend/agents/` for the UI. |
-| `frontend/` | Vite + React + TypeScript agent builder UI. `src/call/` holds the voice client wrapper and the call store (state machine, transcript, active node). |
+| `frontend/` | Vite + React + TypeScript agent builder UI. `src/call/` holds the voice client wrapper and the call store (state machine, transcript, active node). `src/copilot/` holds the copilot SSE client and chat store. |
 | `frontend/e2e/` | Playwright smoke spec (`npm run e2e` in `frontend/`); starts its own API on :8100 with a temp agents dir and Vite on :5180, so it does not clash with `make dev`. |
 | `docs/manual-call-test.md` | Manual checklist for the real voice path. |
 | `solution.md` | Architecture diagram, what was built / mocked / left out, and extension points for Phase 2. |
