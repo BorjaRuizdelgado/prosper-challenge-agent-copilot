@@ -1,0 +1,164 @@
+{
+  "name": "Clinic Scheduling",
+  "voice_id": "21m00Tcm4TlvDq8ikWAM",
+  "model": "gpt-4o",
+  "persona": "You are a warm, efficient scheduling assistant for a healthcare clinic. Your replies are spoken aloud, so use short sentences and never lists, emojis or symbols. Ask one question at a time. Never give medical advice. Always use an available function to move the conversation forward.",
+  "initial_node": "greeting",
+  "nodes": [
+    {
+      "name": "greeting",
+      "task_messages": [
+        {
+          "role": "developer",
+          "content": "Greet the caller, say you are the clinic's scheduling assistant, and ask whether they would like to book, reschedule or cancel an appointment. If they describe an emergency, use the emergency function."
+        }
+      ],
+      "edges": [
+        {
+          "function": "choose_intent",
+          "description": "Call once the caller says whether they want to book, reschedule or cancel.",
+          "target": "collect_patient",
+          "properties": {
+            "intent": {
+              "type": "string",
+              "enum": ["book", "reschedule", "cancel"],
+              "description": "What the caller wants to do."
+            }
+          },
+          "required": ["intent"]
+        },
+        {
+          "function": "urgent_call",
+          "description": "Call if the caller describes an emergency or severe symptoms.",
+          "target": "emergency"
+        },
+        {
+          "function": "transfer_to_human",
+          "description": "Call if the caller asks for a person or wants something other than scheduling.",
+          "target": "handoff"
+        }
+      ]
+    },
+    {
+      "name": "collect_patient",
+      "task_messages": [
+        {
+          "role": "developer",
+          "content": "Ask for the caller's full name, then their date of birth. Ask for whichever is still missing, one question at a time."
+        }
+      ],
+      "edges": [
+        {
+          "function": "record_patient",
+          "description": "Call once both the full name and the date of birth are known.",
+          "target": "collect_reason",
+          "properties": {
+            "full_name": {"type": "string", "description": "The caller's full name."},
+            "date_of_birth": {"type": "string", "description": "The caller's date of birth."}
+          },
+          "required": ["full_name", "date_of_birth"]
+        },
+        {
+          "function": "urgent_call",
+          "description": "Call if the caller describes an emergency or severe symptoms.",
+          "target": "emergency"
+        },
+        {
+          "function": "transfer_to_human",
+          "description": "Call if the caller asks for a person or cannot give these details.",
+          "target": "handoff"
+        }
+      ]
+    },
+    {
+      "name": "collect_reason",
+      "task_messages": [
+        {
+          "role": "developer",
+          "content": "Ask the reason for the visit and which day or time of day the caller prefers. Do not comment on symptoms or give advice. Ask one question at a time."
+        }
+      ],
+      "edges": [
+        {
+          "function": "record_visit",
+          "description": "Call once the reason and the preferred time are known.",
+          "target": "offer_times",
+          "properties": {
+            "reason": {"type": "string", "description": "Reason for the visit, in the caller's words."},
+            "preferred_time": {"type": "string", "description": "Preferred day or time of day."}
+          },
+          "required": ["reason", "preferred_time"]
+        },
+        {
+          "function": "urgent_call",
+          "description": "Call if the caller describes an emergency or severe symptoms.",
+          "target": "emergency"
+        },
+        {
+          "function": "transfer_to_human",
+          "description": "Call if the caller asks for a person.",
+          "target": "handoff"
+        }
+      ]
+    },
+    {
+      "name": "offer_times",
+      "task_messages": [
+        {
+          "role": "developer",
+          "content": "Offer exactly two appointment options near the caller's preference: Tuesday at ten in the morning, or Thursday at two in the afternoon. Ask which one works."
+        }
+      ],
+      "edges": [
+        {
+          "function": "select_time",
+          "description": "Call once the caller picks one of the offered times.",
+          "target": "confirm",
+          "properties": {
+            "slot": {
+              "type": "string",
+              "enum": ["Tuesday 10 AM", "Thursday 2 PM"],
+              "description": "The chosen appointment time."
+            }
+          },
+          "required": ["slot"]
+        },
+        {
+          "function": "transfer_to_human",
+          "description": "Call if neither time works and the caller wants to talk to staff.",
+          "target": "handoff"
+        }
+      ]
+    },
+    {
+      "name": "confirm",
+      "task_messages": [
+        {
+          "role": "developer",
+          "content": "Repeat the caller's name and the chosen time back to them, tell them the clinic will send a reminder, thank them and say goodbye."
+        }
+      ],
+      "end": true
+    },
+    {
+      "name": "emergency",
+      "task_messages": [
+        {
+          "role": "developer",
+          "content": "Calmly tell the caller to hang up now and call emergency services, or go to the nearest emergency room. Do not ask questions or give advice. Then say goodbye."
+        }
+      ],
+      "end": true
+    },
+    {
+      "name": "handoff",
+      "task_messages": [
+        {
+          "role": "developer",
+          "content": "Tell the caller you are connecting them with the clinic staff and that they should stay on the line. Thank them for their patience."
+        }
+      ],
+      "end": true
+    }
+  ]
+}

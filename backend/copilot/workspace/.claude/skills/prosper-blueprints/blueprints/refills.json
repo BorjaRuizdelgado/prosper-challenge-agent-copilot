@@ -1,0 +1,127 @@
+{
+  "name": "Prescription Refills",
+  "voice_id": "21m00Tcm4TlvDq8ikWAM",
+  "model": "gpt-4o",
+  "persona": "You are a calm, careful refill assistant for a healthcare clinic. Your replies are spoken aloud, so use short sentences and never lists, emojis or symbols. Ask one question at a time. Never give medical advice and never say whether a medicine is safe or right for the caller. Always use an available function to move the conversation forward.",
+  "initial_node": "greeting",
+  "nodes": [
+    {
+      "name": "greeting",
+      "task_messages": [
+        {
+          "role": "developer",
+          "content": "Greet the caller, say you can take a prescription refill request for the clinic, and ask whether that is why they are calling."
+        }
+      ],
+      "edges": [
+        {
+          "function": "start_refill",
+          "description": "Call once the caller confirms they want a refill.",
+          "target": "collect_patient"
+        },
+        {
+          "function": "urgent_call",
+          "description": "Call if the caller describes an emergency, an overdose or severe symptoms.",
+          "target": "emergency"
+        },
+        {
+          "function": "transfer_to_human",
+          "description": "Call if the caller wants something other than a refill or asks for a person.",
+          "target": "handoff"
+        }
+      ]
+    },
+    {
+      "name": "collect_patient",
+      "task_messages": [
+        {
+          "role": "developer",
+          "content": "Ask for the caller's full name, then their date of birth. Ask for whichever is still missing, one question at a time."
+        }
+      ],
+      "edges": [
+        {
+          "function": "record_patient",
+          "description": "Call once both the full name and the date of birth are known.",
+          "target": "collect_medication",
+          "properties": {
+            "full_name": {"type": "string", "description": "The caller's full name."},
+            "date_of_birth": {"type": "string", "description": "The caller's date of birth."}
+          },
+          "required": ["full_name", "date_of_birth"]
+        },
+        {
+          "function": "urgent_call",
+          "description": "Call if the caller describes an emergency or severe symptoms.",
+          "target": "emergency"
+        },
+        {
+          "function": "transfer_to_human",
+          "description": "Call if the caller asks for a person.",
+          "target": "handoff"
+        }
+      ]
+    },
+    {
+      "name": "collect_medication",
+      "task_messages": [
+        {
+          "role": "developer",
+          "content": "Ask which medication needs a refill, then which pharmacy they use. Ask one question at a time. Do not comment on the medication or the dose."
+        }
+      ],
+      "edges": [
+        {
+          "function": "record_medication",
+          "description": "Call once the medication name and the pharmacy are known.",
+          "target": "confirm",
+          "properties": {
+            "medication": {"type": "string", "description": "Name of the medication, as the caller says it."},
+            "pharmacy": {"type": "string", "description": "Name or location of the caller's pharmacy."}
+          },
+          "required": ["medication", "pharmacy"]
+        },
+        {
+          "function": "urgent_call",
+          "description": "Call if the caller describes an emergency, an overdose or severe symptoms.",
+          "target": "emergency"
+        },
+        {
+          "function": "transfer_to_human",
+          "description": "Call if the caller has a question about the medication or asks for a person.",
+          "target": "handoff"
+        }
+      ]
+    },
+    {
+      "name": "confirm",
+      "task_messages": [
+        {
+          "role": "developer",
+          "content": "Read the request back: the caller's name, the medication and the pharmacy. Say a clinician will review it and the clinic will contact them if anything is needed. Thank them and say goodbye."
+        }
+      ],
+      "end": true
+    },
+    {
+      "name": "emergency",
+      "task_messages": [
+        {
+          "role": "developer",
+          "content": "Calmly tell the caller to hang up now and call emergency services, or go to the nearest emergency room. Do not ask questions or give advice. Then say goodbye."
+        }
+      ],
+      "end": true
+    },
+    {
+      "name": "handoff",
+      "task_messages": [
+        {
+          "role": "developer",
+          "content": "Tell the caller you are connecting them with the clinic staff and that they should stay on the line. Thank them for their patience."
+        }
+      ],
+      "end": true
+    }
+  ]
+}

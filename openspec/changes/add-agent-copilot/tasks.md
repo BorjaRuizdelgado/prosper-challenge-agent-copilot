@@ -17,7 +17,7 @@ Each group is a vertical slice that ends with something usable and verified. Tes
 ## 3. Blueprints skill
 
 - [x] 3.1 Write `SKILL.md`: agent JSON contract, edge-as-tool semantics, `properties`/`required`, actions, `end`, naming rules the validator enforces, healthcare voice conventions (spoken style, one question at a time, no medical advice, emergency and human handoff, an end node), minimal-edit guidance, and the skeleton-first protocol for new agents (design Decision 8). Verify: every rule in the spec requirement *Generated agents follow healthcare voice conventions* appears in the skill.
-- [ ] 3.2 Add `blueprints/scheduling.json`, `refills.json` and `billing-faq.json`, each following the conventions. Verify: a pytest runs each blueprint through `validation.validate` and expects no errors.
+- [x] 3.2 Add `blueprints/scheduling.json`, `refills.json` and `billing-faq.json`, each following the conventions. Verify: a pytest runs each blueprint through `validation.validate` and expects no errors.
 
 ## 4. Copilot API
 
