@@ -17,6 +17,13 @@ dependencies = [
 ]
 
 [tool.uv]
+# Intel Macs: pipecat's pinned onnxruntime/numba/llvmlite have no macOS x86_64 wheels.
+# Use older releases there only; every other platform resolves as before.
+override-dependencies = [
+    "onnxruntime==1.19.2 ; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "numba==0.61.2 ; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "llvmlite==0.44.0 ; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+]
 # This is an application (flat modules: bot.py + agent_builder/), not a
 # distributable library — manage the environment, don't build/install a package.
 package = false

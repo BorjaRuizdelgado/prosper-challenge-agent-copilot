@@ -4,7 +4,7 @@ Each group is a vertical slice that ends with something usable and verified in t
 
 ## 1. Walking skeleton: API + app shell + agent list (read)
 
-- [ ] 1.1 Spike Pipecat contract: with a throwaway script confirm `POST /start` body reaches `runner_args.body`, RTVI is emitted by default, and a custom server message can be pushed; record findings in `design.md` Decisions 7–9 (adjust if wrong). Verify: notes committed and a stub bot logs the received `agent_id`.
+- [x] 1.1 Spike Pipecat contract: with a throwaway script confirm `POST /start` body reaches `runner_args.body`, RTVI is emitted by default, and a custom server message can be pushed; record findings in `design.md` Decisions 7–9 (adjust if wrong). Verify: notes committed and a stub bot logs the received `agent_id`.
 - [x] 1.2 Backend: add `backend/api/` FastAPI app with `GET /api/agents` over `backend/agents/*.json`, seed from `example_flow.json` when empty, id validation helper, and `fastapi`/`pytest`/`httpx` deps via `uv`. Verify: `uv run pytest` covers seed, listing, and rejected ids (`../x`, uppercase).
 - [x] 1.3 Frontend: scaffold `frontend/` (Vite, React, TS, router, Vitest, CSS tokens + IBM Plex from the dealt `framed-sheet` style), app shell (tinted frame, sidebar with product mark, white sheet), Vite proxies `/api` and `/voice`. Verify: `npm run build` and `npm test` pass; shell renders at laptop width.
 - [ ] 1.4 Sidebar lists agents from the API with loading, empty and error+retry states and routes `/agents/:id` to a placeholder editor. Verify: Vitest for the three states; manual check in the browser.
