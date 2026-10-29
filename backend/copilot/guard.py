@@ -12,7 +12,7 @@ WRITE_TOOLS = {"Edit", "Write"}
 
 
 def check_path(tool: str, file_path: str, agent_id: str) -> tuple[bool, str]:
-    """Allow Read/Edit/Write on the agent's draft, and Read under the skill directory.
+    """Allow Read/Edit/Write on the agent's draft, Read on the agent's runs file, and Read under the skill directory.
 
     Returns (allowed, reason); the reason is what the model sees on a denial. Paths are
     resolved first (relative ones against the workspace, `..` and symlinks followed), so
@@ -29,9 +29,16 @@ def check_path(tool: str, file_path: str, agent_id: str) -> tuple[bool, str]:
 
     # Resolve the directory only: resolving the draft itself would follow a symlink swapped in for it.
     draft = workspace.drafts_dir().resolve() / workspace.draft_path(agent_id).name
+    runs = workspace.runs_dir().resolve() / workspace.runs_path(agent_id).name
     skill = workspace.skill_dir().resolve()
     if resolved == draft:
         return True, ""
+    if resolved == runs:
+        if tool in READ_TOOLS:
+            return True, ""
+        return False, "The production runs are read-only."
+    if resolved.is_relative_to(workspace.runs_dir().resolve()):
+        return False, "You can only read the current agent's production runs."
     if resolved.is_relative_to(skill):
         if tool in READ_TOOLS:
             return True, ""

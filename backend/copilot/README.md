@@ -4,13 +4,14 @@ Backend for the Agent Copilot (OpenSpec change `add-agent-copilot`). Claude Code
 
 | File | Role |
 | --- | --- |
-| `workspace.py` | Sandbox on disk: `workspace/drafts/<agent_id>.json` (git-ignored scratch), `workspace/.claude/skills/prosper-blueprints/` (committed). Stable draft read/write; the system prompt loader. Override the location with `COPILOT_WORKSPACE` (tests do). |
-| `guard.py` | `check_path(tool, file_path, agent_id)`: Read/Edit/Write on the agent's draft, Read only under the skill dir, everything else denied after resolving `..` and symlinks. |
+| `workspace.py` | Sandbox on disk: `workspace/drafts/<agent_id>.json` and `workspace/runs/<agent_id>.txt` (git-ignored scratch), `workspace/.claude/skills/prosper-blueprints/` (committed). Stable draft read/write; `write_runs` renders the agent's production runs to the text file, or removes a stale one; the system prompt loader. Override the location with `COPILOT_WORKSPACE` (tests do). |
+| `guard.py` | `check_path(tool, file_path, agent_id)`: Read/Edit/Write on the agent's draft, Read only on the agent's runs file and under the skill dir, everything else (including other agents' runs) denied after resolving `..` and symlinks. |
+| `runs_text.py` | `render_runs(runs)`: one block per run (header with outcome, duration and flag; the node path with the edge taken and its data; the spoken lines). The format of the runs file. |
 | `validate_tool.py` | The `validate_agent` tool (`mcp__copilot__validate_agent`): the editor's validator over the draft, one line per issue. |
 | `workspace/.claude/skills/prosper-blueprints/` | The skill Claude loads for structural work: `SKILL.md` (agent JSON contract, validator rules, healthcare voice conventions, minimal edits, skeleton-first build) and `blueprints/*.json` example agents. |
 | `system_prompt.md` | Persona and turn protocol. Replaces Claude Code's default prompt. |
 | `events.py` | Pure helpers: step labels, node name of an edit, which drafts are worth a `draft` event. |
-| `runner.py` | `run_turn(agent_id, message, agent)`: yields `step`, `text`, `draft`, `proposal`, `done` or `error` events; keeps the session id per agent (`reset_session`). |
+| `runner.py` | `run_turn(agent_id, message, agent)`: writes the draft and, when the agent has production runs (`api/runs.py`), the runs file, and adds "Its production runs are in runs/<id>.txt." to the prompt only then; yields `step`, `text`, `draft`, `proposal`, `done` or `error` events; keeps the session id per agent (`reset_session`). |
 
 ## HTTP API
 
