@@ -58,7 +58,9 @@ export function CopilotPanel() {
   const [draft, setDraft] = useState("");
   const elapsed = useElapsed(chat.startedAt);
   const end = useRef<HTMLLIElement>(null);
-  useEffect(() => end.current?.scrollIntoView?.({ block: "end" }), [chat.messages]);
+  useEffect(() => {
+    end.current?.scrollIntoView?.({ block: "end" });
+  }, [chat.messages]);
 
   if (!agentId || !agent) return <p className="dock__empty">Open an agent to talk to the copilot.</p>;
 

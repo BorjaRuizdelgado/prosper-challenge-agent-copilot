@@ -137,6 +137,25 @@ describe("CopilotPanel", () => {
     await waitFor(() => expect(screen.getByLabelText("Example requests")).toBeInTheDocument());
   });
 
+  it("does not hand React a cleanup value from the scroll effect", async () => {
+    // Browsers' scrollIntoView can return a non-function; returning it from an effect crashes on unmount.
+    const scroll = vi.fn(() => "not a function");
+    Element.prototype.scrollIntoView = scroll as unknown as typeof Element.prototype.scrollIntoView;
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    const c = controlled();
+    const { unmount } = renderApp(<CopilotPanel />);
+    await type("go");
+    await userEvent.click(screen.getByRole("button", { name: "Send" }));
+    act(() => c.push({ event: "step", label: "Reading agent" }));
+    await screen.findByText("Reading agent");
+    expect(scroll).toHaveBeenCalled();
+    act(() => c.push({ event: "done" }));
+    expect(() => unmount()).not.toThrow();
+    expect(errors).not.toHaveBeenCalled();
+    errors.mockRestore();
+    delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+  });
+
   it("keeps each agent's conversation when switching agents", async () => {
     const c = controlled();
     renderApp(<CopilotPanel />);
