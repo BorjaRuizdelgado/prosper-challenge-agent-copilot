@@ -87,6 +87,21 @@ The **Copilot** tab chats with an AI that edits the open agent (backend: `backen
 - **Ask Copilot (fix from a call):** when a test call has ended with a transcript, the Call tab shows *Ask Copilot*. It opens the Copilot tab with the transcript, a `Path: greeting -> collect_details -> …` line from the call's transitions and `What went wrong: ` in the input, cursor at the end. Nothing is sent until you finish the sentence and press Send; the reply is an ordinary proposal. It is not shown when nobody spoke.
 - **Live draft on the canvas:** from the copilot's first edit the canvas shows its draft instead of your working copy and redraws after every edit. Added nodes and edges are green (new nodes fade in), changed ones amber (they flash once), removed ones faded and dashed. Nodes you already had keep their positions; only new nodes are laid out. The canvas is read-only meanwhile, and clicking a node or edge opens it read-only in the Inspector. Your working copy and the unsaved marker are untouched until you Apply. A banner says *Copilot draft…* while it works and offers *Apply*, *Discard* and *Hide* when it is done (Hide shows your working copy again and keeps the proposal card pending). Stopping or an error also restores the working copy.
 
+### Production runs (demo)
+
+The **Runs** tab shows what happened in an agent's past phone calls and lets the Copilot learn from them. There is no call recording: the runs are hand-written fixtures in `backend/demo/runs/<agent id>.json`, served read-only by `GET /api/agents/{id}/runs`. An agent without a file has no runs.
+
+```bash
+make demo   # writes three demo agents (a scheduler, a refill line, a billing line) into backend/agents/, replacing any with the same id
+make dev    # then open http://localhost:5173 and pick one of the demo agents
+```
+
+- **Runs tab:** counts per outcome (completed, transferred, abandoned, stuck) and how many are flagged, then the runs newest first with outcome, time, duration, the caller's first line and any flag. Selecting a run opens its transcript, the transitions and the path, and draws the path on the canvas (visited nodes outlined, taken edges coloured, the last node dashed). Nodes that no longer exist are labelled *missing*. Leaving the tab closes the run. A copilot draft or a live call takes precedence on the canvas.
+- **Analyze runs:** opens the Copilot tab and sends *Review this agent's production runs…* with the working copy. The Copilot reads the runs (`workspace/runs/<id>.txt`, only its own agent's), groups them by cause, reports findings, and edits the agent. The reply carries a **Findings** card above the usual proposal: title, cause, fix and the run ids, which open that run in the Runs tab; hovering a finding focuses its node on the canvas. Apply and Save work as usual. Run `make demo` again to reset.
+- **Ask Copilot** on an open run prefills the input with its transcript, path, outcome, flag and `What went wrong: `, like after a test call; nothing is sent until you do.
+
+Try it: `make demo`, open *Sunrise Pharmacy Refills* (`demo-sunrise-refills`), Runs tab, **Analyze runs**, wait for the findings and the proposal, **Apply**. `docs/production-runs-demo.md` lists the scenarios for all three agents and what was observed. Needs the same Claude login or key as the Copilot.
+
 ## Layout
 
 | Path | Responsibility |
@@ -98,7 +113,7 @@ The **Copilot** tab chats with an AI that edits the open agent (backend: `backen
 | `backend/demo/` | Demo data for the production-runs review: three flawed agents (`agents/`), about 8 hand-written mocked runs each (`runs/<agent id>.json`, served read-only by `GET /api/agents/{id}/runs`) and `seed.py` (`make demo`), which writes the agents into the agents store and replaces any with the same id. |
 | `frontend/` | Vite + React + TypeScript agent builder UI. `src/call/` holds the voice client wrapper and the call store (state machine, transcript, active node). `src/copilot/` holds the copilot SSE client, chat store and `diffAgents`. |
 | `frontend/e2e/` | Playwright smoke spec (`npm run e2e` in `frontend/`); starts its own API on :8100 with a temp agents dir and Vite on :5180, so it does not clash with `make dev`. |
-| `docs/` | `copilot-demo.md`: scripted run of the copilot scenarios with what was observed. |
+| `docs/` | `copilot-demo.md` and `production-runs-demo.md`: scripted runs of the copilot and run-review scenarios with what was observed. |
 | `backend/copilot/` | The Copilot engine: Claude Code via the Agent SDK on a draft file, path guard, `validate_agent` tool, system prompt and the Prosper Blueprints skill. See its README. |
 | `solution.md` | Architecture diagram, what was built / mocked / left out, and extension points for Phase 2. |
 | `backend/example_flow.json` | The example agent **as data** — a clinic scheduler. The artifact the Phase 2 Copilot generates/edits. |
