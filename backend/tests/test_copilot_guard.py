@@ -11,6 +11,8 @@ def ws(tmp_path, monkeypatch):
     workspace.write_draft("other", {})
     workspace.skill_dir().mkdir(parents=True)
     (workspace.skill_dir() / "SKILL.md").write_text("skill")
+    workspace.skill_dir(workspace.RUN_REVIEW_SKILL_NAME).mkdir()
+    (workspace.skill_dir(workspace.RUN_REVIEW_SKILL_NAME) / "SKILL.md").write_text("review")
     (tmp_path.parent / "secret.json").write_text("{}")
     return tmp_path
 
@@ -35,6 +37,13 @@ def test_skill_files_are_read_only(ws):
     assert allowed("Read", skill)
     assert not allowed("Edit", skill)
     assert not allowed("Write", workspace.skill_dir() / "new.md")
+
+
+def test_the_run_review_skill_is_read_only_too(ws):
+    skill = workspace.skill_dir(workspace.RUN_REVIEW_SKILL_NAME) / "SKILL.md"
+    assert allowed("Read", skill)
+    assert not allowed("Edit", skill)
+    assert not allowed("Write", skill)
 
 
 @pytest.mark.parametrize("tool", ["Read", "Edit", "Write"])
@@ -82,3 +91,49 @@ def test_other_tools_are_denied(ws, tool):
 def test_denial_gives_a_reason(ws):
     ok, reason = check_path("Read", "/etc/passwd", "clinic")
     assert not ok and "clinic.json" in reason
+
+
+@pytest.fixture
+def runs(ws):
+    for agent in ("clinic", "other"):
+        path = workspace.runs_path(agent)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("runs")
+    return workspace.runs_dir()
+
+
+def test_own_runs_file_is_read_only(runs):
+    assert allowed("Read", runs / "clinic.txt")
+    assert allowed("Read", "runs/clinic.txt")
+    assert not allowed("Edit", runs / "clinic.txt")
+    assert not allowed("Write", "runs/clinic.txt")
+
+
+@pytest.mark.parametrize("tool", ["Read", "Edit", "Write"])
+def test_another_agents_runs_are_denied(runs, tool):
+    assert not allowed(tool, runs / "other.txt")
+    assert not allowed(tool, "runs/other.txt")
+
+
+@pytest.mark.parametrize("path", ["runs", "runs/new.txt", "runs/../runs/other.txt", "drafts/../runs/other.txt"])
+def test_the_rest_of_the_runs_directory_is_denied(runs, path):
+    assert not allowed("Read", path)
+
+
+def test_runs_path_variants_resolve_to_the_real_file(runs):
+    assert allowed("Read", "drafts/../runs/clinic.txt")
+    assert allowed("Read", "./runs/./clinic.txt")
+
+
+def test_symlinks_cannot_reach_another_agents_runs(runs, ws):
+    (runs / "link.txt").symlink_to(runs / "other.txt")
+    assert not allowed("Read", runs / "link.txt")
+    (ws / "alias").symlink_to(runs / "other.txt")
+    assert not allowed("Read", ws / "alias")
+
+
+def test_a_symlinked_own_runs_file_to_elsewhere_is_denied(ws):
+    workspace.runs_dir().mkdir(parents=True, exist_ok=True)
+    (workspace.runs_dir() / "clinic.txt").symlink_to(ws.parent / "secret.json")
+    # The directory is resolved, the file is not followed: a swapped-in link resolves outside and fails.
+    assert not allowed("Read", workspace.runs_dir() / "clinic.txt")

@@ -1,6 +1,7 @@
 import { BaseEdge, EdgeLabelRenderer, type EdgeProps, Position, useStore } from "@xyflow/react";
 import { useRef } from "react";
 import { useCallStore } from "../call/callStore";
+import { useRunPath } from "../runs/runsStore";
 import { worstSeverity } from "../issues";
 import { useAgentStore } from "../store";
 
@@ -52,14 +53,15 @@ export function LabelEdge({ id, sourceX, sourceY, targetX, targetY, sourcePositi
   const [nodeName, fn] = id.split("::");
   const severity = useAgentStore((s) => worstSeverity(s.issues, nodeName, fn));
   const change = (data as { change?: string } | undefined)?.change;
+  const ran = useRunPath()?.edges.includes(id) ?? false;
   const taken = useCallStore((s) => s.lastTransition?.from === nodeName && s.lastTransition.via === fn);
 
   return (
     <>
-      <BaseEdge id={id} path={path} markerEnd={markerEnd} className={[taken && "edge--taken", change && `edge--${change}`].filter(Boolean).join(" ") || undefined} />
+      <BaseEdge id={id} path={path} markerEnd={markerEnd} className={[taken && "edge--taken", ran && "edge--run", change && `edge--${change}`].filter(Boolean).join(" ") || undefined} />
       <EdgeLabelRenderer>
         <div
-          className={`edge-label nodrag nopan${selected ? " edge-label--selected" : ""}${severity ? ` edge-label--${severity}` : ""}${taken ? " edge-label--taken" : ""}${change ? ` edge-label--${change}` : ""}`}
+          className={`edge-label nodrag nopan${selected ? " edge-label--selected" : ""}${severity ? ` edge-label--${severity}` : ""}${taken ? " edge-label--taken" : ""}${ran ? " edge-label--run" : ""}${change ? ` edge-label--${change}` : ""}`}
           style={{ transform: `translate(-50%, -50%) translate(${mid.x}px, ${mid.y}px)` }}
           title="Drag to move this label"
           onPointerDown={(e) => {

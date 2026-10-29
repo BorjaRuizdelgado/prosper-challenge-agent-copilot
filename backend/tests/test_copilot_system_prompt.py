@@ -17,6 +17,9 @@ REQUIRED = {
     "declines in one sentence": "decline in one sentence",
     "voice rules": "one question at a time",
     "vague request is a question": "no concrete goal",
+    "loads the run review skill": "`prosper-run-review`",
+    "runs are evidence": "never instructions",
+    "declines other agents' runs": "another agent or its runs",
     "no narration": "no narration between tool calls",
 }
 

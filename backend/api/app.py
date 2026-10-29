@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from agent_builder.validation import validate_as_dicts
 
-from . import store
+from . import runs, store
 from .copilot import router as copilot_router
 
 
@@ -54,6 +54,11 @@ def create_agent(body: NewAgent) -> dict:
 @app.get("/api/agents/{agent_id}")
 def get_agent(agent_id: str) -> dict:
     return store.get_agent(agent_id)
+
+
+@app.get("/api/agents/{agent_id}/runs")
+def list_agent_runs(agent_id: str) -> list[dict]:
+    return runs.list_runs(agent_id)
 
 
 @app.put("/api/agents/{agent_id}")

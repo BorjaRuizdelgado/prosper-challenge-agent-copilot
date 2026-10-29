@@ -1,4 +1,4 @@
-import type { Agent, Issue } from "./model";
+import type { Agent, Issue, Run } from "./model";
 
 export interface AgentSummary {
   id: string;
@@ -41,6 +41,10 @@ export const deleteAgent = (id: string) =>
 
 export const saveAgent = (id: string, agent: Agent) =>
   request<AgentRecord>(`/api/agents/${id}`, sendJson("PUT", agent), "Could not save the agent");
+
+/** Production runs of an agent, newest first; empty when it has none. */
+export const listRuns = (agentId: string) =>
+  request<Run[]>(`/api/agents/${agentId}/runs`, {}, "Could not load the runs");
 
 /** Runs the backend's validation rules over a working copy that need not be saved. */
 export const validateAgent = (agent: Agent) =>

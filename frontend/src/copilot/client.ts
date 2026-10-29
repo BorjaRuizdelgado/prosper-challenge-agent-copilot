@@ -1,15 +1,16 @@
-import type { Agent, Issue } from "../model";
+import type { Agent, Finding, Issue } from "../model";
 
 /** One server-sent event of a copilot turn (design Decision 6). */
 export type CopilotEvent =
   | { event: "step"; label: string; node?: string }
   | { event: "text"; delta: string }
+  | { event: "findings"; findings: Finding[] }
   | { event: "draft"; agent: Agent }
   | { event: "proposal"; agent: Agent; issues: Issue[] }
   | { event: "done" }
   | { event: "error"; message: string; setup?: boolean };
 
-const KNOWN = new Set(["step", "text", "draft", "proposal", "done", "error"]);
+const KNOWN = new Set(["step", "text", "findings", "draft", "proposal", "done", "error"]);
 
 /** Splits an SSE byte stream into typed events; a block may arrive split across any number of chunks. */
 export async function* parseSse(body: ReadableStream<Uint8Array>): AsyncGenerator<CopilotEvent> {

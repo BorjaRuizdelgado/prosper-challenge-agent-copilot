@@ -94,3 +94,105 @@ test("copilot: send, see steps, apply the proposal, see the new node", async ({ 
   await page.screenshot({ path: "test-results/copilot-applied.png" });
   expect(errors).toEqual([]);
 });
+
+// Production runs review: both /runs and the copilot turn are stubbed at the network edge. The stream carries a
+// findings event and a proposal that adds a node, so the whole flow runs on the real UI: select a run (canvas
+// highlight), Analyze, findings card, a run link, Apply, the new node.
+test("runs: select a run, analyze, see findings, open a run from one, apply the fix", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  page.on("pageerror", (e) => errors.push(e.message));
+
+  const runs = [
+    {
+      id: "r-9002",
+      started_at: "2026-10-21T10:00:00Z",
+      duration_s: 70,
+      outcome: "abandoned",
+      flag: "Caller wanted to cancel and could not.",
+      transcript: [
+        { speaker: "agent", text: "Would you like to book an appointment?" },
+        { speaker: "caller", text: "I need to cancel instead." },
+      ],
+      path: [{ node: "greeting" }],
+    },
+    {
+      id: "r-9001",
+      started_at: "2026-10-20T09:00:00Z",
+      duration_s: 96,
+      outcome: "stuck",
+      transcript: [
+        { speaker: "agent", text: "Would you like to book an appointment?" },
+        { speaker: "caller", text: "Yes please." },
+      ],
+      path: [{ node: "greeting" }, { node: "collect_details", via: "choose_intent", args: {} }],
+    },
+  ];
+  await page.route("**/api/agents/*/runs", (route) => route.fulfill({ json: runs }));
+
+  let sentMessage = "";
+  await page.route("**/api/copilot/*", async (route) => {
+    const body = route.request().postDataJSON() as { message: string; agent: { nodes: Array<Record<string, unknown>> } };
+    sentMessage = body.message;
+    const agent = structuredClone(body.agent) as typeof body.agent & { initial_node: string };
+    const first = agent.nodes[0] as { edges?: Array<Record<string, unknown>> };
+    agent.nodes.push({
+      name: "cancel_appointment",
+      task_messages: [{ role: "developer", content: "Help the caller cancel their appointment." }],
+      post_actions: [{ type: "end_conversation" }],
+    });
+    first.edges = [...(first.edges ?? []), { function: "cancel", description: "The caller wants to cancel.", target: "cancel_appointment" }];
+    const sse = (event: string, data: unknown) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+    await route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body: [
+        sse("step", { label: "Reading the agent" }),
+        sse("step", { label: "Reporting 1 findings" }),
+        sse("findings", {
+          findings: [
+            {
+              title: "No way to cancel",
+              runs: ["r-9002"],
+              cause: "The greeting only offers booking.",
+              fix: "Add a cancel path from the greeting.",
+              node: "greeting",
+            },
+          ],
+        }),
+        sse("draft", { agent }),
+        sse("text", { delta: "Added a cancel path." }),
+        sse("proposal", { agent, issues: [] }),
+        sse("done", {}),
+      ].join(""),
+    });
+  });
+
+  await page.goto("/");
+  await page.getByRole("link", { name: /Prosper Scheduler/ }).click();
+  await expect(page.locator(".react-flow__node")).toHaveCount(4);
+
+  await page.getByRole("tab", { name: "Runs" }).click();
+  await expect(page.getByTestId("runs-summary")).toContainText("2 runs");
+  await expect(page.getByTestId("runs-summary")).toContainText("1 flagged");
+  await page.getByRole("button", { name: /stuck/ }).click();
+  await expect(page.locator('.react-flow__node [data-run="end"]')).toContainText("collect_details");
+  await expect(page.locator('.react-flow__node [data-run="visited"]')).toContainText("greeting");
+  await page.screenshot({ path: "test-results/runs-highlight.png" });
+
+  await page.getByRole("button", { name: "Analyze runs" }).click();
+  await expect(page.getByRole("region", { name: "Findings" }).getByText("No way to cancel")).toBeVisible();
+  expect(sentMessage).toContain("production runs");
+  await expect(page.locator(".react-flow__node")).toHaveCount(5);
+
+  await page.getByRole("region", { name: "Findings" }).getByRole("button", { name: "r-9002" }).click();
+  await expect(page.getByRole("tab", { name: "Runs" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("button", { name: /abandoned/ })).toHaveAttribute("aria-expanded", "true");
+
+  await page.getByRole("tab", { name: "Copilot" }).click();
+  await page.getByRole("region", { name: "Proposal" }).getByRole("button", { name: "Apply" }).click();
+  await expect(page.getByTestId("save-status")).toHaveText("Unsaved changes");
+  await expect(page.locator(".react-flow__node", { hasText: "cancel_appointment" })).toBeVisible();
+  await page.screenshot({ path: "test-results/runs-applied.png" });
+  expect(errors).toEqual([]);
+});

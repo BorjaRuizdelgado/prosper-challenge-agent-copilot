@@ -34,7 +34,7 @@ export function parseNodeChanged(message: unknown): Transition | null {
   };
 }
 
-function describeTransition(t: Transition): string {
+export function describeTransition(t: Transition): string {
   const collected = Object.entries(t.args).map(([k, v]) => `${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`);
   const via = t.via ? ` via ${t.via}` : "";
   return t.from ? `Moved to ${t.node}${via}${collected.length ? ` (${collected.join(", ")})` : ""}` : `Started at ${t.node}`;

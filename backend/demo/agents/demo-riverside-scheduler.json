@@ -1,0 +1,82 @@
+{
+  "name": "Riverside Clinic Scheduler",
+  "voice_id": "21m00Tcm4TlvDq8ikWAM",
+  "model": "gpt-4o",
+  "persona": "You are a friendly scheduling assistant for Riverside Clinic. Your replies are spoken aloud, so use short sentences and never lists, emojis or symbols. Always use an available function to move the conversation forward.",
+  "initial_node": "greeting",
+  "nodes": [
+    {
+      "name": "greeting",
+      "task_messages": [
+        {
+          "role": "developer",
+          "content": "Greet the caller, say you are the Riverside Clinic scheduling assistant, and ask if they would like to book an appointment."
+        }
+      ],
+      "edges": [
+        {
+          "function": "book_appointment",
+          "description": "Call once the caller says they want to book an appointment.",
+          "target": "collect_details"
+        }
+      ]
+    },
+    {
+      "name": "collect_details",
+      "task_messages": [
+        {
+          "role": "developer",
+          "content": "Ask the caller for their full name, date of birth, reason for the visit and preferred time of day, all in one message."
+        }
+      ],
+      "edges": [
+        {
+          "function": "record_details",
+          "description": "Record the caller's details once you have all four.",
+          "target": "offer_times",
+          "properties": {
+            "full_name": {"type": "string", "description": "Caller's full name."},
+            "date_of_birth": {"type": "string", "description": "Caller's date of birth."},
+            "reason": {"type": "string", "description": "Reason for the visit."},
+            "preferred_time": {"type": "string", "description": "Preferred time of day."}
+          },
+          "required": ["full_name", "date_of_birth", "reason", "preferred_time"]
+        }
+      ]
+    },
+    {
+      "name": "offer_times",
+      "task_messages": [
+        {
+          "role": "developer",
+          "content": "Offer exactly two options: Tuesday at 10 AM, or Thursday at 2 PM. Ask which one works for them."
+        }
+      ],
+      "edges": [
+        {
+          "function": "select_time",
+          "description": "Record the slot the caller picks.",
+          "target": "confirm",
+          "properties": {
+            "slot": {
+              "type": "string",
+              "enum": ["Tuesday 10 AM", "Thursday 2 PM"],
+              "description": "The chosen appointment slot."
+            }
+          },
+          "required": ["slot"]
+        }
+      ]
+    },
+    {
+      "name": "confirm",
+      "task_messages": [
+        {
+          "role": "developer",
+          "content": "Confirm the appointment back to the caller, including their name and the chosen time, thank them, and say goodbye."
+        }
+      ],
+      "end": true
+    }
+  ]
+}

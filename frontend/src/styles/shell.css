@@ -945,6 +945,46 @@ button.issues__item:hover {
   font-size: 13px;
 }
 
+.findings {
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid var(--control);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.findings__title {
+  margin: 0 0 4px;
+  font-size: 13px;
+}
+
+.findings ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.findings p {
+  margin: 2px 0;
+}
+
+.findings__label {
+  font-weight: 600;
+}
+
+.findings__runs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.findings__run {
+  padding: 0 6px;
+  font-family: monospace;
+}
+
 .proposal--discarded {
   opacity: 0.6;
 }
@@ -1083,4 +1123,102 @@ button.issues__item:hover {
   .node-card--changed {
     animation: none;
   }
+}
+
+/* ---- runs ---- */
+.runs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.runs__summary {
+  margin: 0;
+  color: var(--muted);
+}
+
+.runs__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.runs__row {
+  display: grid;
+  gap: 2px 8px;
+  width: 100%;
+  text-align: left;
+  grid-template-columns: auto 1fr;
+}
+
+.runs__row[aria-expanded="true"] {
+  border-color: var(--accent);
+}
+
+.runs__first,
+.runs__flag {
+  grid-column: 1 / -1;
+  overflow-wrap: anywhere;
+}
+
+.runs__flag {
+  color: var(--negative);
+  font-size: 12px;
+}
+
+.runs__meta {
+  color: var(--muted);
+  font-size: 12px;
+  align-self: center;
+}
+
+.runs__outcome--stuck,
+.runs__outcome--abandoned {
+  color: var(--negative);
+}
+
+.runs__detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 4px;
+}
+
+.runs__notes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.runs__path {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.runs__missing {
+  color: var(--negative);
+}
+
+/* The path of the run open in the Runs tab: visited nodes outlined, taken edges coloured, the last node dashed. */
+.node-card--run-visited,
+.node-card--run-end {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.node-card--run-end {
+  outline-style: dashed;
+  outline-offset: 3px;
+}
+
+.react-flow__edge-path.edge--run {
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
 }

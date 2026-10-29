@@ -1,0 +1,75 @@
+{
+  "name": "Sunrise Pharmacy Refills",
+  "voice_id": "21m00Tcm4TlvDq8ikWAM",
+  "model": "gpt-4o",
+  "persona": "You are a calm refill assistant for Sunrise Pharmacy. Your replies are spoken aloud, so use short sentences and never lists, emojis or symbols. Ask one question at a time. Always use an available function to move the conversation forward.",
+  "initial_node": "greeting",
+  "nodes": [
+    {
+      "name": "greeting",
+      "task_messages": [
+        {
+          "role": "developer",
+          "content": "Greet the caller, say you can take a prescription refill request, and ask whether that is why they are calling."
+        }
+      ],
+      "edges": [
+        {
+          "function": "start_refill",
+          "description": "Call once the caller confirms they want a refill.",
+          "target": "identify_patient"
+        }
+      ]
+    },
+    {
+      "name": "identify_patient",
+      "task_messages": [
+        {
+          "role": "developer",
+          "content": "Ask for the caller's full name, then their date of birth. Ask for whichever is still missing, one question at a time."
+        }
+      ],
+      "edges": [
+        {
+          "function": "record_patient",
+          "description": "Record the caller's name and date of birth once both are known.",
+          "target": "collect_medication",
+          "properties": {
+            "full_name": {"type": "string", "description": "Caller's full name."},
+            "date_of_birth": {"type": "string", "description": "Caller's date of birth."}
+          },
+          "required": ["full_name", "date_of_birth"]
+        }
+      ]
+    },
+    {
+      "name": "collect_medication",
+      "task_messages": [
+        {
+          "role": "developer",
+          "content": "Ask which medication the caller wants refilled."
+        }
+      ],
+      "edges": [
+        {
+          "function": "record_medication",
+          "description": "Record the medication once the caller has named it.",
+          "target": "confirm_refill",
+          "properties": {
+            "medication": {"type": "string", "description": "Name of the medication to refill."}
+          },
+          "required": ["medication"]
+        }
+      ]
+    },
+    {
+      "name": "confirm_refill",
+      "task_messages": [
+        {
+          "role": "developer",
+          "content": "Tell the caller their refill request has been received."
+        }
+      ]
+    }
+  ]
+}

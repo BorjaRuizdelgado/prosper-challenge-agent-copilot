@@ -211,7 +211,7 @@ async def test_options_confine_the_copilot():
     options = FakeClient.instances[0].options
     assert options.setting_sources == ["project"]
     assert options.cwd == str(workspace.workspace_dir())
-    assert options.allowed_tools == ["Skill", "mcp__copilot__validate_agent"]
+    assert options.allowed_tools == ["Skill", "mcp__copilot__validate_agent", "mcp__copilot__report_findings"]
     assert "Bash" in options.disallowed_tools
     assert options.include_partial_messages is True
 
@@ -236,3 +236,62 @@ def test_model_defaults_to_haiku_and_can_be_overridden(monkeypatch):
     assert runner._options("demo").model == "haiku"
     monkeypatch.setenv("COPILOT_MODEL", "sonnet")
     assert runner._options("demo").model == "sonnet"
+
+
+async def test_prompt_points_at_the_runs_file_of_an_agent_with_runs(tmp_path, monkeypatch):
+    runs_dir = tmp_path / "runs-data"
+    runs_dir.mkdir()
+    run = {
+        "id": "r-1", "started_at": "2026-10-21T09:14:00Z", "duration_s": 30, "outcome": "stuck",
+        "transcript": [{"speaker": "caller", "text": "Hello?"}], "path": [{"node": "a"}],
+    }
+    (runs_dir / "clinic.json").write_text(json.dumps([run]))
+    monkeypatch.setenv("RUNS_DIR", str(runs_dir))
+    await collect([result()])
+    assert FakeClient.instances[0].prompt == (
+        "The agent draft is drafts/clinic.json. Its production runs are in runs/clinic.txt.\n\ndo it"
+    )
+    assert "run r-1 · stuck · 30s" in (workspace.workspace_dir() / "runs" / "clinic.txt").read_text()
+
+
+async def test_no_runs_means_no_file_no_prompt_line_and_no_stale_file(tmp_path, monkeypatch):
+    monkeypatch.setenv("RUNS_DIR", str(tmp_path / "none"))
+    stale = workspace.runs_path("clinic")
+    stale.parent.mkdir(parents=True)
+    stale.write_text("old")
+    await collect([result()])
+    assert not stale.exists()
+    assert "production runs" not in FakeClient.instances[0].prompt
+
+
+FINDINGS = [{"title": "Callers cannot cancel", "runs": ["r-1"], "cause": "No cancel path.", "fix": "Add one.", "node": "a"}]
+
+
+async def test_findings_are_sent_after_their_step_and_before_the_proposal():
+    def retask(d):
+        d["nodes"][1]["task_messages"] = ["Say goodbye."]
+
+    events = await collect([
+        tool_use("1", "mcp__copilot__report_findings", findings=FINDINGS),
+        tool_result("1", [{"type": "text", "text": "Recorded 1 finding"}]),
+        tool_use("2", "Edit", old_string="Bye.", new_string="Say goodbye."),
+        edit_draft(retask),
+        tool_result("2"),
+        result(),
+    ])
+    assert names(events) == ["step", "findings", "step", "draft", "proposal", "done"]
+    assert events[0]["data"] == {"label": "Reporting 1 finding"}
+    assert events[1]["data"] == {"findings": FINDINGS}
+
+
+async def test_a_rejected_findings_call_sends_no_findings_and_the_retry_wins():
+    corrected = [{**FINDINGS[0], "runs": ["r-2"]}]
+    events = await collect([
+        tool_use("1", "mcp__copilot__report_findings", findings=FINDINGS),
+        tool_result("1", "Unknown run ids: r-1.", True),
+        tool_use("2", "mcp__copilot__report_findings", findings=corrected),
+        tool_result("2", "Recorded 1 finding"),
+        result(),
+    ])
+    assert names(events) == ["step", "step", "findings", "done"]
+    assert events[2]["data"] == {"findings": corrected}

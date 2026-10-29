@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildCallMessage, nodePath, WENT_WRONG } from "./askCopilot";
+import { buildCallMessage, buildRunMessage, nodePath, WENT_WRONG } from "./askCopilot";
+import type { Run } from "../model";
 import type { TranscriptEntry } from "./callStore";
 
 const call: TranscriptEntry[] = [
@@ -36,5 +37,36 @@ describe("buildCallMessage", () => {
   });
   it("omits the path line when no node was visited", () => {
     expect(buildCallMessage([{ kind: "user", text: "hi" }])).not.toContain("Path:");
+  });
+});
+
+describe("buildRunMessage", () => {
+  const run: Run = {
+    id: "r-1042",
+    started_at: "2026-10-21T09:14:00Z",
+    duration_s: 96,
+    outcome: "abandoned",
+    flag: "Caller wanted to cancel and could not.",
+    transcript: [
+      { speaker: "agent", text: "Would you like to book?" },
+      { speaker: "caller", text: "I need to cancel." },
+    ],
+    path: [{ node: "greeting" }, { node: "collect_details", via: "book" }],
+  };
+  const message = buildRunMessage(run);
+  it("includes the outcome, the flag, the spoken lines and the node path", () => {
+    expect(message).toContain("(r-1042)");
+    expect(message).toContain("Outcome: abandoned");
+    expect(message).toContain("Flag: Caller wanted to cancel and could not.");
+    expect(message).toContain("Agent: Would you like to book?\nCaller: I need to cancel.");
+    expect(message).toContain("Path: greeting -> collect_details");
+  });
+  it("ends with the open question", () => {
+    expect(message.endsWith(WENT_WRONG)).toBe(true);
+  });
+  it("omits the flag and the path when the run has none", () => {
+    const plain = buildRunMessage({ ...run, flag: undefined, path: [] });
+    expect(plain).not.toContain("Flag:");
+    expect(plain).not.toContain("Path:");
   });
 });

@@ -1,6 +1,7 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { chatOf, type ChatMessage, useCopilotStore } from "../copilot/copilotStore";
 import { useAgentStore } from "../store";
+import { FindingsCard } from "./FindingsCard";
 import { ProposalCard } from "./ProposalCard";
 
 export const EXAMPLES = [
@@ -40,6 +41,7 @@ function Reply({ agentId, index, message, running, elapsed }: { agentId: string;
           Working… {elapsed}s
         </p>
       )}
+      {message.findings && <FindingsCard agentId={agentId} findings={message.findings} />}
       {message.proposal && <ProposalCard agentId={agentId} index={index} proposal={message.proposal} />}
       {message.stopped && <p className="copilot__note">Stopped.</p>}
       {message.error && (
