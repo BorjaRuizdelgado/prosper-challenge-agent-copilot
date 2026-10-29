@@ -40,3 +40,4 @@ frontend/coverage/
 
 # ---- Runtime agent files (created via the UI/API); the seed is example_flow.json ----
 backend/agents/
+*.tsbuildinfo
