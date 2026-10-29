@@ -97,6 +97,8 @@ export interface AgentState {
   /** Deletes a node and every edge targeting it; the initial node and the last node are protected. */
   removeNode: (name: string) => RemoveNodeResult;
   setInitialNode: (name: string) => void;
+  /** Replaces the whole working copy (e.g. from the JSON view) and re-derives layout from it. */
+  replaceAgent: (agent: Agent) => void;
   /** Changes agent-level settings (name, persona, voice, model). */
   updateSettings: (patch: SettingsPatch) => void;
   /** Records where the user dragged an edge label, relative to the middle of its edge. */
@@ -324,6 +326,10 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     const { agent } = get();
     if (!agent || agent.initial_node === name || !agent.nodes.some((n) => n.name === name)) return;
     set({ dirty: true, agent: { ...agent, initial_node: name } });
+  },
+  replaceAgent(agent) {
+    const labelOffsets = Object.fromEntries(Object.entries(agent.layout ?? {}).filter(([k]) => isEdgeKey(k)));
+    set({ dirty: true, agent, positions: resolveLayout(agent), labelOffsets, selection: null });
   },
   updateSettings(patch) {
     const { agent } = get();

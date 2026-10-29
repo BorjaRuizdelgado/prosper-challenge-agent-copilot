@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import { useAgentStore } from "../store";
 import { Inspector } from "./Inspector";
+import { JsonPanel } from "./JsonPanel";
 import { IssuesPanel } from "./IssuesPanel";
 import { SettingsForm } from "./SettingsForm";
 
@@ -13,6 +14,7 @@ interface DockTab {
 /** Register a component here to add a dock tab (JSON, Issues, Call, Copilot…). */
 export const DOCK_TABS: DockTab[] = [{ id: "inspector", label: "Inspector", component: Inspector },
   { id: "issues", label: "Issues", component: IssuesPanel },
+  { id: "json", label: "JSON", component: JsonPanel },
   { id: "settings", label: "Settings", component: SettingsForm },
 ];
 

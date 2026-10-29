@@ -683,3 +683,38 @@ button.issues__item:hover {
 .node-card__edge .marker {
   margin-left: 6px;
 }
+
+/* ---- json view ---- */
+.json-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+}
+
+.json-panel__text {
+  flex: 1;
+  min-height: 240px;
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 8px;
+  border: 1px solid var(--control);
+  border-radius: var(--radius-control);
+  resize: none;
+  white-space: pre;
+}
+
+.json-panel__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
