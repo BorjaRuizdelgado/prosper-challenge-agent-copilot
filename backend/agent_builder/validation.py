@@ -65,6 +65,53 @@ def _edge_issues(name: str, edge: dict) -> list[Issue]:
     for param, spec in properties.items():
         if not isinstance(spec, dict) or not spec.get("type"):
             issues.append(_warning("untyped-parameter", f"Parameter '{param}' of {label.lower()} has no type.", **where))
+        elif spec["type"] == "array" and not isinstance(spec.get("items"), dict):
+            # OpenAI rejects the whole tool list when an array parameter does not say what it holds.
+            issues.append(
+                _error("array-without-items", f"Parameter '{param}' of {label.lower()} is a list but has no item type.", **where)
+            )
+    return issues
+
+
+# Actions the JSON format can express: Pipecat Flows' "function" action needs a Python handler.
+SUPPORTED_ACTIONS = ("tts_say", "end_conversation")
+
+
+def _action_issues(name: str, node: dict) -> list[Issue]:
+    """Pre/post actions run by Pipecat Flows; an unknown or malformed one raises mid-call."""
+    issues: list[Issue] = []
+    for field in ("pre_actions", "post_actions"):
+        actions = node.get(field, [])
+        if not isinstance(actions, list):
+            issues.append(_error("bad-actions", f"Node '{name}' needs '{field}' as a list.", node=name))
+            continue
+        for i, action in enumerate(actions, 1):
+            kind = action.get("type") if isinstance(action, dict) else None
+            if kind not in SUPPORTED_ACTIONS:
+                issues.append(
+                    _error(
+                        "bad-action",
+                        f"Action {i} in {field} of node '{name}' must have a type of "
+                        f"{' or '.join(SUPPORTED_ACTIONS)} (got {kind!r}).",
+                        node=name,
+                    )
+                )
+            elif kind == "tts_say" and not _is_text(action.get("text")):
+                issues.append(
+                    _warning("empty-say", f"Action {i} in {field} of node '{name}' has nothing to say, so it is skipped.", node=name)
+                )
+
+    post = node.get("post_actions") or []
+    if node.get("end") and isinstance(post, list) and post:
+        # AgentBuilder only adds end_conversation to a terminal node when it has no post-actions of its own.
+        if not any(isinstance(a, dict) and a.get("type") == "end_conversation" for a in post):
+            issues.append(
+                _warning(
+                    "end-not-ending",
+                    f"Node '{name}' ends the call, but its post-actions replace the hang-up: add an end_conversation action.",
+                    node=name,
+                )
+            )
     return issues
 
 
@@ -74,8 +121,8 @@ def validate(data: dict) -> list[Issue]:
         return [_error("no-nodes", "The agent has no nodes.")]
 
     issues: list[Issue] = []
-    if not isinstance(data.get("name"), str):
-        issues.append(_error("missing-field", "The agent needs a 'name'."))
+    if not _is_text(data.get("name")):
+        issues.append(_error("missing-field", "The agent needs a non-empty 'name'."))
 
     names: set[str] = set()
     for node in nodes:
@@ -101,6 +148,7 @@ def validate(data: dict) -> list[Issue]:
             issues.append(_error("bad-tasks", f"Node '{name}' needs 'task_messages' as a list.", node=name))
         elif not tasks:
             issues.append(_warning("no-task", f"Node '{name}' has no task messages, so the agent has no instructions there.", node=name))
+        issues.extend(_action_issues(name, node))
         edges = [e for e in (node.get("edges") or []) if isinstance(e, dict)]
         seen_functions: set[str] = set()
         for edge in edges:

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test } from "vitest";
 import type { Agent } from "../model";
@@ -93,18 +93,46 @@ test("toggles the terminal flag and sets or clears the role override", async () 
   expect(node().role_message).toBeNull();
 });
 
-test("valid action JSON is written to the node; invalid JSON is flagged and not applied", () => {
-  const pre = screen.getByLabelText("Pre-actions (JSON)");
+test("pre-actions are added, edited and removed as Say / End call steps", async () => {
+  const pre = within(screen.getByRole("group", { name: "Pre-actions" }));
+  await userEvent.click(pre.getByRole("button", { name: "Add say" }));
+  expect(node().pre_actions).toEqual([{ type: "tts_say" }]);
 
-  fireEvent.change(pre, { target: { value: '[{"type":"tts_say","text":"Hi"}]' } });
-  expect(node().pre_actions).toEqual([{ type: "tts_say", text: "Hi" }]);
+  fireEvent.change(pre.getByLabelText("Text of pre-actions step 1"), { target: { value: "One moment." } });
+  expect(node().pre_actions).toEqual([{ type: "tts_say", text: "One moment." }]);
 
-  fireEvent.change(pre, { target: { value: '{"type":' } });
-  expect(screen.getByRole("alert")).toHaveTextContent("Not saved to the node");
-  expect(node().pre_actions).toEqual([{ type: "tts_say", text: "Hi" }]);
+  // Unticking writes the non-default false; ticking again drops the key so the JSON stays minimal.
+  await userEvent.click(pre.getByLabelText("Add to the conversation history"));
+  expect(node().pre_actions![0].append_text_to_context).toBe(false);
+  await userEvent.click(pre.getByLabelText("Add to the conversation history"));
+  expect(node().pre_actions![0]).not.toHaveProperty("append_text_to_context");
 
-  fireEvent.change(pre, { target: { value: '{"a":1}' } });
-  expect(screen.getByRole("alert")).toHaveTextContent("Expected a JSON array.");
+  await userEvent.selectOptions(pre.getByLabelText("Type of pre-actions step 1"), "End call");
+  expect(node().pre_actions).toEqual([{ type: "end_conversation", text: "One moment." }]);
+
+  await userEvent.click(pre.getByRole("button", { name: "Remove pre-actions step 1" }));
+  expect(node().pre_actions).toEqual([]);
+});
+
+test("unsupported actions are shown read-only and can be removed", async () => {
+  act(() => useAgentStore.getState().updateNode("greeting", { post_actions: [{ type: "function" }] }));
+  const post = within(screen.getByRole("group", { name: "Post-actions" }));
+  expect(post.getByText('{"type":"function"}')).toBeInTheDocument();
+  expect(post.getByText(/Not an action the agent can run/)).toBeInTheDocument();
+  await userEvent.click(post.getByRole("button", { name: "Remove post-actions step 1" }));
+  expect(node().post_actions).toEqual([]);
+});
+
+test("a terminal node warns when its post-actions replace the automatic hang-up", async () => {
+  act(() => useAgentStore.getState().updateNode("greeting", { end: true }));
+  const post = within(screen.getByRole("group", { name: "Post-actions" }));
+  expect(post.getByText(/the call hangs up after the agent's reply/)).toBeInTheDocument();
+
+  await userEvent.click(post.getByRole("button", { name: "Add say" }));
+  expect(post.getByRole("alert")).toHaveTextContent("replace the automatic hang-up");
+
+  await userEvent.click(post.getByRole("button", { name: "Add end call" }));
+  expect(post.queryByRole("alert")).toBeNull();
 });
 
 test("deleting a targeted node states how many edges go and removes them on confirm", async () => {

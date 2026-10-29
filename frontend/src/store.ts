@@ -111,6 +111,8 @@ export interface AgentState {
   replaceAgent: (agent: Agent) => void;
   /** Changes agent-level settings (name, persona, voice, model). */
   updateSettings: (patch: SettingsPatch) => void;
+  /** Takes in a name already saved elsewhere (the sidebar's rename) without marking the working copy dirty. */
+  applySavedName: (name: string) => void;
   /** Records where the user dragged an edge label, relative to the middle of its edge. */
   moveLabel: (id: string, offset: Position) => void;
   /** Records where the user dragged a node; saved with the agent as its `layout`. */
@@ -347,6 +349,10 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     const { agent } = get();
     if (!agent) return;
     set({ dirty: true, agent: { ...agent, ...patch } });
+  },
+  applySavedName(name) {
+    const { agent } = get();
+    if (agent && agent.name !== name) set({ agent: { ...agent, name } });
   },
   async save() {
     const { agentId, agent, positions, labelOffsets, saveStatus } = get();

@@ -29,15 +29,6 @@ The voice runner (Pipecat pipeline, ElevenLabs STT/TTS, OpenAI LLM, Pipecat Flow
 - **Agents API** (`backend/api/`, FastAPI). CRUD on `/api/agents` plus `POST /api/agents/validate`. Agents are files in `backend/agents/<id>.json`, seeded from `example_flow.json`.
 - **Voice runner** (`backend/bot.py`, provided). Started by the Call tab with `{agent_id}` in the session body; loads that agent and runs it.
 
-### Changes to the provided backend
-
-| Change | Why |
-| --- | --- |
-| `agent_builder/validation.py` | Returns structured issues (code, severity, node, edge) instead of raising on the first problem. `AgentBuilder` now calls it and refuses to build on any error; the API exposes the same function, so the UI and the runner apply the same rules. Errors cover everything the runtime would reject later (missing fields, function names OpenAI does not accept as tool names), so an agent with no errors can always start a call. |
-| `on_transition` callback in `AgentBuilder` | Lets `bot.py` send a `node_changed` RTVI message on every edge taken, so the UI can highlight the active node during a call. |
-| `layout` field in `AgentConfig` | Stores node positions in the agent JSON. Ignored at runtime. |
-| `session.py` | Picks the agent from `agent_id` in the session body (was a hard-coded `example_flow.json`), checks API keys and blocking issues before the call starts. |
-
 ### Decisions
 
 - **Files, not a database.** Single-user local tool. Writes are atomic (temp file + rename), so a failed save leaves the previous version. Ids must be a lowercase slug, so a path cannot escape the directory.
@@ -72,24 +63,12 @@ Delivered as stacked PRs, one per slice in `tasks.md`:
 | Skeleton | FastAPI app, Vite/React shell, agent list with loading / empty / error states, `make dev` / `make up`. |
 | Agent management | Create, rename, duplicate, delete with confirmation, toasts. |
 | Read-only graph | Typed model, API client, store, auto layout, node cards, labelled edges, fit-to-view, minimap. |
-| Node editing | Inspector form (name with rename cascade, task messages, role override, pre/post actions), save with dirty tracking, Cmd/Ctrl+S, unsaved-changes guard. |
+| Node editing | Inspector form (name with rename cascade, task messages, role override, pre/post actions as Say / End call steps), save with dirty tracking, Cmd/Ctrl+S, unsaved-changes guard. |
 | Edge editing | Connect, retarget and delete edges by dragging; edge form for function, description and collected parameters; draggable labels. |
 | Structure and layout | Add / delete node, set initial node, persisted positions, auto layout. |
 | Settings, validation, JSON | Persona / voice / model settings; server validation with clickable issues and canvas markers; raw JSON view with *Apply*. |
 | Test call | Mic permission, connect, mute, hang up; live transcript with transitions; active node and last edge highlighted on the canvas. |
 | Polish | Fit-to-view zoom cap, agent list hover fix, Playwright smoke spec, docs. |
-
-### Built, mocked and left out
-
-| | What | Why |
-| --- | --- | --- |
-| **Built** | Agent CRUD, graph editing (nodes, edges, parameters, layout), settings, live validation, raw JSON editing, test call with transcript and active-node highlight. | The minimum for a deployment engineer to build an agent and hear it, which is what the Copilot will automate. |
-| **Mocked** | The voice client in automated tests (`frontend/src/call/fakeClient.ts`). | A real call needs a microphone and paid keys; it is covered by `docs/manual-call-test.md` instead. |
-| **Left out** | Auth and multi-user editing (last write wins, no ETags). | Single-user local tool; the API already returns `updated_at`, so `If-Match` can be added without a schema change. |
-| | Undo/redo and version history. | Not needed to edit by hand; it becomes necessary once the Copilot proposes changes, so it belongs to Phase 2. |
-| | A form for pre/post actions and custom tools (webhooks, calendar lookups). | Edited as JSON; the provided runtime has no tool integrations to configure yet. |
-| | Changes to the provided runtime and example agent (`bot.py`, `AgentBuilder`, `schema.py`, `example_flow.json`). | Treated as given; only the hooks listed above were added. |
-| | Mobile layouts, theming, i18n. | Laptop-only internal tool. |
 
 ### Extension points for the Copilot
 

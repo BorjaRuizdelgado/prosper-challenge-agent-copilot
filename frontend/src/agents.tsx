@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import * as api from "./api";
 import type { AgentSummary } from "./api";
 import { useToast } from "./components/Toasts";
+import { useAgentStore } from "./store";
 
 type State =
   | { status: "loading" }
@@ -49,6 +50,28 @@ export function AgentsProvider({ children }: { children: ReactNode }) {
 
   useEffect(reload, [reload]);
 
+  // A save from the editor can change the name and node count the list shows.
+  useEffect(
+    () =>
+      useAgentStore.subscribe((s, prev) => {
+        if (prev.saveStatus !== "saving" || s.saveStatus !== "idle" || !s.agentId || !s.agent) return;
+        const { agentId, agent } = s;
+        setState((list) =>
+          list.status === "ready"
+            ? {
+                status: "ready",
+                agents: list.agents.map((a) =>
+                  a.id === agentId
+                    ? { ...a, name: agent.name, node_count: agent.nodes.length, updated_at: new Date().toISOString() }
+                    : a,
+                ),
+              }
+            : list,
+        );
+      }),
+    [],
+  );
+
   const update = (fn: (agents: AgentSummary[]) => AgentSummary[]) =>
     setState((s) => (s.status === "ready" ? { status: "ready", agents: fn(s.agents) } : s));
 
@@ -82,10 +105,12 @@ export function AgentsProvider({ children }: { children: ReactNode }) {
     create: (name) => addAndOpen(() => api.createAgent(name)),
     duplicate: (id) => addAndOpen(() => api.duplicateAgent(id)),
     rename: async (id, name) => {
-      await optimistic(
+      const renamed = await optimistic(
         (agents) => agents.map((a) => (a.id === id ? { ...a, name } : a)),
         () => api.renameAgent(id, name),
       );
+      // Otherwise the open editor keeps the old name and its next save would write it back.
+      if (renamed && useAgentStore.getState().agentId === id) useAgentStore.getState().applySavedName(name);
     },
     remove: async (id) => {
       const deleted = await optimistic(

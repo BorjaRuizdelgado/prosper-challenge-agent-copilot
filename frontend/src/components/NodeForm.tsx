@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { AgentNode, TaskMessage } from "../model";
+import { type Action, ACTION_TYPES, type AgentNode, type TaskMessage } from "../model";
 import { incomingEdgeCount, useAgentStore } from "../store";
 import { ConfirmDialog } from "./ConfirmDialog";
 
@@ -95,43 +95,97 @@ function TaskMessages({ node }: { node: AgentNode }) {
   );
 }
 
-/** A JSON array editor that only writes valid arrays back to the node. */
+const ACTION_LABELS: Record<(typeof ACTION_TYPES)[number], string> = { tts_say: "Say", end_conversation: "End call" };
+
+const isKnownAction = (a: unknown): a is Action =>
+  typeof a === "object" && a !== null && (ACTION_TYPES as readonly unknown[]).includes((a as Action).type);
+
+/** The pre- or post-actions of a node as a list of Say / End call steps; anything else is shown as raw JSON. */
 function ActionsField({ node, field, label }: { node: AgentNode; field: "pre_actions" | "post_actions"; label: string }) {
   const updateNode = useAgentStore((s) => s.updateNode);
-  const [text, setText] = useState(() => JSON.stringify(node[field] ?? [], null, 2));
-  const [error, setError] = useState<string | null>(null);
-  const id = `node-${field}`;
-
-  const change = (next: string) => {
-    setText(next);
-    try {
-      const parsed: unknown = JSON.parse(next || "[]");
-      if (!Array.isArray(parsed)) throw new Error("Expected a JSON array.");
-      setError(null);
-      updateNode(node.name, { [field]: parsed });
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  };
+  const actions = node[field] ?? [];
+  const set = (next: Action[]) => updateNode(node.name, { [field]: next });
+  const change = (i: number, patch: Partial<Action>) =>
+    set(
+      actions.map((a, j) => {
+        if (j !== i) return a;
+        const next = { ...a, ...patch };
+        // Both default away (no text, append_text_to_context true), so only meaningful values are written.
+        if (next.append_text_to_context !== false) delete next.append_text_to_context;
+        if (next.text === "") delete next.text;
+        return next;
+      }),
+    );
+  const hangsUp = actions.some((a) => isKnownAction(a) && a.type === "end_conversation");
+  const hint =
+    field === "pre_actions"
+      ? "Run when the conversation enters this node, before the agent replies."
+      : node.end
+        ? "None needed: the call hangs up after the agent's reply, because this node ends the call."
+        : "Run after the agent's reply in this node.";
 
   return (
-    <div className="field">
-      <label htmlFor={id}>{label}</label>
-      <textarea
-        id={id}
-        className="mono"
-        rows={4}
-        spellCheck={false}
-        value={text}
-        aria-invalid={error !== null}
-        onChange={(e) => change(e.target.value)}
-      />
-      {error && (
+    <fieldset className="field">
+      <legend>{label}</legend>
+      {actions.length === 0 && <p className="field__hint">{hint}</p>}
+      {field === "post_actions" && node.end && actions.length > 0 && !hangsUp && (
         <p className="field__error" role="alert">
-          Not saved to the node: {error}
+          Custom post-actions replace the automatic hang-up. Add an End call step, or the call stays open.
         </p>
       )}
-    </div>
+      <ol className="messages">
+        {actions.map((a, i) => {
+          const name = `${label.toLowerCase()} step ${i + 1}`;
+          return (
+            <li key={i} className="messages__item">
+              <div className="messages__row">
+                {isKnownAction(a) ? (
+                  <select aria-label={`Type of ${name}`} value={a.type} onChange={(e) => change(i, { type: e.target.value })}>
+                    {ACTION_TYPES.map((t) => (
+                      <option key={t} value={t}>
+                        {ACTION_LABELS[t]}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <code className="mono actions__raw">{JSON.stringify(a)}</code>
+                )}
+                <button type="button" aria-label={`Remove ${name}`} onClick={() => set(actions.filter((_, j) => j !== i))}>
+                  Remove
+                </button>
+              </div>
+              {isKnownAction(a) ? (
+                <>
+                  <input
+                    aria-label={`Text of ${name}`}
+                    placeholder={a.type === "tts_say" ? "What the agent says, word for word" : "Goodbye message (optional)"}
+                    value={a.text ?? ""}
+                    onChange={(e) => change(i, { text: e.target.value })}
+                  />
+                  <label className="field--check">
+                    <input
+                      type="checkbox"
+                      checked={a.append_text_to_context !== false}
+                      onChange={(e) => change(i, { append_text_to_context: e.target.checked })}
+                    />
+                    Add to the conversation history
+                  </label>
+                </>
+              ) : (
+                <p className="field__hint">Not an action the agent can run. Remove it, or edit it in the JSON tab.</p>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+      <div className="node-actions__row">
+        {ACTION_TYPES.map((t) => (
+          <button key={t} type="button" onClick={() => set([...actions, { type: t }])}>
+            Add {ACTION_LABELS[t].toLowerCase()}
+          </button>
+        ))}
+      </div>
+    </fieldset>
   );
 }
 
@@ -201,8 +255,8 @@ export function NodeForm({ node }: { node: AgentNode }) {
           onChange={(e) => updateNode(node.name, { role_message: e.target.value || null })}
         />
       </div>
-      <ActionsField node={node} field="pre_actions" label="Pre-actions (JSON)" />
-      <ActionsField node={node} field="post_actions" label="Post-actions (JSON)" />
+      <ActionsField node={node} field="pre_actions" label="Pre-actions" />
+      <ActionsField node={node} field="post_actions" label="Post-actions" />
       <NodeActions node={node} />
     </form>
   );

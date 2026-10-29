@@ -3,10 +3,13 @@ export interface TaskMessage {
   content: string;
 }
 
+/** A collected parameter, as a JSON-schema property; keywords the form does not edit are kept as they are. */
 export interface Param {
   type?: string;
   description?: string;
-  enum?: string[];
+  enum?: Array<string | number>;
+  /** What an `array` parameter holds. */
+  items?: Param;
   [key: string]: unknown;
 }
 
@@ -18,13 +21,26 @@ export interface Edge {
   required?: string[];
 }
 
+/**
+ * A Pipecat Flows action. Only `tts_say` and `end_conversation` can be written as data (`function` needs a
+ * Python handler); both take an optional `text` and `append_text_to_context` (default true).
+ */
+export interface Action {
+  type: string;
+  text?: string;
+  append_text_to_context?: boolean;
+  [key: string]: unknown;
+}
+
+export const ACTION_TYPES = ["tts_say", "end_conversation"] as const;
+
 export interface AgentNode {
   name: string;
   task_messages?: TaskMessage[];
   role_message?: string | null;
   edges?: Edge[];
-  pre_actions?: unknown[];
-  post_actions?: unknown[];
+  pre_actions?: Action[];
+  post_actions?: Action[];
   end?: boolean;
 }
 

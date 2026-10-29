@@ -2,7 +2,21 @@ import { useState } from "react";
 import type { AgentNode, Edge, Param } from "../model";
 import { useAgentStore } from "../store";
 
-const TYPES = ["string", "number", "integer", "boolean"];
+const SCALARS = ["string", "number", "integer", "boolean"];
+const TYPES = [...SCALARS, "array"];
+const TYPE_LABELS: Record<string, string> = { array: "list" };
+
+/** Types whose values can be restricted to a list of allowed values. */
+const ENUMERABLE = ["string", "number", "integer"];
+
+/** Allowed values typed as text, converted to the parameter's type; null when one does not fit it. */
+function parseEnum(text: string, type: string): Array<string | number> | null {
+  const values = text.split(",").map((v) => v.trim()).filter(Boolean);
+  if (type === "string") return values;
+  const numbers = values.map(Number);
+  const fits = numbers.every((n) => (type === "integer" ? Number.isInteger(n) : Number.isFinite(n)));
+  return fits ? numbers : null;
+}
 
 const FUNCTION_ERRORS = {
   blank: "An edge needs a function name.",
@@ -54,9 +68,30 @@ function ParamRow({ node, edge, name }: { node: AgentNode; edge: Edge; name: str
   const required = edge.required ?? [];
   const [draft, setDraft] = useState(name);
   const [enumText, setEnumText] = useState((param.enum ?? []).join(", "));
+  const [enumError, setEnumError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const type = param.type ?? "string";
+  const editable = TYPES.includes(type);
 
   const patch = (next: Param) => updateEdge(node.name, edge.function, { properties: { ...properties, [name]: next } });
+
+  /** Writes `values` as the allowed values of a `type` parameter, or drops them when empty. */
+  const withEnum = (base: Param, values: Array<string | number> | null): Param => {
+    const { enum: _drop, ...rest } = base;
+    return values?.length ? { ...rest, enum: values } : rest;
+  };
+
+  const changeType = (next: string) => {
+    const { items: _items, ...rest } = param;
+    let updated: Param = { ...rest, type: next };
+    if (next === "array") updated.items = { type: "string" };
+    // Allowed values only make sense for scalars, and must be re-read as the new type.
+    const values = ENUMERABLE.includes(next) ? parseEnum(enumText, next) : null;
+    updated = withEnum(updated, values);
+    if (!ENUMERABLE.includes(next)) setEnumText("");
+    setEnumError(ENUMERABLE.includes(next) && values === null ? `Allowed values must all be ${next === "integer" ? "whole numbers" : "numbers"}.` : null);
+    patch(updated);
+  };
 
   const commitName = () => {
     const to = draft.trim();
@@ -72,9 +107,13 @@ function ParamRow({ node, edge, name }: { node: AgentNode; edge: Edge; name: str
 
   const changeEnum = (text: string) => {
     setEnumText(text);
-    const values = text.split(",").map((v) => v.trim()).filter(Boolean);
-    const { enum: _drop, ...rest } = param;
-    patch(values.length ? { ...rest, enum: values } : rest);
+    const values = parseEnum(text, type);
+    if (values === null) {
+      setEnumError(`Allowed values must all be ${type === "integer" ? "whole numbers" : "numbers"}.`);
+      return;
+    }
+    setEnumError(null);
+    patch(withEnum(param, values));
   };
 
   const remove = () => {
@@ -94,9 +133,11 @@ function ParamRow({ node, edge, name }: { node: AgentNode; edge: Edge; name: str
           onBlur={commitName}
           onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
         />
-        <select aria-label={`Type of ${name}`} value={param.type ?? "string"} onChange={(e) => patch({ ...param, type: e.target.value })}>
-          {TYPES.map((t) => (
-            <option key={t}>{t}</option>
+        <select aria-label={`Type of ${name}`} value={type} onChange={(e) => changeType(e.target.value)}>
+          {(editable ? TYPES : [...TYPES, type]).map((t) => (
+            <option key={t} value={t}>
+              {TYPE_LABELS[t] ?? t}
+            </option>
           ))}
         </select>
         <button type="button" aria-label={`Remove parameter ${name}`} onClick={remove}>
@@ -114,12 +155,42 @@ function ParamRow({ node, edge, name }: { node: AgentNode; edge: Edge; name: str
         value={param.description ?? ""}
         onChange={(e) => patch({ ...param, description: e.target.value })}
       />
-      <input
-        aria-label={`Allowed values of ${name}`}
-        placeholder="Allowed values, comma separated (optional)"
-        value={enumText}
-        onChange={(e) => changeEnum(e.target.value)}
-      />
+      {type === "array" && (
+        <label className="field--check">
+          Each item is a
+          <select
+            aria-label={`Item type of ${name}`}
+            value={param.items?.type ?? ""}
+            onChange={(e) => patch({ ...param, items: { ...(param.items ?? {}), type: e.target.value } })}
+          >
+            {!param.items?.type && <option value="">choose a type</option>}
+            {SCALARS.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      {!editable && (
+        <p className="field__hint">
+          A {type} parameter has a nested schema; edit it in the JSON tab.
+        </p>
+      )}
+      {ENUMERABLE.includes(type) && (
+        <input
+          aria-label={`Allowed values of ${name}`}
+          aria-invalid={enumError !== null}
+          placeholder="Allowed values, comma separated (optional)"
+          value={enumText}
+          onChange={(e) => changeEnum(e.target.value)}
+        />
+      )}
+      {enumError && (
+        <p className="field__error" role="alert">
+          {enumError}
+        </p>
+      )}
       <label className="field--check">
         <input
           type="checkbox"

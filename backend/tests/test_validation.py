@@ -109,6 +109,56 @@ CASES = {
         agent(edge("go", "b", properties={"zip": {"description": "z"}})),
         [("untyped-parameter", "a", "go")],
     ),
+    "blank agent name": (
+        {"name": "  ", "initial_node": "a", "nodes": [node("a", end=True)]},
+        [("missing-field", None, None)],
+    ),
+    "array parameter without item type": (
+        agent(edge("go", "b", properties={"tags": {"type": "array"}})),
+        [("array-without-items", "a", "go")],
+    ),
+    "array parameter with item type": (
+        agent(edge("go", "b", properties={"tags": {"type": "array", "items": {"type": "string"}}})),
+        [],
+    ),
+    "supported actions": (
+        {
+            "name": "x",
+            "initial_node": "a",
+            "nodes": [
+                {
+                    **node("a", end=True),
+                    "pre_actions": [{"type": "tts_say", "text": "One moment."}],
+                    "post_actions": [{"type": "end_conversation", "text": "Bye."}],
+                }
+            ],
+        },
+        [],
+    ),
+    "unsupported or malformed actions": (
+        {
+            "name": "x",
+            "initial_node": "a",
+            "nodes": [{**node("a", end=True), "pre_actions": [{"type": "function"}, {}, "say hi"]}],
+        },
+        [("bad-action", "a", None)] * 3,
+    ),
+    "actions not a list": (
+        {"name": "x", "initial_node": "a", "nodes": [{**node("a", end=True), "post_actions": {"type": "tts_say"}}]},
+        [("bad-actions", "a", None)],
+    ),
+    "say action without text": (
+        {"name": "x", "initial_node": "a", "nodes": [{**node("a", end=True), "pre_actions": [{"type": "tts_say"}]}]},
+        [("empty-say", "a", None)],
+    ),
+    "terminal node whose post-actions do not hang up": (
+        {
+            "name": "x",
+            "initial_node": "a",
+            "nodes": [{**node("a", end=True), "post_actions": [{"type": "tts_say", "text": "Bye."}]}],
+        },
+        [("end-not-ending", "a", None)],
+    ),
     "node without task messages": (
         {"name": "x", "initial_node": "a", "nodes": [{"name": "a", "end": True}]},
         [("no-task", "a", None)],

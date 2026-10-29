@@ -122,3 +122,46 @@ test("deletes the edge", async () => {
   expect(useAgentStore.getState().agent!.nodes[0].edges!.map((e) => e.function)).toEqual(["other"]);
   expect(useAgentStore.getState().selection).toBeNull();
 });
+
+test("a list parameter gets an item type, and loses it when switched back", async () => {
+  await userEvent.click(screen.getByRole("button", { name: "Add parameter" }));
+  await userEvent.selectOptions(screen.getByLabelText("Type of param"), "list");
+  expect(edge().properties!.param).toMatchObject({ type: "array", items: { type: "string" } });
+  expect(screen.queryByLabelText("Allowed values of param")).toBeNull();
+
+  await userEvent.selectOptions(screen.getByLabelText("Item type of param"), "integer");
+  expect(edge().properties!.param.items).toEqual({ type: "integer" });
+
+  await userEvent.selectOptions(screen.getByLabelText("Type of param"), "string");
+  expect(edge().properties!.param).not.toHaveProperty("items");
+});
+
+test("allowed values are stored as numbers for number parameters and refused when they are not numbers", async () => {
+  await userEvent.click(screen.getByRole("button", { name: "Add parameter" }));
+  await userEvent.selectOptions(screen.getByLabelText("Type of param"), "integer");
+  await userEvent.type(screen.getByLabelText("Allowed values of param"), "1, 2");
+  expect(edge().properties!.param.enum).toEqual([1, 2]);
+
+  await userEvent.type(screen.getByLabelText("Allowed values of param"), ".5");
+  expect(screen.getByRole("alert")).toHaveTextContent("whole numbers");
+  expect(edge().properties!.param.enum).toEqual([1, 2]);
+});
+
+test("booleans have no allowed values; switching to one drops them", async () => {
+  await userEvent.click(screen.getByRole("button", { name: "Add parameter" }));
+  await userEvent.type(screen.getByLabelText("Allowed values of param"), "yes, no");
+  await userEvent.selectOptions(screen.getByLabelText("Type of param"), "boolean");
+  expect(edge().properties!.param).not.toHaveProperty("enum");
+  expect(screen.queryByLabelText("Allowed values of param")).toBeNull();
+});
+
+test("a type the form does not edit is shown as it is and kept, with extra keywords", () => {
+  const nested = { type: "object", properties: { street: { type: "string" } }, minProperties: 1 };
+  useAgentStore.getState().updateEdge("greeting", "choose", { properties: { address: nested } });
+  render(<Inspector />);
+  const type = screen.getAllByLabelText("Type of address")[0] as HTMLSelectElement;
+  expect(type.value).toBe("object");
+  expect(screen.getAllByText(/nested schema; edit it in the JSON tab/)[0]).toBeInTheDocument();
+  fireEvent.change(screen.getAllByLabelText("Description of address")[0], { target: { value: "Home" } });
+  expect(edge().properties!.address).toEqual({ ...nested, description: "Home" });
+});

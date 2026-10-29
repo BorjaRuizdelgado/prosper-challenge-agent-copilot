@@ -146,3 +146,57 @@ test("a failed delete brings the agent back and keeps the editor open", async ()
   expect(screen.getByRole("link", { name: /Scheduler/ })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: "Scheduler" })).toBeInTheDocument();
 });
+
+const fullRecord = (name: string) => ({
+  id: "a-1",
+  agent: { name, initial_node: "greeting", nodes: [{ name: "greeting", task_messages: [], end: true }] },
+  updated_at: "2026-01-02T00:00:00Z",
+});
+
+test("renaming the open agent from the sidebar updates the editor, so its next save keeps the new name", async () => {
+  mockApi({
+    "GET /api/agents": () => json([summary]),
+    "GET /api/agents/a-1": () => json(fullRecord("Scheduler")),
+    "PUT /api/agents/a-1": () => json(fullRecord("Booker")),
+    "POST /api/agents/validate": () => json([]),
+  });
+  const fetchMock = vi.mocked(fetch);
+  renderApp(<App />, "/agents/a-1");
+  await screen.findByRole("heading", { name: "Scheduler" });
+
+  await userEvent.click(screen.getByRole("button", { name: "Rename Scheduler" }));
+  const input = within(screen.getByRole("dialog")).getByLabelText("Name");
+  await userEvent.clear(input);
+  await userEvent.type(input, "Booker{Enter}");
+
+  expect(await screen.findByRole("heading", { name: "Booker" })).toBeInTheDocument();
+  expect(screen.getByText("Saved")).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", { name: "Add node" }));
+  await userEvent.click(screen.getByRole("button", { name: "Save" }));
+  await waitFor(() => expect(fetchMock.mock.calls.filter(([, init]) => init?.method === "PUT")).toHaveLength(2));
+  const saved = JSON.parse(fetchMock.mock.calls.filter(([, init]) => init?.method === "PUT")[1][1]!.body as string);
+  expect(saved).toMatchObject({ name: "Booker" });
+});
+
+test("saving from the editor updates the agent's name and node count in the sidebar", async () => {
+  mockApi({
+    "GET /api/agents": () => json([{ ...summary, node_count: 1 }]),
+    "GET /api/agents/a-1": () => json(fullRecord("Scheduler")),
+    "PUT /api/agents/a-1": () => json(fullRecord("Front desk")),
+    "POST /api/agents/validate": () => json([]),
+  });
+  renderApp(<App />, "/agents/a-1");
+  await screen.findByRole("heading", { name: "Scheduler" });
+
+  await userEvent.click(screen.getByRole("tab", { name: "Settings" }));
+  const name = screen.getByLabelText("Name");
+  await userEvent.clear(name);
+  await userEvent.type(name, "Front desk");
+  await userEvent.click(screen.getByRole("button", { name: "Add node" }));
+  expect(screen.getByRole("link", { name: /Scheduler/ })).toHaveTextContent("1 nodes");
+
+  await userEvent.click(screen.getByRole("button", { name: "Save" }));
+  const link = await screen.findByRole("link", { name: /Front desk/ });
+  expect(link).toHaveTextContent("2 nodes");
+});

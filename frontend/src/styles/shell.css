@@ -553,6 +553,18 @@ fieldset.field {
   flex: 1;
 }
 
+/* An action the form cannot edit, shown as its JSON. */
+.actions__raw {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding: 4px 6px;
+  font-size: 12px;
+  background: var(--raised);
+  border-radius: var(--radius-control);
+}
+
 .save-bar {
   margin-left: 8px;
   display: flex;
