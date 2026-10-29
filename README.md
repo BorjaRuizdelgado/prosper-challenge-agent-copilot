@@ -31,7 +31,7 @@ uv run --directory backend python bot.py   # run the agent
 \
 Remember to update the `.env` file accordingly.
 
-## Agent builder UI (Phase 1, in progress)
+## Agent builder UI (Phase 1)
 
 Needs **Node 20+** in addition to the above.
 
@@ -39,7 +39,7 @@ Needs **Node 20+** in addition to the above.
 make up     # install + create .env + start everything
 make down   # stop all services
 make dev    # agents API :8000 + voice runner :7860 + Vite :5173
-make test   # pytest + Vitest (the call is faked; see docs/manual-call-test.md for the real one)
+make test   # pytest + Vitest + Playwright smoke spec (the call is faked; see docs/manual-call-test.md for the real one)
 ```
 
 Open `http://localhost:5173`. Agents are JSON files in `backend/agents/` (git-ignored; seeded from `example_flow.json` on first run). Run pieces separately with `make api` / `make frontend`.
@@ -74,7 +74,9 @@ How it works: the browser `POST`s `/voice/start` (proxied to the runner) with `{
 | `backend/session.py` | Call setup helpers with no Pipecat imports: read `agent_id` from the session body, load the agent (refusing unknown ids and blocking issues), check API keys, build the `node_changed` message. |
 | `backend/api/` | FastAPI app that lists/edits agent JSON files in `backend/agents/` for the UI. |
 | `frontend/` | Vite + React + TypeScript agent builder UI. `src/call/` holds the voice client wrapper and the call store (state machine, transcript, active node). |
+| `frontend/e2e/` | Playwright smoke spec (`npm run e2e` in `frontend/`); starts its own API on :8100 with a temp agents dir and Vite on :5180, so it does not clash with `make dev`. |
 | `docs/manual-call-test.md` | Manual checklist for the real voice path. |
+| `solution.md` | Architecture diagram, what was built / mocked / left out, and extension points for Phase 2. |
 | `backend/example_flow.json` | The example agent **as data** — a clinic scheduler. The artifact the Phase 2 Composer generates/edits. |
 
 `bot.py` runs the agent whose id the session is started with (`{"agent_id": ...}` in the `/start` body); there is no hardcoded agent. `backend/session.py` loads it, refuses unknown ids and agents with blocking issues, and checks the API keys.

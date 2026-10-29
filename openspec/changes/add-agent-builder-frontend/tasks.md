@@ -55,6 +55,6 @@ Each group is a vertical slice that ends with something usable and verified in t
 
 ## 9. Polish and hand-off
 
-- [ ] 9.1 Quick look-and-fix at laptop width only (1440 and 1280): consistent gutters, empty/error/loading states, visible focus. No inspector gate, no mobile. Verify: screenshots look clean and no console errors.
-- [ ] 9.2 Docs: update `README.md` (layout, run, test), add the architecture and key decisions section to `solution.md` (what was built, mocked, left out and why), note extension points for the Copilot (store actions, dock registry, agent JSON contract, RTVI messages). Verify: a fresh clone follows README to a running demo.
+- [x] 9.1 Quick look-and-fix at laptop width only (1440 and 1280): consistent gutters, empty/error/loading states, visible focus. No inspector gate, no mobile. Verify: screenshots look clean and no console errors.
+- [x] 9.2 Docs: update `README.md` (layout, run, test), add the architecture and key decisions section to `solution.md` (what was built, mocked, left out and why), note extension points for the Copilot (store actions, dock registry, agent JSON contract, RTVI messages). Verify: a fresh clone follows README to a running demo.
 - [ ] 9.3 Final integration: full demo script run (create agent → edit nodes/edges → fix a validation error → save → test call → watch active node) plus `make test` green (pytest, Vitest, the Playwright smoke spec). Verify: all suites pass and the demo script completes without console errors.
