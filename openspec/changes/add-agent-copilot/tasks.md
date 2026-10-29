@@ -4,7 +4,7 @@ Each group is a vertical slice that ends with something usable and verified. Tes
 
 ## 1. Spike: Agent SDK on the subscription login
 
-- [ ] 1.1 Add `claude-agent-sdk` via `uv add`; with a throwaway script and `ANTHROPIC_API_KEY` unset, run one SDK query with `cwd` set to a temp dir, `setting_sources=["project"]`, a custom `@tool`, `allowed_tools`, a `can_use_tool` callback and `resume`. Confirm it authenticates with the CLI login, the custom tool is called as `mcp__copilot__validate_agent`, `can_use_tool` sees file paths, and a project skill in `cwd/.claude/skills/` loads. Record any API differences in `design.md` Decisions 1, 3–5 and 7. Verify: script output committed in the notes; the dependency resolves in `uv.lock`.
+- [x] 1.1 Add `claude-agent-sdk` via `uv add`; with a throwaway script and `ANTHROPIC_API_KEY` unset, run one SDK query with `cwd` set to a temp dir, `setting_sources=["project"]`, a custom `@tool`, `allowed_tools`, a `can_use_tool` callback and `resume`. Confirm it authenticates with the CLI login, the custom tool is called as `mcp__copilot__validate_agent`, `can_use_tool` sees file paths, and a project skill in `cwd/.claude/skills/` loads. Record any API differences in `design.md` Decisions 1, 3–5 and 7. Verify: script output committed in the notes; the dependency resolves in `uv.lock`.
 
 ## 2. Backend engine: draft, guard, validation tool, runner
 

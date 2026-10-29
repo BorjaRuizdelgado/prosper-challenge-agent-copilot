@@ -37,6 +37,8 @@ The copilot is a Claude Agent SDK session (`claude-agent-sdk`) run inside the AP
 
 The API's `.env` must not set `ANTHROPIC_API_KEY` unless per-token billing is intended; the README states this.
 
+*Spike (task 1.1, `claude-agent-sdk` 0.2.174, CLI 2.1.308):* with `ANTHROPIC_API_KEY` unset, `ClaudeSDKClient` authenticated through the CLI login with no extra setup. Drive it with `ClaudeSDKClient` (`query` + `receive_response`); `ResultMessage.session_id` carries the session id.
+
 ### 2. The copilot edits a draft file, not the editor state
 
 Each agent gets a workspace file `backend/copilot/workspace/drafts/<agent_id>.json`. At the start of each turn the API writes the request's working copy there (pretty-printed, stable key order, so `Edit` string matching is reliable). The copilot uses `Read`/`Edit`/`Write` on that file. When the turn ends, the API reads the file back, validates it and returns it as the proposal.
@@ -48,14 +50,17 @@ Each agent gets a workspace file `backend/copilot/workspace/drafts/<agent_id>.js
 ### 3. Sandboxing: tool allowlist plus a path guard
 
 - `allowed_tools`: `Read`, `Edit`, `Write`, `Skill`, and the custom `mcp__copilot__validate_agent`. Everything else (Bash, WebFetch, Task, etc.) is disallowed explicitly.
-- A `can_use_tool` callback denies `Read`/`Edit`/`Write` whose resolved path is not the current agent's draft or a file under the skill directory (read-only). Denials return a message the model sees.
+- A path guard denies `Read`/`Edit`/`Write` whose resolved path is not the current agent's draft or a file under the skill directory (read-only). Denials return a message the model sees.
+- *Spike correction:* `can_use_tool` is **not** a complete gate. (a) Any tool listed in `allowed_tools` is auto-approved before the callback (the SDK warns `CanUseToolShadowedWarning`), so `Read`/`Edit`/`Write` must not be in `allowed_tools`. (b) Even then, `Read` inside `cwd` is auto-approved and never reached the callback; only `Write` did. The guard therefore runs in a `PreToolUse` hook (`HookMatcher(matcher="Read|Edit|Write", hooks=[...])`), which saw both `Read` and `Write` with `tool_input["file_path"]` (absolute, `/private/var/...` form on macOS, so resolve before comparing). Denying from the hook is the enforcement point; `can_use_tool` stays as a second layer. `allowed_tools` holds only `Skill` and `mcp__copilot__validate_agent`.
 - `cwd` is the workspace directory, and `setting_sources=["project"]` so only the workspace's `.claude/` is loaded, not the repo's or the user's settings, CLAUDE.md or skills.
 
 The path guard is a pure function with unit tests; it carries the spec *Copilot can only change the agent*.
 
 ### 4. `validate_agent` as an in-process tool
 
-Defined with the SDK's `@tool` and `create_sdk_mcp_server`. It takes no arguments, reads the current draft, runs `validation.validate` and returns the issues as text (`error E_DANGLING_TARGET at node offer_times edge select_time: ...`) or "0 issues". The system prompt requires calling it after the last edit and fixing errors before replying. If the draft is not valid JSON, the tool reports that as an error. The model gets the same feedback a human sees in the Issues tab.
+Defined with the SDK's `@tool` and `create_sdk_mcp_server`. It takes no arguments, reads the current draft, runs `validation.validate` and returns the issues as text (`error E_DANGLING_TARGET at node offer_times edge select_time: ...`) or "0 issues". The system prompt requires calling it after the last edit and fixing errors before replying.
+
+*Spike:* `@tool(name, description, input_schema)` with `{}` for no arguments, registered via `create_sdk_mcp_server(name="copilot", ...)` and `mcp_servers={"copilot": server}`, is called as `mcp__copilot__validate_agent` and works as designed. The CLI first issues a `ToolSearch` for it (`select:mcp__copilot__validate_agent`) before the call, which adds a step; ignore `ToolSearch` blocks when mapping steps to labels. If the draft is not valid JSON, the tool reports that as an error. The model gets the same feedback a human sees in the Issues tab.
 
 ### 5. Knowledge: a Prosper Blueprints skill plus a short system prompt
 
@@ -65,6 +70,7 @@ Defined with the SDK's `@tool` and `create_sdk_mcp_server`. It takes no argument
 
 The system prompt holds the persona and the turn protocol (read the draft, load the skill for structural work, edit, validate, reply in at most three sentences, ask instead of editing only when a decision belongs to the user). The SDK's default Claude Code system prompt is replaced, not appended to, so the persona stays terse and does not drift into coding-assistant behavior.
 
+- *Spike:* a skill at `cwd/.claude/skills/<name>/SKILL.md` (frontmatter `name`, `description`) loaded with `setting_sources=["project"]`; the model called `Skill {skill: "prosper-blueprints"}` and quoted its content, and it still remembered it after `resume`. The fallback below was not needed.
 - *Alternative: inline everything in the system prompt.* Deterministic, but large on every turn and hides the "skill" design. Fallback if skill loading proves unreliable: the system prompt tells the model to `Read` `SKILL.md`, which the path guard allows.
 
 ### 6. Streaming protocol: SSE over a POST
@@ -102,6 +108,8 @@ The SDK call sits behind a `run_turn(...) -> AsyncIterator[Event]` seam so endpo
 ### 7. Sessions: in-memory map of agent id to SDK session id
 
 On each turn the runner resumes the stored session id for that agent, and stores the new one from the result message. A per-agent `asyncio.Lock` rejects a second concurrent turn with 409. Restarting the API forgets conversations; acceptable for a local tool.
+
+*Spike:* `ClaudeAgentOptions(resume=<session_id>)` on a new `ClaudeSDKClient` kept context across turns (the second turn recalled the skill content). The session id returned by the resumed turn was the same as the original, so storing it after every turn is safe.
 
 ### 8. Proposal review in the frontend
 
