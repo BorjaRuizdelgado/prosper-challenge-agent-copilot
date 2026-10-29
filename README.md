@@ -9,7 +9,7 @@ Voice AI for healthcare scheduling. An agent is a **graph of nodes** (Pipecat Fl
 browser mic  ->  ElevenLabs STT  ->  OpenAI LLM  ->  ElevenLabs TTS  ->  browser
 ```
 
-Pipecat's dev runner ships a **prebuilt browser client**, so the test-call UI comes for free — no frontend code to write yet.
+Calls are started from the agent builder UI (see below), which tells the voice runner which agent to run.
 
 ## Quickstart
 
@@ -20,7 +20,7 @@ make install   # uv sync — creates backend/.venv and installs from uv.lock
 make run       # uv run python bot.py
 ```
 
-Open the URL it prints (default `http://localhost:7860/client`), click **Connect**, allow mic access, and talk to the agent. `Ctrl+C` to stop. (`make help` lists all targets.)
+This starts the voice runner on :7860. A call needs an agent id, so start it from the builder UI below (the prebuilt `/client` page does not send one). `Ctrl+C` to stop. (`make help` lists all targets.)
 
 Prefer raw `uv`? The same commands without `make`:
 
@@ -64,4 +64,4 @@ Open `http://localhost:5173`. Agents are JSON files in `backend/agents/` (git-ig
 | `frontend/` | Vite + React + TypeScript agent builder UI. |
 | `backend/example_flow.json` | The example agent **as data** — a clinic scheduler. The artifact the Phase 2 Composer generates/edits. |
 
-To run a different agent, point `AGENT_FLOW` in `bot.py` at another JSON file.
+`bot.py` runs the agent whose id the session is started with (`{"agent_id": ...}` in the `/start` body); there is no hardcoded agent. `backend/session.py` loads it, refuses unknown ids and agents with blocking issues, and checks the API keys.

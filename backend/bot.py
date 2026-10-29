@@ -4,11 +4,11 @@
 # The runnable voice agent: WebRTC transport + ElevenLabs STT/TTS + OpenAI LLM,
 # driven by a Pipecat Flows node graph. This file is generic — it loads an agent
 # definition (JSON) via AgentBuilder and runs it. Swapping the agent is a data
-# change (edit/replace the JSON), not a code change.
+# change (a different agent_id in the session body), not a code change.
 #
 #   example_flow.json  ->  AgentBuilder  ->  Pipecat Flows graph  ->  FlowManager
 #
-# Run:  python bot.py   then open http://localhost:7860/client
+# Run:  python bot.py   (the editor starts calls with the id of the agent to run)
 #
 
 import os
@@ -35,14 +35,10 @@ from pipecat.workers.runner import WorkerRunner
 from pipecat_flows import FlowManager
 
 from agent_builder import AgentBuilder
+from session import SessionError, agent_id_from_body, check_keys, load_agent
 
 # Load .env next to this file, so the bot runs the same from the repo root or backend/.
 load_dotenv(Path(__file__).parent / ".env", override=True)
-
-
-# The agent this bot runs. Point this at any agent JSON (the Phase 2 Composer
-# would generate one and drop it here).
-AGENT_FLOW = Path(__file__).parent / "example_flow.json"
 
 
 transport_params = {
@@ -111,8 +107,14 @@ async def run_bot(
 
 async def bot(runner_args: RunnerArguments):
     """Entry point invoked by the Pipecat dev runner (and Pipecat Cloud)."""
+    # The editor starts a session with {"agent_id": ...}; run exactly that agent.
+    try:
+        check_keys()
+        builder = load_agent(agent_id_from_body(runner_args.body))
+    except SessionError as e:
+        logger.error(f"Cannot start session: {e}")
+        raise
     transport = await create_transport(runner_args, transport_params)
-    builder = AgentBuilder.from_json(AGENT_FLOW)
     await run_bot(transport, runner_args, builder)
 
 
