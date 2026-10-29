@@ -5,6 +5,7 @@ import { useCallStore } from "../call/callStore";
 import { chatOf, useCopilotStore } from "../copilot/copilotStore";
 import { issueMessages, worstSeverity } from "../issues";
 import { NODE_WIDTH } from "../layout";
+import { useRunPath } from "../runs/runsStore";
 import { useAgentStore } from "../store";
 
 const summary = (messages: { content: string }[] = []) => messages[0]?.content ?? "No task yet";
@@ -14,13 +15,15 @@ export function NodeCard({ data, selected }: NodeProps<CardNode>) {
   const issues = useAgentStore((s) => s.issues);
   const active = useCallStore((s) => s.activeNode === node.name);
   const agentId = useAgentStore((s) => s.agentId);
+  const runPath = useRunPath();
+  const runState = runPath?.last === node.name ? "end" : runPath?.nodes.includes(node.name) ? "visited" : undefined;
   const copilotFocus = useCopilotStore((s) => chatOf(s.chats, agentId).focus === node.name);
   const severity = worstSeverity(issues, node.name);
   const edges = node.edges ?? [];
   const kind = node.end ? "end" : edges.some((e) => Object.keys(e.properties ?? {}).length) ? "collect" : "greeting";
   return (
-    <div className={`node-card${selected ? " node-card--selected" : ""}${active ? " node-card--active" : ""}${copilotFocus ? " node-card--copilot" : ""}${data.change ? ` node-card--${data.change}` : ""}`}
-      data-active={active || undefined} data-copilot-focus={copilotFocus || undefined} data-change={data.change} style={{ width: NODE_WIDTH }}>
+    <div className={`node-card${selected ? " node-card--selected" : ""}${active ? " node-card--active" : ""}${copilotFocus ? " node-card--copilot" : ""}${runState ? ` node-card--run-${runState}` : ""}${data.change ? ` node-card--${data.change}` : ""}`}
+      data-active={active || undefined} data-copilot-focus={copilotFocus || undefined} data-run={runState} data-change={data.change} style={{ width: NODE_WIDTH }}>
       {/* Loose connection mode lets every handle start or receive a connection. The centre of the left
           side is where edges end, so that handle only receives and lets the edge's own drag anchor
           (retargeting) through; every side has a separate "new edge" handle for starting edges. */}

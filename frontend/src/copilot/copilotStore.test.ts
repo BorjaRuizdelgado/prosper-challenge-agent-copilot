@@ -234,6 +234,35 @@ describe("copilotStore", () => {
   });
 });
 
+const findings = [{ title: "Callers cannot cancel", runs: ["r-1", "r-2"], cause: "No cancel path.", fix: "Add one.", node: "greeting" }];
+
+describe("findings", () => {
+  it("attach to the assistant message, before the proposal, and the last event wins", async () => {
+    install(stream([
+      { event: "step", label: "Reporting 2 findings" },
+      { event: "findings", findings: [{ ...findings[0], title: "first" }] },
+      { event: "findings", findings },
+      { event: "proposal", agent: proposed, issues: [] },
+      { event: "done" },
+    ]));
+    await useCopilotStore.getState().send("a", "review", base);
+    expect(reply().findings).toEqual(findings);
+    expect(reply().proposal?.status).toBe("pending");
+  });
+
+  it("are not set on a turn that reports none", async () => {
+    install(stream([{ event: "text", delta: "Fine." }, { event: "done" }]));
+    await useCopilotStore.getState().send("a", "review", base);
+    expect(reply().findings).toBeUndefined();
+  });
+
+  it("come back after a reload", async () => {
+    install(stream([{ event: "findings", findings }, { event: "done" }]));
+    await useCopilotStore.getState().send("a", "review", base);
+    expect((loadChats().a.messages.at(-1) as { findings?: unknown }).findings).toEqual(findings);
+  });
+});
+
 describe("persistence across a page reload", () => {
   it("keeps the conversation and brings back a pending proposal's draft", async () => {
     install(stream([{ event: "text", delta: "Added it." }, { event: "proposal", agent: proposed, issues: [] }, { event: "done" }]));

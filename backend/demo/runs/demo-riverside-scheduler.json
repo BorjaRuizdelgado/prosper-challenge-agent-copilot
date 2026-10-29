@@ -1,0 +1,422 @@
+[
+  {
+    "id": "r-1001",
+    "started_at": "2026-10-12T09:02:00Z",
+    "duration_s": 88,
+    "outcome": "completed",
+    "transcript": [
+      {
+        "speaker": "agent",
+        "text": "Thanks for calling Riverside Clinic. Would you like to book an appointment?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Yes please."
+      },
+      {
+        "speaker": "agent",
+        "text": "To get you booked, I need your full name, date of birth, reason for the visit and preferred time of day."
+      },
+      {
+        "speaker": "caller",
+        "text": "Maria Lopez, born March 3 1980, for a check-up, mornings."
+      },
+      {
+        "speaker": "agent",
+        "text": "I have Tuesday at 10 AM, or Thursday at 2 PM. Which works for you?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Tuesday works."
+      },
+      {
+        "speaker": "agent",
+        "text": "You are booked, Maria Lopez, for Tuesday 10 AM. Thank you for calling. Goodbye."
+      }
+    ],
+    "path": [
+      {
+        "node": "greeting"
+      },
+      {
+        "node": "collect_details",
+        "via": "book_appointment",
+        "args": {}
+      },
+      {
+        "node": "offer_times",
+        "via": "record_details",
+        "args": {
+          "full_name": "Maria Lopez",
+          "date_of_birth": "March 3 1980",
+          "reason": "a check-up",
+          "preferred_time": "morning"
+        }
+      },
+      {
+        "node": "confirm",
+        "via": "select_time",
+        "args": {
+          "slot": "Tuesday 10 AM"
+        }
+      }
+    ]
+  },
+  {
+    "id": "r-1002",
+    "started_at": "2026-10-13T14:30:00Z",
+    "duration_s": 94,
+    "outcome": "completed",
+    "transcript": [
+      {
+        "speaker": "agent",
+        "text": "Thanks for calling Riverside Clinic. Would you like to book an appointment?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Yes please."
+      },
+      {
+        "speaker": "agent",
+        "text": "To get you booked, I need your full name, date of birth, reason for the visit and preferred time of day."
+      },
+      {
+        "speaker": "caller",
+        "text": "James Carter, born July 21 1975, for a flu shot, mornings."
+      },
+      {
+        "speaker": "agent",
+        "text": "I have Tuesday at 10 AM, or Thursday at 2 PM. Which works for you?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Thursday works."
+      },
+      {
+        "speaker": "agent",
+        "text": "You are booked, James Carter, for Thursday 2 PM. Thank you for calling. Goodbye."
+      }
+    ],
+    "path": [
+      {
+        "node": "greeting"
+      },
+      {
+        "node": "collect_details",
+        "via": "book_appointment",
+        "args": {}
+      },
+      {
+        "node": "offer_times",
+        "via": "record_details",
+        "args": {
+          "full_name": "James Carter",
+          "date_of_birth": "July 21 1975",
+          "reason": "a flu shot",
+          "preferred_time": "morning"
+        }
+      },
+      {
+        "node": "confirm",
+        "via": "select_time",
+        "args": {
+          "slot": "Thursday 2 PM"
+        }
+      }
+    ]
+  },
+  {
+    "id": "r-1003",
+    "started_at": "2026-10-15T11:15:00Z",
+    "duration_s": 81,
+    "outcome": "completed",
+    "transcript": [
+      {
+        "speaker": "agent",
+        "text": "Thanks for calling Riverside Clinic. Would you like to book an appointment?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Yes please."
+      },
+      {
+        "speaker": "agent",
+        "text": "To get you booked, I need your full name, date of birth, reason for the visit and preferred time of day."
+      },
+      {
+        "speaker": "caller",
+        "text": "Aisha Khan, born January 9 1992, for back pain, mornings."
+      },
+      {
+        "speaker": "agent",
+        "text": "I have Tuesday at 10 AM, or Thursday at 2 PM. Which works for you?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Tuesday works."
+      },
+      {
+        "speaker": "agent",
+        "text": "You are booked, Aisha Khan, for Tuesday 10 AM. Thank you for calling. Goodbye."
+      }
+    ],
+    "path": [
+      {
+        "node": "greeting"
+      },
+      {
+        "node": "collect_details",
+        "via": "book_appointment",
+        "args": {}
+      },
+      {
+        "node": "offer_times",
+        "via": "record_details",
+        "args": {
+          "full_name": "Aisha Khan",
+          "date_of_birth": "January 9 1992",
+          "reason": "back pain",
+          "preferred_time": "morning"
+        }
+      },
+      {
+        "node": "confirm",
+        "via": "select_time",
+        "args": {
+          "slot": "Tuesday 10 AM"
+        }
+      }
+    ]
+  },
+  {
+    "id": "r-1004",
+    "started_at": "2026-10-16T09:14:00Z",
+    "duration_s": 96,
+    "outcome": "abandoned",
+    "flag": "Caller wanted to cancel and could not.",
+    "transcript": [
+      {
+        "speaker": "agent",
+        "text": "Thanks for calling Riverside Clinic. Would you like to book an appointment?"
+      },
+      {
+        "speaker": "caller",
+        "text": "I need to cancel my appointment on Friday."
+      },
+      {
+        "speaker": "agent",
+        "text": "Sorry, I can only book new appointments. Would you like to book one?"
+      },
+      {
+        "speaker": "caller",
+        "text": "No, I want to cancel the one I have."
+      },
+      {
+        "speaker": "agent",
+        "text": "I can only book appointments. Would you like to book one?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Forget it."
+      }
+    ],
+    "path": [
+      {
+        "node": "greeting"
+      }
+    ]
+  },
+  {
+    "id": "r-1005",
+    "started_at": "2026-10-17T13:40:00Z",
+    "duration_s": 71,
+    "outcome": "abandoned",
+    "flag": "Caller wanted to reschedule and could not.",
+    "transcript": [
+      {
+        "speaker": "agent",
+        "text": "Thanks for calling Riverside Clinic. Would you like to book an appointment?"
+      },
+      {
+        "speaker": "caller",
+        "text": "I need to move my appointment to next week."
+      },
+      {
+        "speaker": "agent",
+        "text": "Sorry, I can only book new appointments. Would you like to book one?"
+      },
+      {
+        "speaker": "caller",
+        "text": "That is not what I asked. Bye."
+      }
+    ],
+    "path": [
+      {
+        "node": "greeting"
+      }
+    ]
+  },
+  {
+    "id": "r-1006",
+    "started_at": "2026-10-19T10:05:00Z",
+    "duration_s": 58,
+    "outcome": "abandoned",
+    "transcript": [
+      {
+        "speaker": "agent",
+        "text": "Thanks for calling Riverside Clinic. Would you like to book an appointment?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Can I cancel my appointment?"
+      },
+      {
+        "speaker": "agent",
+        "text": "I can only book appointments. Would you like to book one?"
+      },
+      {
+        "speaker": "caller",
+        "text": "No. Never mind."
+      }
+    ],
+    "path": [
+      {
+        "node": "greeting"
+      }
+    ]
+  },
+  {
+    "id": "r-1007",
+    "started_at": "2026-10-20T16:22:00Z",
+    "duration_s": 143,
+    "outcome": "stuck",
+    "transcript": [
+      {
+        "speaker": "agent",
+        "text": "Thanks for calling Riverside Clinic. Would you like to book an appointment?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Yes."
+      },
+      {
+        "speaker": "agent",
+        "text": "To get you booked, I need your full name, date of birth, reason for the visit and preferred time of day."
+      },
+      {
+        "speaker": "caller",
+        "text": "Sure, I am Tom Reyes, and I need to see someone about my knee."
+      },
+      {
+        "speaker": "agent",
+        "text": "To get you booked, I need your full name, date of birth, reason for the visit and preferred time of day."
+      },
+      {
+        "speaker": "caller",
+        "text": "I just told you my name and the knee. What else?"
+      },
+      {
+        "speaker": "agent",
+        "text": "To get you booked, I need your full name, date of birth, reason for the visit and preferred time of day."
+      },
+      {
+        "speaker": "caller",
+        "text": "Um, I am not sure what you want me to say. Can I talk to someone?"
+      }
+    ],
+    "path": [
+      {
+        "node": "greeting"
+      },
+      {
+        "node": "collect_details",
+        "via": "book_appointment",
+        "args": {}
+      }
+    ]
+  },
+  {
+    "id": "r-1008",
+    "started_at": "2026-10-21T08:47:00Z",
+    "duration_s": 126,
+    "outcome": "stuck",
+    "transcript": [
+      {
+        "speaker": "agent",
+        "text": "Thanks for calling Riverside Clinic. Would you like to book an appointment?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Yes, book me in."
+      },
+      {
+        "speaker": "agent",
+        "text": "To get you booked, I need your full name, date of birth, reason for the visit and preferred time of day."
+      },
+      {
+        "speaker": "caller",
+        "text": "Priya Shah, for a skin rash."
+      },
+      {
+        "speaker": "agent",
+        "text": "To get you booked, I need your full name, date of birth, reason for the visit and preferred time of day."
+      },
+      {
+        "speaker": "caller",
+        "text": "Born in 1988. I said the rash already."
+      },
+      {
+        "speaker": "agent",
+        "text": "To get you booked, I need your full name, date of birth, reason for the visit and preferred time of day."
+      },
+      {
+        "speaker": "caller",
+        "text": "That is too many things at once. I will call back."
+      }
+    ],
+    "path": [
+      {
+        "node": "greeting"
+      },
+      {
+        "node": "collect_details",
+        "via": "book_appointment",
+        "args": {}
+      }
+    ]
+  },
+  {
+    "id": "r-1009",
+    "started_at": "2026-10-22T12:10:00Z",
+    "duration_s": 40,
+    "outcome": "abandoned",
+    "flag": "Caller asked for a person and was ignored.",
+    "transcript": [
+      {
+        "speaker": "agent",
+        "text": "Thanks for calling Riverside Clinic. Would you like to book an appointment?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Can I speak to a person at the front desk?"
+      },
+      {
+        "speaker": "agent",
+        "text": "I can only book appointments. Would you like to book one?"
+      },
+      {
+        "speaker": "caller",
+        "text": "No, a person please."
+      },
+      {
+        "speaker": "agent",
+        "text": "I can only book appointments."
+      }
+    ],
+    "path": [
+      {
+        "node": "greeting"
+      }
+    ]
+  }
+]

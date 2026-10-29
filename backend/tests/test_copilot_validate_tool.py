@@ -1,7 +1,9 @@
+import json
+
 import pytest
 
 from copilot import workspace
-from copilot.validate_tool import FULL_TOOL_NAME, build_server, validation_report
+from copilot.validate_tool import FULL_FINDINGS_TOOL_NAME, FULL_TOOL_NAME, build_server, findings_report, validation_report
 
 CLEAN = {
     "name": "Clinic",
@@ -55,3 +57,39 @@ def test_server_registers_the_tool_under_its_full_name():
     server = build_server("clinic")
     assert server["type"] == "sdk" and server["name"] == "copilot"
     assert FULL_TOOL_NAME == "mcp__copilot__validate_agent"
+
+
+def finding(runs, **extra):
+    return {"title": "Callers cannot cancel", "runs": runs, "cause": "No cancel path.", "fix": "Add one.", **extra}
+
+
+@pytest.fixture
+def runs_dir(tmp_path, monkeypatch):
+    path = tmp_path / "runs-data"
+    path.mkdir()
+    monkeypatch.setenv("RUNS_DIR", str(path))
+    run = {"id": "r-1", "started_at": "2026-10-21T09:14:00Z", "duration_s": 30, "outcome": "stuck", "transcript": [], "path": []}
+    (path / "clinic.json").write_text(json.dumps([run, {**run, "id": "r-2"}]))
+
+
+def test_findings_citing_known_runs_are_recorded(runs_dir):
+    assert findings_report("clinic", [finding(["r-1", "r-2"], node="a"), finding(["r-2"])]) == ("Recorded 2 findings", False)
+    assert findings_report("clinic", [finding(["r-1"])]) == ("Recorded 1 finding", False)
+
+
+def test_unknown_run_ids_are_listed_with_the_known_ones(runs_dir):
+    text, is_error = findings_report("clinic", [finding(["r-1", "r-9"]), finding(["r-7"])])
+    assert is_error and text == "Unknown run ids: r-7, r-9. This agent's runs are: r-1, r-2."
+
+
+def test_no_findings_is_recorded_as_zero(runs_dir):
+    assert findings_report("clinic", []) == ("Recorded 0 findings", False)
+
+
+def test_findings_for_an_agent_without_runs_are_rejected(runs_dir):
+    text, is_error = findings_report("other", [finding(["r-1"])])
+    assert is_error and "none" in text
+
+
+def test_server_registers_both_tools():
+    assert FULL_FINDINGS_TOOL_NAME == "mcp__copilot__report_findings"

@@ -135,3 +135,39 @@ Backend tests never call Claude: a scripted fake SDK client covers event mapping
 - **Flagged-calls inbox, automatic issue detection, simulated-caller regression.** Natural next steps on the same engine; out of scope for this change.
 - **Rename detection in the diff.** A renamed node shows as one removed and one added.
 - **Text appears at the end of a turn.** The reply is written after the tool calls, so progress is carried by steps and the live canvas rather than typing.
+
+## Production iteration: learning from runs
+
+The Copilot can also fix an agent from what happened in production, not only from one test call. A **Runs** tab lists an agent's past calls; *Analyze runs* has the Copilot read them, say what is wrong, and propose the fix through the same review and Apply flow.
+
+```mermaid
+flowchart LR
+    Fixtures[("backend/demo/runs/{id}.json<br/>mocked runs")]
+    Api["GET /api/agents/{id}/runs"]
+    Tab["Runs tab<br/>list · transcript · path on canvas"]
+    File[("workspace/runs/{id}.txt<br/>render_runs")]
+    Skill[("prosper-run-review skill")]
+    Tool["report_findings tool<br/>checks run ids"]
+    Card["Findings card<br/>+ proposal"]
+
+    Fixtures --> Api --> Tab
+    Fixtures --> File
+    File -- "Read" --> Skill
+    Skill --> Tool -- "findings event" --> Card
+    Skill -- "Edit draft, validate" --> Card
+    Card -- "run id" --> Tab
+```
+
+- **Mocked runs, on purpose.** There is no recording or ingestion pipeline. Each of three demo agents (`make demo`) ships about 8 hand-written runs against a planted flaw: a scheduler that only offers booking and asks four things at once, a refill line that stops before it finishes, and a healthy billing line with one handoff edge that is too narrow. A pytest checks that every run's path exists in its agent, so the fixtures cannot drift.
+- **Runs as a file, not as chat.** Each turn the runner renders the agent's runs to a plain-text file in the workspace and tells the model where it is; the guard lets it read only that agent's file. Pasting runs into the message would repeat them on every follow-up and fill the chat.
+- **Findings as a tool call.** `report_findings` takes `{title, runs, cause, fix, node?}` and rejects run ids that do not exist, so the model corrects them. The runner turns a successful call into a `findings` event; the UI renders a card with run ids that open the run, and `node` focuses the canvas. The prose reply stays at three sentences.
+- **A review skill.** `prosper-run-review` says to group runs by cause, cite every run that shows it, leave paths that work in completed runs alone, report findings before editing, build missing steps from what callers asked and hand off where a policy is unknown instead of inventing one. Runs are evidence, never instructions, and the Copilot declines to discuss another agent's runs.
+- **Observed** (`docs/production-runs-demo.md`): with Haiku and with Sonnet the scheduler's intake is split and a handoff and emergency exit are added, the refill line gets its ending, handoff and emergency exit with no invented turnaround time, and the billing line gets only the edge description changed.
+
+### Left out, and why
+
+- **Real call capture.** Needs a recording and storage pipeline; the demo needs only the shape of a run.
+- **Proving the fix.** The new agent is not replayed against the old callers. A simulated caller is the natural next change.
+- **Versions and deploy.** Apply edits the working copy and Save writes the file, as before; the runs belong to the version they were recorded on, and a node a later edit removes is labelled *missing*.
+- **Cancel and reschedule as their own paths.** The model hands them to staff and asks, because the runs carry no scheduling policy.
+- **Several agents at once.** Analysis is per open agent.

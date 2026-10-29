@@ -7,7 +7,7 @@ import json
 import re
 from typing import Optional
 
-from copilot.validate_tool import FULL_TOOL_NAME
+from copilot.validate_tool import FULL_FINDINGS_TOOL_NAME, FULL_TOOL_NAME
 
 NAME_RE = re.compile(r'"name"\s*:\s*"((?:[^"\\]|\\.)*)"')
 
@@ -59,7 +59,10 @@ def step_for_tool(tool: str, tool_input: dict, draft_text: str) -> Optional[dict
     if tool == "Write":
         return {"label": "Writing agent"}
     if tool == "Skill":
-        return {"label": "Loading Prosper Blueprints"}
+        return {"label": "Loading run review" if "run-review" in str(tool_input.get("skill", "")) else "Loading Prosper Blueprints"}
+    if tool == FULL_FINDINGS_TOOL_NAME:
+        count = len(tool_input.get("findings", []))
+        return {"label": f"Reporting {count} finding" + ("" if count == 1 else "s")}
     return {"label": f"Using {tool}"}
 
 
