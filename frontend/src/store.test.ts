@@ -266,3 +266,49 @@ describe("moveNode and autoLayout", () => {
     expect(state().dirty).toBe(true);
   });
 });
+
+describe("edge label offsets", () => {
+  beforeEach(() => useAgentStore.setState({ labelOffsets: {} }));
+
+  test("moving a label records the offset and marks dirty", () => {
+    state().moveLabel("greeting::choose", { x: 5, y: -10 });
+
+    expect(state().labelOffsets).toEqual({ "greeting::choose": { x: 5, y: -10 } });
+    expect(state().dirty).toBe(true);
+  });
+
+  test("renaming a node or an edge carries the offset along", () => {
+    state().moveLabel("greeting::choose", { x: 5, y: 5 });
+
+    state().renameEdge("greeting", "choose", "pick");
+    expect(Object.keys(state().labelOffsets)).toEqual(["greeting::pick"]);
+    state().renameNode("greeting", "hello");
+    expect(Object.keys(state().labelOffsets)).toEqual(["hello::pick"]);
+  });
+
+  test("removing the edge, its node or its target drops the offset", () => {
+    const offset = { x: 1, y: 1 };
+    useAgentStore.setState({ labelOffsets: { "greeting::choose": offset, "confirm::back": offset } });
+
+    state().removeEdge("greeting", "choose");
+    expect(Object.keys(state().labelOffsets)).toEqual(["confirm::back"]);
+
+    state().removeNode("confirm");
+    expect(state().labelOffsets).toEqual({});
+  });
+
+  test("removing a node drops offsets of edges that pointed at it", () => {
+    useAgentStore.setState({ labelOffsets: { "greeting::choose": { x: 1, y: 1 } } });
+
+    state().removeNode("confirm");
+
+    expect(state().labelOffsets).toEqual({});
+  });
+
+  test("auto layout resets label offsets", () => {
+    state().moveLabel("greeting::choose", { x: 5, y: 5 });
+    state().autoLayout();
+
+    expect(state().labelOffsets).toEqual({});
+  });
+});

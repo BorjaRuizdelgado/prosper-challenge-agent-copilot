@@ -142,3 +142,21 @@ test("a moved node's position is saved in the layout and Auto layout resets it",
   expect(useAgentStore.getState().positions.greeting).toEqual(autoLayout(agent).greeting);
   expect(status()).toHaveTextContent("Unsaved changes");
 });
+
+test("a dragged edge label is saved in the layout and restored on reload", async () => {
+  renderApp(<App />, "/agents/s-1");
+  await screen.findByRole("complementary", { name: "Dock" });
+
+  await act(async () => useAgentStore.getState().moveLabel("greeting::go", { x: 30, y: -20 }));
+  fireEvent.click(screen.getByRole("button", { name: "Save" }));
+  await waitFor(() => expect(status()).toHaveTextContent("Saved"));
+  expect(sent()[0].layout["greeting::go"]).toEqual({ x: 30, y: -20 });
+  expect(sent()[0].layout.greeting).toBeDefined();
+
+  const saved = { ...agent, layout: sent()[0].layout };
+  mockApi({ "GET /api/agents": () => json([]), "GET /api/agents/s-1": () => json({ id: "s-1", agent: saved, updated_at: "" }) });
+  await act(async () => useAgentStore.getState().load("s-1"));
+
+  expect(useAgentStore.getState().labelOffsets).toEqual({ "greeting::go": { x: 30, y: -20 } });
+  expect(Object.keys(useAgentStore.getState().positions).sort()).toEqual(["confirm", "greeting"]);
+});

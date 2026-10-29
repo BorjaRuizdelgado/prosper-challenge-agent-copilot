@@ -595,3 +595,21 @@ fieldset.field {
   background: var(--surface);
   cursor: crosshair;
 }
+
+.edge-label {
+  position: absolute;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 11px;
+  cursor: grab;
+  pointer-events: all;
+  touch-action: none;
+  user-select: none;
+}
+
+.edge-label--selected {
+  border-color: var(--accent);
+}

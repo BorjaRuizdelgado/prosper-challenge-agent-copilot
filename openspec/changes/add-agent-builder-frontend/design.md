@@ -37,7 +37,7 @@ Atomic write (temp file + `os.replace`), listing derives name/node count/mtime f
 **3. Validation is a backend function returning structured issues; the UI calls it.**
 `agent_builder.validate(data) -> list[Issue{severity, code, message, node?, edge?}]` powers the API, `AgentBuilder.__init__` (raises if any `error`), and the UI panel (debounced `POST /api/agents/validate` on the working copy). One source of truth instead of porting rules to TS. Error codes: `no-nodes`, `bad-initial`, `unknown-target`, `duplicate-node`, `duplicate-function`; warnings: `unreachable`, `no-terminal`, `dead-end` (non-terminal node without edges).
 
-**4. Positions live in the agent JSON as `layout: {nodeName: {x, y}}`.**
+**4. Positions live in the agent JSON as `layout: {nodeName: {x, y}}`.** Dragged edge-label offsets share the map under the edge id (`"node::function"`, offset from the edge midpoint); keys containing `::` are never node names and are ignored by node layout.
 Alternative: sidecar file — rejected, it splits one agent over two files. The backend ignores it at runtime. Nodes without a position (e.g. produced by a Copilot) get dagre auto layout on load; "Auto layout" button re-runs it. Node names are the ids (as in the schema), so rename updates `layout`, edge targets and `initial_node` atomically in one store action.
 
 **5. Frontend stack: Vite + React 19 + TypeScript, `@xyflow/react`, `@dagrejs/dagre`, Zustand, plain CSS with tokens, React Router, Vitest.** Playwright is limited to one smoke spec.

@@ -5,9 +5,11 @@ import { connect, deleteEdges, reconnect } from "../canvasActions";
 import { toFlow } from "../graph";
 import { useAgentStore } from "../store";
 import type { Agent, Position } from "../model";
+import { LabelEdge } from "./LabelEdge";
 import { NodeCard } from "./NodeCard";
 
 const nodeTypes = { card: NodeCard };
+const edgeTypes = { labelled: LabelEdge };
 
 export function GraphCanvas({ agent, positions }: { agent: Agent; positions: Record<string, Position> }) {
   const selection = useAgentStore((s) => s.selection);
@@ -23,6 +25,7 @@ export function GraphCanvas({ agent, positions }: { agent: Agent; positions: Rec
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           fitView
           fitViewOptions={{ padding: 0.2 }}
           onNodeClick={(_, n) => select({ kind: "node", node: n.id })}

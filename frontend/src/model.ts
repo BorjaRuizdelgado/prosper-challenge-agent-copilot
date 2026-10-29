@@ -45,3 +45,6 @@ export interface Agent {
 }
 
 export const edgeId = (node: string, fn: string) => `${node}::${fn}`;
+
+/** Edge label offsets live in `layout` beside node positions, under the edge id (`node::function`). */
+export const isEdgeKey = (key: string) => key.includes("::");

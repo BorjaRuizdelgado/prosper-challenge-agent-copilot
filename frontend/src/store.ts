@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import * as api from "./api";
 import { autoLayout, NODE_HEIGHT, resolveLayout } from "./layout";
-import type { Agent, AgentNode, Edge, Position } from "./model";
+import { type Agent, type AgentNode, type Edge, edgeId, isEdgeKey, type Position } from "./model";
 
 export type Selection = { kind: "node"; node: string } | { kind: "edge"; node: string; function: string } | null;
 
@@ -50,6 +50,13 @@ function selectedEdgeTargets(agent: Agent, selection: NonNullable<Selection>, ta
   return edge?.target === target;
 }
 
+/** Copy of `map` with `from` renamed to `to`, or dropped when `to` is omitted. */
+function renameKey<T>(map: Record<string, T>, from: string, to?: string): Record<string, T> {
+  if (!(from in map)) return map;
+  const { [from]: value, ...rest } = map;
+  return to ? { ...rest, [to]: value } : rest;
+}
+
 export interface AgentState {
   agentId: string | null;
   status: Status;
@@ -58,6 +65,8 @@ export interface AgentState {
   agent: Agent | null;
   /** Position of every node (saved or auto-laid-out). */
   positions: Record<string, Position>;
+  /** How far the user dragged each edge's label from its default spot, by edge id. */
+  labelOffsets: Record<string, Position>;
   /** Bumped by auto layout so the canvas refits its view to the new arrangement. */
   layoutRun: number;
   selection: Selection;
@@ -77,6 +86,8 @@ export interface AgentState {
   /** Deletes a node and every edge targeting it; the initial node and the last node are protected. */
   removeNode: (name: string) => RemoveNodeResult;
   setInitialNode: (name: string) => void;
+  /** Records where the user dragged an edge label, relative to the middle of its edge. */
+  moveLabel: (id: string, offset: Position) => void;
   /** Records where the user dragged a node; saved with the agent as its `layout`. */
   moveNode: (name: string, position: Position) => void;
   /** Discards every position and lays the whole graph out again. */
@@ -101,6 +112,7 @@ const empty = {
   error: null,
   agent: null,
   positions: {},
+  labelOffsets: {} as Record<string, Position>,
   layoutRun: 0,
   selection: null as Selection,
   dirty: false,
@@ -116,7 +128,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     try {
       const { agent } = await api.getAgent(id);
       if (get().agentId !== id) return; // user navigated elsewhere meanwhile
-      set({ status: "ready", agent, positions: resolveLayout(agent) });
+      const labelOffsets = Object.fromEntries(Object.entries(agent.layout ?? {}).filter(([k]) => isEdgeKey(k)));
+      set({ status: "ready", agent, positions: resolveLayout(agent), labelOffsets });
     } catch (e) {
       if (get().agentId !== id) return;
       set({ status: "error", error: (e as Error).message });
@@ -131,7 +144,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     });
   },
   renameNode(from, raw) {
-    const { agent, positions, selection } = get();
+    const { agent, positions, labelOffsets, selection } = get();
     const to = raw.trim();
     if (!agent || !agent.nodes.some((n) => n.name === from)) return { ok: false, reason: "unknown" };
     if (!to) return { ok: false, reason: "blank" };
@@ -152,6 +165,9 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         })),
       },
       positions: moved(positions)!,
+      labelOffsets: Object.fromEntries(
+        Object.entries(labelOffsets).map(([k, v]) => [k.startsWith(`${from}::`) ? `${to}${k.slice(from.length)}` : k, v]),
+      ),
       selection: selection && selection.node === from ? { ...selection, node: to } : selection,
     });
     return { ok: true };
@@ -201,6 +217,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           n === node ? { ...n, edges: n.edges!.map((e) => (e.function === fn ? { ...e, function: to } : e)) } : n,
         ),
       },
+      labelOffsets: renameKey(get().labelOffsets, edgeId(from, fn), edgeId(from, to)),
       selection:
         selection?.kind === "edge" && selection.node === from && selection.function === fn
           ? { ...selection, function: to }
@@ -219,6 +236,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           n.name === from ? { ...n, edges: n.edges!.filter((e) => e.function !== fn) } : n,
         ),
       },
+      labelOffsets: renameKey(get().labelOffsets, edgeId(from, fn)),
       selection: selection?.kind === "edge" && selection.node === from && selection.function === fn ? null : selection,
     });
   },
@@ -247,6 +265,11 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     if (!agent || !agent.nodes.some((n) => n.name === name)) return { ok: false, reason: "unknown" };
     if (agent.nodes.length === 1) return { ok: false, reason: "last" };
     if (agent.initial_node === name) return { ok: false, reason: "initial" };
+    const gone = new Set(
+      agent.nodes.flatMap((n) =>
+        (n.edges ?? []).filter((e) => n.name === name || e.target === name).map((e) => edgeId(n.name, e.function)),
+      ),
+    );
     const without = <T,>(map?: Record<string, T>) => map && Object.fromEntries(Object.entries(map).filter(([k]) => k !== name));
     set({
       dirty: true,
@@ -258,9 +281,18 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           .map((n) => (n.edges?.some((e) => e.target === name) ? { ...n, edges: n.edges.filter((e) => e.target !== name) } : n)),
       },
       positions: without(positions)!,
+      labelOffsets: Object.fromEntries(
+        Object.entries(get().labelOffsets).filter(([k]) => !gone.has(k)),
+      ),
       selection: selection && (selection.node === name || selectedEdgeTargets(agent, selection, name)) ? null : selection,
     });
     return { ok: true };
+  },
+  moveLabel(id, offset) {
+    const { labelOffsets } = get();
+    const current = labelOffsets[id];
+    if (current?.x === offset.x && current?.y === offset.y) return;
+    set({ dirty: true, labelOffsets: { ...labelOffsets, [id]: offset } });
   },
   moveNode(name, position) {
     const { agent, positions } = get();
@@ -271,7 +303,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   autoLayout() {
     const { agent } = get();
     if (!agent) return;
-    set({ dirty: true, positions: autoLayout(agent), layoutRun: get().layoutRun + 1 });
+    set({ dirty: true, positions: autoLayout(agent), labelOffsets: {}, layoutRun: get().layoutRun + 1 });
   },
   setInitialNode(name) {
     const { agent } = get();
@@ -279,15 +311,16 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     set({ dirty: true, agent: { ...agent, initial_node: name } });
   },
   async save() {
-    const { agentId, agent, positions, saveStatus } = get();
+    const { agentId, agent, positions, labelOffsets, saveStatus } = get();
     if (!agentId || !agent || saveStatus === "saving") return false;
     set({ saveStatus: "saving", saveError: null });
     try {
-      await api.saveAgent(agentId, { ...agent, layout: positions });
+      const layout = { ...positions, ...labelOffsets };
+      await api.saveAgent(agentId, { ...agent, layout });
       if (get().agentId !== agentId) return true;
       // Edits made while the request was in flight are not saved yet, so only clear dirty if untouched.
-      const untouched = get().agent === agent && get().positions === positions;
-      set({ saveStatus: "idle", agent: untouched ? { ...agent, layout: positions } : get().agent, dirty: !untouched });
+      const untouched = get().agent === agent && get().positions === positions && get().labelOffsets === labelOffsets;
+      set({ saveStatus: "idle", agent: untouched ? { ...agent, layout } : get().agent, dirty: !untouched });
       return true;
     } catch (e) {
       if (get().agentId === agentId) set({ saveStatus: "failed", saveError: (e as Error).message });

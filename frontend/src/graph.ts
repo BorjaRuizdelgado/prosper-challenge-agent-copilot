@@ -29,7 +29,7 @@ export function toFlow(
         target: e.target,
         label: e.function,
         selected: selection?.kind === "edge" && selection.node === node.name && selection.function === e.function,
-        type: "default",
+        type: "labelled",
       })),
   );
   return { nodes, edges };
