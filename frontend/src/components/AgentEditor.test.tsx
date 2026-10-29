@@ -103,3 +103,19 @@ test("Add node puts a new card on the canvas, selects it and marks the agent uns
   expect(screen.getByLabelText("Name")).toHaveValue("new_node");
   expect(screen.getByTestId("save-status")).toHaveTextContent("Unsaved changes");
 });
+
+test("validation issues put markers on the affected node and edge", async () => {
+  mockApi({
+    ...routes(),
+    "POST /api/agents/validate": () =>
+      json([
+        { severity: "warning", code: "dead-end", message: "Node 'confirm' has no edges out.", node: "confirm" },
+        { severity: "error", code: "unknown-target", message: "Bad target.", node: "greeting", edge: "choose_intent" },
+      ]),
+  });
+  renderApp(<App />, "/agents/s-1");
+
+  // React Flow hides cards until they are measured, which jsdom never does, so query by label rather than role.
+  expect(await screen.findByLabelText("warning on this node", {}, { timeout: 3000 })).toBeInTheDocument();
+  expect(await screen.findByLabelText("error on edge choose_intent", {}, { timeout: 3000 })).toBeInTheDocument();
+});

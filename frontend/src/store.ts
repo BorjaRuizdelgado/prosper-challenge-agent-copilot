@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import * as api from "./api";
 import { autoLayout, NODE_HEIGHT, resolveLayout } from "./layout";
-import { type Agent, type AgentNode, type Edge, edgeId, isEdgeKey, type Position } from "./model";
+import { type Agent, type AgentNode, type Edge, edgeId, isEdgeKey, type Issue, type Position } from "./model";
 
 export type Selection = { kind: "node"; node: string } | { kind: "edge"; node: string; function: string } | null;
 
@@ -29,6 +29,9 @@ export function uniqueFunction(node: AgentNode, base: string): string {
   while (used.has(`${base}_${i}`)) i++;
   return `${base}_${i}`;
 }
+
+/** Errors stop a call from starting; warnings only inform. */
+export const blockingIssues = (issues: Issue[]) => issues.filter((i) => i.severity === "error");
 
 export type RemoveNodeResult = { ok: true } | { ok: false; reason: "unknown" | "initial" | "last" };
 
@@ -77,6 +80,11 @@ export interface AgentState {
   dirty: boolean;
   saveStatus: SaveStatus;
   saveError: string | null;
+  /** Latest validation result for the working copy; empty until the first check settles. */
+  issues: Issue[];
+  /** False when the last validation request failed, so `issues` may be stale. */
+  validated: boolean;
+  setIssues: (issues: Issue[] | null) => void;
   /** Active dock tab id (see dock registry). */
   dockTab: string;
   select: (selection: Selection) => void;
@@ -123,6 +131,8 @@ const empty = {
   dirty: false,
   saveStatus: "idle" as SaveStatus,
   saveError: null as string | null,
+  issues: [] as Issue[],
+  validated: false,
   dockTab: "inspector",
 };
 
@@ -338,6 +348,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     }
   },
   select: (selection) => set(selection ? { selection, dockTab: "inspector" } : { selection }),
+  setIssues: (issues) => set(issues ? { issues, validated: true } : { validated: false }),
   setDockTab: (dockTab) => set({ dockTab }),
   reset: () => set(empty),
 }));

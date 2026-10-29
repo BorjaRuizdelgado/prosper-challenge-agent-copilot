@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useAgentStore } from "../store";
+import { useValidation } from "../useValidation";
 import { Dock } from "./Dock";
 import { GraphCanvas } from "./GraphCanvas";
 import { SaveBar } from "./SaveBar";
@@ -8,6 +9,8 @@ import { SaveBar } from "./SaveBar";
 export function AgentEditor() {
   const { id } = useParams();
   const { status, error, agent, positions, load, reset, addNode, autoLayout } = useAgentStore();
+
+  useValidation();
 
   useEffect(() => {
     if (id) void load(id);

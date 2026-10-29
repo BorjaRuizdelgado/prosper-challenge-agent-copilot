@@ -1,4 +1,4 @@
-import type { Agent } from "./model";
+import type { Agent, Issue } from "./model";
 
 export interface AgentSummary {
   id: string;
@@ -41,6 +41,10 @@ export const deleteAgent = (id: string) =>
 
 export const saveAgent = (id: string, agent: Agent) =>
   request<AgentRecord>(`/api/agents/${id}`, sendJson("PUT", agent), "Could not save the agent");
+
+/** Runs the backend's validation rules over a working copy that need not be saved. */
+export const validateAgent = (agent: Agent) =>
+  request<Issue[]>("/api/agents/validate", sendJson("POST", agent), "Could not validate the agent");
 
 /** Rename by re-saving the stored document with a new name. */
 export async function renameAgent(id: string, name: string): Promise<AgentRecord> {

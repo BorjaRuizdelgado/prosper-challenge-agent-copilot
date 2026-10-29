@@ -41,7 +41,7 @@ Each group is a vertical slice that ends with something usable and verified in t
 ## 7. Agent settings, validation feedback and JSON view
 
 - [x] 7.1 Settings form (name, persona, voice select with curated ElevenLabs voices + custom id, model select + custom). Verify: Vitest; manual check in the browser.
-- [ ] 7.2 Debounced validation via `/api/agents/validate`: Issues dock tab with errors/warnings, markers on affected nodes/edges, clear "No issues" state, issue click selects the element. Verify: manual check in the browser.
+- [x] 7.2 Debounced validation via `/api/agents/validate`: Issues dock tab with errors/warnings, markers on affected nodes/edges, clear "No issues" state, issue click selects the element. Verify: manual check in the browser.
 - [ ] 7.3 JSON dock tab: editable view of the working agent, Apply button, parse/shape errors with line info, graph unchanged on failure, successful apply marks dirty. Verify: Vitest for good/bad JSON; manual check in the browser.
 
 ## 8. Test call (voice end to end)

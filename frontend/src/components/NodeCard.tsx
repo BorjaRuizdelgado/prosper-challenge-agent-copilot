@@ -1,12 +1,16 @@
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import type { CardNode } from "../graph";
 import { NEW_EDGE_HANDLE } from "../canvasActions";
+import { issueMessages, worstSeverity } from "../issues";
 import { NODE_WIDTH } from "../layout";
+import { useAgentStore } from "../store";
 
 const summary = (messages: { content: string }[] = []) => messages[0]?.content ?? "No task yet";
 
 export function NodeCard({ data, selected }: NodeProps<CardNode>) {
   const { node, initial } = data;
+  const issues = useAgentStore((s) => s.issues);
+  const severity = worstSeverity(issues, node.name);
   const edges = node.edges ?? [];
   const kind = node.end ? "end" : edges.some((e) => Object.keys(e.properties ?? {}).length) ? "collect" : "greeting";
   return (
@@ -23,12 +27,32 @@ export function NodeCard({ data, selected }: NodeProps<CardNode>) {
         <span className="node-card__name">{node.name}</span>
         {initial && <span className="pill pill--accent">Start</span>}
         {node.end && <span className="pill">End</span>}
+        {severity && (
+          <span
+            className={`marker marker--${severity}`}
+            role="img"
+            aria-label={`${severity} on this node`}
+            title={issueMessages(issues, node.name).join("\n")}
+          >
+            !
+          </span>
+        )}
       </header>
       <p className="node-card__task">{summary(node.task_messages)}</p>
       <ul className="node-card__edges">
         {edges.map((e, i) => (
           <li key={e.function} className="node-card__edge">
             <span>{e.function}</span>
+            {worstSeverity(issues, node.name, e.function) && (
+              <span
+                className={`marker marker--${worstSeverity(issues, node.name, e.function)}`}
+                role="img"
+                aria-label={`${worstSeverity(issues, node.name, e.function)} on edge ${e.function}`}
+                title={issueMessages(issues, node.name, e.function).join("\n")}
+              >
+                !
+              </span>
+            )}
             <Handle
               type="source"
               id={e.function}

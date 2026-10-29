@@ -1,5 +1,6 @@
 import { BaseEdge, EdgeLabelRenderer, type EdgeProps, Position, useStore } from "@xyflow/react";
 import { useRef } from "react";
+import { worstSeverity } from "../issues";
 import { useAgentStore } from "../store";
 
 const CURVATURE = 0.25;
@@ -48,13 +49,14 @@ export function LabelEdge({ id, sourceX, sourceY, targetX, targetY, sourcePositi
 
   const { path, mid } = bezierThroughOffset([sourceX, sourceY], [targetX, targetY], sourcePosition, targetPosition, offset);
   const [nodeName, fn] = id.split("::");
+  const severity = useAgentStore((s) => worstSeverity(s.issues, nodeName, fn));
 
   return (
     <>
       <BaseEdge id={id} path={path} markerEnd={markerEnd} />
       <EdgeLabelRenderer>
         <div
-          className={`edge-label nodrag nopan${selected ? " edge-label--selected" : ""}`}
+          className={`edge-label nodrag nopan${selected ? " edge-label--selected" : ""}${severity ? ` edge-label--${severity}` : ""}`}
           style={{ transform: `translate(-50%, -50%) translate(${mid.x}px, ${mid.y}px)` }}
           title="Drag to move this label"
           onPointerDown={(e) => {
