@@ -45,3 +45,7 @@ def write_draft(agent_id: str, agent: dict) -> Path:
 def read_draft(agent_id: str) -> dict:
     """The draft as parsed JSON. Raises FileNotFoundError or json.JSONDecodeError."""
     return json.loads(draft_path(agent_id).read_text(encoding="utf-8"))
+
+
+def system_prompt() -> str:
+    return (Path(__file__).parent / "system_prompt.md").read_text(encoding="utf-8")
