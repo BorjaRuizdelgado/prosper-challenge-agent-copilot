@@ -352,3 +352,70 @@ button:disabled {
   color: var(--accent);
   border-color: var(--accent);
 }
+
+/* ---- dock ---- */
+.editor__body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.dock {
+  width: 320px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+}
+
+.dock__tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.dock__tabs button {
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  color: var(--muted);
+}
+
+.dock__tabs button[aria-selected="true"] {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+.dock__panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.dock__empty {
+  color: var(--muted);
+  margin: 0;
+}
+
+.inspector {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.inspector__field dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.inspector__field dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.mono {
+  font-family: var(--font-mono);
+}

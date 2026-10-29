@@ -3,6 +3,8 @@ import * as api from "./api";
 import { resolveLayout } from "./layout";
 import type { Agent, Position } from "./model";
 
+export type Selection = { kind: "node"; node: string } | { kind: "edge"; node: string; function: string } | null;
+
 type Status = "idle" | "loading" | "ready" | "error";
 
 export interface AgentState {
@@ -13,11 +15,24 @@ export interface AgentState {
   agent: Agent | null;
   /** Position of every node (saved or auto-laid-out). */
   positions: Record<string, Position>;
+  selection: Selection;
+  /** Active dock tab id (see dock registry). */
+  dockTab: string;
+  select: (selection: Selection) => void;
+  setDockTab: (tab: string) => void;
   load: (id: string) => Promise<void>;
   reset: () => void;
 }
 
-const empty = { agentId: null, status: "idle" as Status, error: null, agent: null, positions: {} };
+const empty = {
+  agentId: null,
+  status: "idle" as Status,
+  error: null,
+  agent: null,
+  positions: {},
+  selection: null as Selection,
+  dockTab: "inspector",
+};
 
 export const useAgentStore = create<AgentState>((set, get) => ({
   ...empty,
@@ -32,5 +47,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       set({ status: "error", error: (e as Error).message });
     }
   },
+  select: (selection) => set(selection ? { selection, dockTab: "inspector" } : { selection }),
+  setDockTab: (dockTab) => set({ dockTab }),
   reset: () => set(empty),
 }));

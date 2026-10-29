@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useAgentStore } from "../store";
+import { Dock } from "./Dock";
 import { GraphCanvas } from "./GraphCanvas";
 
 export function AgentEditor() {
@@ -30,7 +31,10 @@ export function AgentEditor() {
         <h1 className="editor__title">{agent.name}</h1>
         <span className="editor__meta">{agent.nodes.length} nodes</span>
       </header>
-      <GraphCanvas agent={agent} positions={positions} />
+      <div className="editor__body">
+        <GraphCanvas agent={agent} positions={positions} />
+        <Dock />
+      </div>
     </div>
   );
 }

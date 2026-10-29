@@ -1,7 +1,8 @@
-import { screen } from "@testing-library/react";
+import { act, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 import { App } from "../App";
 import { json, mockApi, renderApp } from "../test/helpers";
+import { useAgentStore } from "../store";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -51,4 +52,42 @@ test("a failed load shows the error with a working retry", async () => {
   screen.getByRole("button", { name: "Retry" }).click();
 
   expect(await screen.findByRole("heading", { name: "Scheduler" })).toBeInTheDocument();
+});
+
+test("clicking nodes shows them in the Inspector", async () => {
+  mockApi(routes());
+  renderApp(<App />, "/agents/s-1");
+  const canvas = await screen.findByTestId("canvas");
+  const dock = screen.getByRole("complementary", { name: "Dock" });
+  expect(dock).toHaveTextContent("Select a node or an edge");
+
+  fireEvent.click(await within(canvas).findByText("Greet the caller."));
+  expect(within(dock).getByLabelText("Node")).toHaveTextContent("greeting");
+  expect(within(dock).getByLabelText("Node")).toHaveTextContent("Greet the caller.");
+
+  fireEvent.click(within(canvas).getByText("confirm", { selector: ".node-card__name" }));
+  expect(within(dock).getByLabelText("Node")).toHaveTextContent("Ends the callYes");
+});
+
+test("selecting an element switches the dock back to the Inspector tab", () => {
+  useAgentStore.setState({ dockTab: "other" });
+  useAgentStore.getState().select({ kind: "node", node: "greeting" });
+
+  expect(useAgentStore.getState().dockTab).toBe("inspector");
+  expect(useAgentStore.getState().selection).toEqual({ kind: "node", node: "greeting" });
+
+  useAgentStore.getState().select(null);
+  expect(useAgentStore.getState().selection).toBeNull();
+});
+
+test("an edge selection shows function, target and parameters", async () => {
+  mockApi(routes());
+  renderApp(<App />, "/agents/s-1");
+  await screen.findByTestId("canvas");
+
+  act(() => useAgentStore.getState().select({ kind: "edge", node: "greeting", function: "choose_intent" }));
+
+  const panel = screen.getByLabelText("Edge");
+  expect(panel).toHaveTextContent("choose_intent");
+  expect(panel).toHaveTextContent("confirm");
 });
