@@ -31,3 +31,12 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# ---- Frontend build / tooling ----
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+.taste-skill/
+
+# ---- Runtime agent files (created via the UI/API); the seed is example_flow.json ----
+backend/agents/
