@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resetCallStore, setCallClientFactory } from "../call/callStore";
@@ -52,5 +52,25 @@ describe("CallPanel", () => {
     useAgentStore.setState({ issues: [{ severity: "warning", code: "dead-end", message: "x" }] });
     renderApp(<CallPanel />);
     expect(screen.getByRole("button", { name: "Test call" })).toBeEnabled();
+  });
+});
+
+describe("CallPanel transcript", () => {
+  it("shows both sides, notes, and keeps them after hang-up", async () => {
+    renderApp(<CallPanel />);
+    await userEvent.click(screen.getByRole("button", { name: "Test call" }));
+    await waitFor(() => expect(screen.getByTestId("call-state")).toHaveTextContent("Live"));
+    const ev = fake.state.events!;
+    act(() => {
+      ev.onBotText("Hello there.");
+      ev.onUserText("Hi, I need a slot");
+      ev.onServerMessage({ type: "node_changed", from: "greeting", node: "collect", via: "go", args: {} });
+    });
+    const list = screen.getByRole("list", { name: "Transcript" });
+    expect(within(list).getByText("Hello there.")).toBeInTheDocument();
+    expect(within(list).getByText("Hi, I need a slot")).toBeInTheDocument();
+    expect(within(list).getByText("Moved to collect via go")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Hang up" }));
+    expect(screen.getByRole("list", { name: "Transcript" })).toBeInTheDocument();
   });
 });

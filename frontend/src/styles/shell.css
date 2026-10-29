@@ -748,3 +748,29 @@ button.issues__item:hover {
   display: flex;
   gap: 8px;
 }
+
+.call__transcript {
+  list-style: none;
+  margin: 0;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.call__line {
+  overflow-wrap: anywhere;
+}
+
+.call__who {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.call__line--note {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}

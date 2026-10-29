@@ -102,3 +102,93 @@ describe("call state machine", () => {
     expect(fake.factory).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("transcript", () => {
+  it("alternates user and agent, merging consecutive sentences of one speaker", async () => {
+    const fake = install();
+    await useCallStore.getState().start("a");
+    const ev = fake.state.events!;
+    ev.onBotText("Hello, this is Prosper.");
+    ev.onBotText("How can I help?");
+    ev.onUserText("I need an appointment");
+    ev.onBotText("Sure.");
+    expect(useCallStore.getState().transcript).toEqual([
+      { kind: "agent", text: "Hello, this is Prosper. How can I help?" },
+      { kind: "user", text: "I need an appointment" },
+      { kind: "agent", text: "Sure." },
+    ]);
+  });
+
+  it("ignores blank text", async () => {
+    const fake = install();
+    await useCallStore.getState().start("a");
+    fake.state.events!.onUserText("   ");
+    expect(useCallStore.getState().transcript).toEqual([]);
+  });
+
+  it("survives hang-up and is cleared by the next call", async () => {
+    const fake = install();
+    await useCallStore.getState().start("a");
+    fake.state.events!.onBotText("Hi");
+    await useCallStore.getState().hangUp();
+    expect(useCallStore.getState().transcript).toHaveLength(1);
+    await useCallStore.getState().start("a");
+    expect(useCallStore.getState().transcript).toEqual([]);
+  });
+
+  it("notes transitions with the collected data", async () => {
+    const fake = install();
+    await useCallStore.getState().start("a");
+    const ev = fake.state.events!;
+    ev.onServerMessage({ type: "node_changed", from: null, node: "greeting", via: null, args: {} });
+    ev.onServerMessage({ type: "node_changed", from: "greeting", node: "confirm", via: "collect", args: { name: "Ana", slots: [1] } });
+    expect(useCallStore.getState().transcript).toEqual([
+      { kind: "note", text: "Started at greeting" },
+      { kind: "note", text: "Moved to confirm via collect (name: Ana, slots: [1])" },
+    ]);
+  });
+});
+
+describe("active node", () => {
+  const msg = (node: string, from: string | null = null, via: string | null = null) => ({
+    type: "node_changed", from, node, via, args: {},
+  });
+
+  it("tracks the node and the last transition", async () => {
+    const fake = install();
+    await useCallStore.getState().start("a");
+    const ev = fake.state.events!;
+    ev.onServerMessage(msg("greeting"));
+    expect(useCallStore.getState()).toMatchObject({ activeNode: "greeting", lastTransition: null });
+    ev.onServerMessage(msg("confirm", "greeting", "go"));
+    expect(useCallStore.getState()).toMatchObject({
+      activeNode: "confirm",
+      lastTransition: { from: "greeting", node: "confirm", via: "go" },
+    });
+  });
+
+  it("accepts the message wrapped in `data` and ignores other messages", async () => {
+    const fake = install();
+    await useCallStore.getState().start("a");
+    fake.state.events!.onServerMessage({ data: msg("b", "a", "go") });
+    fake.state.events!.onServerMessage({ type: "something_else" });
+    fake.state.events!.onServerMessage(null);
+    expect(useCallStore.getState().activeNode).toBe("b");
+  });
+
+  it("is cleared on hang-up", async () => {
+    const fake = install();
+    await useCallStore.getState().start("a");
+    fake.state.events!.onServerMessage(msg("b", "a", "go"));
+    await useCallStore.getState().hangUp();
+    expect(useCallStore.getState()).toMatchObject({ activeNode: null, lastTransition: null });
+  });
+
+  it("is cleared when the other side disconnects", async () => {
+    const fake = install();
+    await useCallStore.getState().start("a");
+    fake.state.events!.onServerMessage(msg("b", "a", "go"));
+    fake.state.events!.onDisconnected();
+    expect(useCallStore.getState()).toMatchObject({ state: "ended", activeNode: null, lastTransition: null });
+  });
+});

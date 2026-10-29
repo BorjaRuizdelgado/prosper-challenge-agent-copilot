@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useCallStore } from "../call/callStore";
 import { blockingIssues, useAgentStore } from "../store";
 
@@ -10,7 +11,9 @@ export function CallPanel() {
   const saving = useAgentStore((s) => s.saveStatus === "saving");
   const blocking = useAgentStore((s) => blockingIssues(s.issues).length);
   const save = useAgentStore((s) => s.save);
-  const { state, message, muted, start, hangUp, toggleMute } = useCallStore();
+  const { state, message, muted, transcript, start, hangUp, toggleMute } = useCallStore();
+  const end = useRef<HTMLLIElement>(null);
+  useEffect(() => end.current?.scrollIntoView?.({ block: "end" }), [transcript]);
 
   const busy = state === "connecting" || state === "live";
   const blockedReason = blocking > 0 ? `Fix the ${blocking} error${blocking === 1 ? "" : "s"} in Issues before calling.` : null;
@@ -52,6 +55,17 @@ export function CallPanel() {
       {!busy && blockedReason && <p className="field__hint">{blockedReason}</p>}
       {!busy && !blockedReason && dirty && (
         <p className="field__hint">This agent has unsaved changes. The call always runs the saved version, so it will be saved first.</p>
+      )}
+      {transcript.length > 0 && (
+        <ol className="call__transcript" aria-label="Transcript">
+          {transcript.map((entry, i) => (
+            <li key={i} className={`call__line call__line--${entry.kind}`}>
+              {entry.kind !== "note" && <span className="call__who">{entry.kind === "user" ? "You" : "Agent"}</span>}
+              {entry.text}
+            </li>
+          ))}
+          <li ref={end} aria-hidden />
+        </ol>
       )}
     </div>
   );
