@@ -1,4 +1,5 @@
 import { Outlet } from "react-router-dom";
+import { AgentList } from "./AgentList";
 
 export function Shell() {
   return (
@@ -8,6 +9,7 @@ export function Shell() {
           <span className="product-mark__glyph" aria-hidden />
           Agent Builder
         </div>
+        <AgentList />
       </aside>
       <main className="sheet">
         <Outlet />
