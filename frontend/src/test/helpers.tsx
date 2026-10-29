@@ -17,6 +17,17 @@ export function mockFetch(...responses: Array<Response | Error>) {
   return fn;
 }
 
+/** Stub fetch by route ("GET /api/agents", ...); unmatched requests fail the test loudly. */
+export function mockApi(routes: Record<string, () => Response>) {
+  const fn = vi.fn(async (url: string, init?: RequestInit) => {
+    const handler = routes[`${init?.method ?? "GET"} ${url}`];
+    if (!handler) throw new Error(`Unexpected request: ${init?.method ?? "GET"} ${url}`);
+    return handler();
+  });
+  vi.stubGlobal("fetch", fn);
+  return fn;
+}
+
 export const renderApp = (ui: ReactElement, route = "/") =>
   render(
     <MemoryRouter initialEntries={[route]}>

@@ -2,7 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, test, vi } from "vitest";
 import { App } from "../App";
-import { json, mockFetch, renderApp } from "../test/helpers";
+import { json, mockApi, mockFetch, renderApp } from "../test/helpers";
 
 const summary = { id: "a-1", name: "Scheduler", node_count: 4, updated_at: "2026-01-01T00:00:00Z" };
 const record = (id: string, name: string) => ({
@@ -17,7 +17,11 @@ const calls = (fn: ReturnType<typeof vi.fn>) =>
   fn.mock.calls.map(([url, init]) => `${init?.method ?? "GET"} ${url}`);
 
 test("creating an agent adds it to the list and opens it at its own URL", async () => {
-  const fetchMock = mockFetch(json([summary]), json(record("new-1234", "Intake"), 201));
+  const fetchMock = mockApi({
+    "GET /api/agents": () => json([summary]),
+    "POST /api/agents": () => json(record("new-1234", "Intake"), 201),
+    "GET /api/agents/new-1234": () => json(record("new-1234", "Intake")),
+  });
   renderApp(<App />);
   await screen.findByRole("link", { name: /Scheduler/ });
 
@@ -28,8 +32,9 @@ test("creating an agent adds it to the list and opens it at its own URL", async 
   await userEvent.click(within(dialog).getByRole("button", { name: "Create" }));
 
   expect(await screen.findByRole("link", { name: /Intake/ })).toHaveAttribute("href", "/agents/new-1234");
-  expect(screen.getByRole("main")).toHaveTextContent("new-1234");
-  expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ name: "Intake" });
+  expect(await screen.findByRole("heading", { name: "Intake" })).toBeInTheDocument();
+  const post = fetchMock.mock.calls.find(([, init]) => init?.method === "POST")!;
+  expect(JSON.parse(post[1]!.body as string)).toEqual({ name: "Intake" });
 });
 
 test("a failed create shows a toast and leaves the list alone", async () => {
@@ -78,15 +83,19 @@ test("a failed rename restores the old name and toasts", async () => {
 });
 
 test("duplicating adds the copy and opens it", async () => {
-  const fetchMock = mockFetch(json([summary]), json(record("copy-9999", "Scheduler copy"), 201));
+  const fetchMock = mockApi({
+    "GET /api/agents": () => json([summary]),
+    "POST /api/agents/a-1/duplicate": () => json(record("copy-9999", "Scheduler copy"), 201),
+    "GET /api/agents/copy-9999": () => json(record("copy-9999", "Scheduler copy")),
+  });
   renderApp(<App />);
   await screen.findByRole("link", { name: /Scheduler/ });
 
   await userEvent.click(screen.getByRole("button", { name: "Duplicate Scheduler" }));
 
   expect(await screen.findByRole("link", { name: /Scheduler copy/ })).toHaveAttribute("href", "/agents/copy-9999");
-  expect(calls(fetchMock)[1]).toBe("POST /api/agents/a-1/duplicate");
-  expect(screen.getByRole("main")).toHaveTextContent("copy-9999");
+  expect(calls(fetchMock)).toContain("POST /api/agents/a-1/duplicate");
+  expect(await screen.findByRole("heading", { name: "Scheduler copy" })).toBeInTheDocument();
 });
 
 test("delete needs confirmation, and cancelling deletes nothing", async () => {
@@ -104,21 +113,29 @@ test("delete needs confirmation, and cancelling deletes nothing", async () => {
 });
 
 test("confirming delete removes the agent and leaves its editor", async () => {
-  const fetchMock = mockFetch(json([summary]), new Response(null, { status: 204 }));
+  const fetchMock = mockApi({
+    "GET /api/agents": () => json([summary]),
+    "GET /api/agents/a-1": () => json(record("a-1", "Scheduler")),
+    "DELETE /api/agents/a-1": () => new Response(null, { status: 204 }),
+  });
   renderApp(<App />, "/agents/a-1");
   await screen.findByRole("link", { name: /Scheduler/ });
-  expect(screen.getByRole("main")).toHaveTextContent("a-1");
+  expect(await screen.findByRole("heading", { name: "Scheduler" })).toBeInTheDocument();
 
   await userEvent.click(screen.getByRole("button", { name: "Delete Scheduler" }));
   await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete" }));
 
   await waitFor(() => expect(screen.queryByRole("link", { name: /Scheduler/ })).not.toBeInTheDocument());
-  expect(calls(fetchMock)[1]).toBe("DELETE /api/agents/a-1");
+  expect(calls(fetchMock)).toContain("DELETE /api/agents/a-1");
   await waitFor(() => expect(screen.getByRole("main")).toHaveTextContent("Select an agent"));
 });
 
 test("a failed delete brings the agent back and keeps the editor open", async () => {
-  mockFetch(json([summary]), json({}, 500));
+  mockApi({
+    "GET /api/agents": () => json([summary]),
+    "GET /api/agents/a-1": () => json(record("a-1", "Scheduler")),
+    "DELETE /api/agents/a-1": () => json({}, 500),
+  });
   renderApp(<App />, "/agents/a-1");
   await screen.findByRole("link", { name: /Scheduler/ });
 
@@ -127,5 +144,5 @@ test("a failed delete brings the agent back and keeps the editor open", async ()
 
   expect(await screen.findByRole("status")).toHaveTextContent("Could not delete the agent (500)");
   expect(screen.getByRole("link", { name: /Scheduler/ })).toBeInTheDocument();
-  expect(screen.getByRole("main")).toHaveTextContent("a-1");
+  expect(screen.getByRole("heading", { name: "Scheduler" })).toBeInTheDocument();
 });

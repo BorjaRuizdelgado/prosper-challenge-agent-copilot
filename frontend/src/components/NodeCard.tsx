@@ -1,0 +1,38 @@
+import { Handle, type NodeProps, Position } from "@xyflow/react";
+import type { CardNode } from "../graph";
+import { NODE_WIDTH } from "../layout";
+
+const summary = (messages: { content: string }[] = []) => messages[0]?.content ?? "No task yet";
+
+export function NodeCard({ data, selected }: NodeProps<CardNode>) {
+  const { node, initial } = data;
+  const edges = node.edges ?? [];
+  const kind = node.end ? "end" : edges.some((e) => Object.keys(e.properties ?? {}).length) ? "collect" : "greeting";
+  return (
+    <div className={`node-card${selected ? " node-card--selected" : ""}`} style={{ width: NODE_WIDTH }}>
+      <Handle type="target" position={Position.Left} className="node-card__in" />
+      <header className="node-card__head">
+        <span className={`node-card__tile node-card__tile--${kind}`} aria-hidden />
+        <span className="node-card__name">{node.name}</span>
+        {initial && <span className="pill pill--accent">Start</span>}
+        {node.end && <span className="pill">End</span>}
+      </header>
+      <p className="node-card__task">{summary(node.task_messages)}</p>
+      <ul className="node-card__edges">
+        {edges.map((e, i) => (
+          <li key={e.function} className="node-card__edge">
+            <span>{e.function}</span>
+            <Handle
+              type="source"
+              id={e.function}
+              position={Position.Right}
+              className="node-card__out"
+              style={{ top: undefined }}
+              data-index={i}
+            />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}

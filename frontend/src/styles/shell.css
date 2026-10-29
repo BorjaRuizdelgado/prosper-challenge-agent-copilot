@@ -212,3 +212,143 @@ button:disabled {
   border-radius: var(--radius-control);
   font-size: 13px;
 }
+
+/* ---- editor + canvas ---- */
+.editor {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.editor__bar {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.editor__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.editor__meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.canvas {
+  flex: 1;
+  min-height: 0;
+  background: var(--raised);
+}
+
+.canvas .react-flow {
+  --xy-edge-stroke: var(--control);
+  --xy-edge-stroke-selected: var(--accent);
+  --xy-minimap-background-color: var(--surface);
+  --xy-controls-button-background-color: var(--surface);
+  --xy-controls-button-border-color: var(--border);
+  font-family: var(--font-sans);
+}
+
+.node-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+}
+
+.node-card--selected {
+  border-color: var(--accent);
+}
+
+.node-card__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.node-card__name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.node-card__tile {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background: var(--accent);
+  opacity: 0.85;
+}
+
+.node-card__tile--collect {
+  background: var(--warning);
+}
+
+.node-card__tile--end {
+  background: var(--muted);
+}
+
+.node-card__task {
+  margin: 6px 0 8px;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.node-card__edges {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.node-card__edge {
+  position: relative;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  border-top: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  color: var(--text);
+}
+
+.node-card__out {
+  right: -13px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  border: none;
+}
+
+.node-card__in {
+  width: 8px;
+  height: 8px;
+  background: var(--control);
+  border: none;
+}
+
+.pill {
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.pill--accent {
+  color: var(--accent);
+  border-color: var(--accent);
+}
