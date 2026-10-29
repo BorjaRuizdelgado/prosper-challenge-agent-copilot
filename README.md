@@ -50,6 +50,9 @@ Open `http://localhost:5173`. Agents are JSON files in `backend/agents/` (git-ig
 - **Edges:** drag from a card's handle to another node to connect, drag an edge end to retarget, select and press Delete/Backspace to remove.
 - **Edge labels:** drag an edge's label (its function name) to pull overlapping labels apart; the offset is relative to the middle of the edge and saved in `layout` under the edge id `node::function`, next to the node positions.
 - **Layout:** drag cards to place them. Positions are saved with the agent as `layout` when you press *Save*. *Auto layout* re-arranges everything (left to right), resets label offsets and marks the agent unsaved; nodes without a saved position (e.g. added by hand in the JSON) are laid out automatically on load.
+- **Settings tab:** agent name, persona (applies to every node), voice and model. Voice and model are picked from a curated list (`frontend/src/options.ts`) or set to *Custom…* to type any ElevenLabs voice id / model name.
+- **Issues tab:** after edits settle (~400 ms) the working copy, saved or not, is sent to `POST /api/agents/validate`, the same rules `AgentBuilder` enforces. Errors (e.g. an edge to a missing node) and warnings (unreachable node, no terminal node, dead end) are listed; clicking one selects the node or edge, which also carries a red/amber `!` marker. Errors will block starting a test call. If the request fails the tab says the list may be stale.
+- **JSON tab:** the whole agent, including `layout`, as editable JSON. *Apply* replaces the graph and marks it unsaved; malformed JSON (with the line when the browser reports one) or the wrong shape is rejected and the graph is left untouched. *Discard* returns to the current graph.
 
 ## Layout
 
