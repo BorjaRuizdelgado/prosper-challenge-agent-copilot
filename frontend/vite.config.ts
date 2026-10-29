@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 const proxy = {
-  "/api": "http://localhost:8000",
+  "/api": process.env.API_URL ?? "http://localhost:8000",
   "/voice": {
     target: "http://localhost:7860",
     rewrite: (path: string) => path.replace(/^\/voice/, ""),
@@ -19,5 +19,6 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     css: false,
+    exclude: ["e2e/**", "node_modules/**"],
   },
 });

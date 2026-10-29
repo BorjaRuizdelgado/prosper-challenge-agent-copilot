@@ -41,9 +41,9 @@ down: ## Stop the API, voice runner and frontend (by process and by port)
 			if [ -n "$$pids" ]; then kill -9 $$pids; fi; \
 		done; echo "Stopped."
 
-test: ## Run backend (pytest) and frontend (Vitest) tests
+test: ## Run backend (pytest), frontend (Vitest) and the Playwright smoke spec
 	uv run --directory $(PROJECT) pytest
-	cd frontend && npm install && npm test
+	cd frontend && npm install && npm test && npx playwright install chromium && npm run e2e
 
 clean: ## Remove the venv and Python caches
 	rm -rf $(PROJECT)/.venv frontend/node_modules frontend/dist
