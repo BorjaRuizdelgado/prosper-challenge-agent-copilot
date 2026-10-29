@@ -36,7 +36,7 @@ Each group is a vertical slice that ends with something usable and verified. Tes
 
 - [x] 6.1 Frontend client and store: parse the `findings` event, attach findings to the assistant message, persist them with the chat. Verify: Vitest for parsing, attaching and a reload restoring the findings.
 - [x] 6.2 Findings card above the proposal card: title, cause, fix, run ids as links that select the run and open the Runs tab; hover on a finding with `node` focuses it on the canvas. Verify: Vitest for rendering and the run link switching tab and selection.
-- [ ] 6.3 "Analyze runs" in the Runs tab: opens the Copilot tab and sends the fixed review message with the working copy; disabled with a reason while a turn runs, hidden when there are no runs. Verify: Vitest that the user message appears and `send` is called once, and the disabled state.
+- [x] 6.3 "Analyze runs" in the Runs tab: opens the Copilot tab and sends the fixed review message with the working copy; disabled with a reason while a turn runs, hidden when there are no runs. Verify: Vitest that the user message appears and `send` is called once, and the disabled state.
 - [ ] 6.4 "Ask Copilot" on a run: `buildRunMessage(run)` in `call/askCopilot.ts` (transcript, path, outcome, flag, `What went wrong: `), prefilled without sending. Verify: Vitest for the message builder on a flagged run and that no turn starts.
 
 ## 7. Demo run and integration

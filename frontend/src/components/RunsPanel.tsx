@@ -1,5 +1,7 @@
 import { useEffect } from "react";
+import { ANALYZE_RUNS_MESSAGE } from "../call/askCopilot";
 import { describeTransition } from "../call/callStore";
+import { chatOf, useCopilotStore } from "../copilot/copilotStore";
 import type { Run, RunOutcome, RunStep } from "../model";
 import { runPath, useRunsStore } from "../runs/runsStore";
 import { useAgentStore } from "../store";
@@ -48,6 +50,26 @@ function RunDetail({ run }: { run: Run }) {
   );
 }
 
+/** Opens the Copilot tab and sends the review request with the working copy; unavailable while a turn runs. */
+function AnalyzeRuns({ agentId }: { agentId: string }) {
+  const agent = useAgentStore((s) => s.agent);
+  const setDockTab = useAgentStore((s) => s.setDockTab);
+  const busy = useCopilotStore((s) => chatOf(s.chats, agentId).running);
+  const analyze = () => {
+    if (!agent) return;
+    setDockTab("copilot");
+    void useCopilotStore.getState().send(agentId, ANALYZE_RUNS_MESSAGE, agent);
+  };
+  return (
+    <div className="runs__analyze">
+      <button type="button" className="primary" disabled={busy || !agent} onClick={analyze}>
+        Analyze runs
+      </button>
+      {busy && <span className="field__hint">The copilot is busy.</span>}
+    </div>
+  );
+}
+
 /** Production runs of the open agent: a summary, the list, and one run opened at a time (also drawn on the canvas). */
 export function RunsPanel() {
   const agentId = useAgentStore((s) => s.agentId);
@@ -83,6 +105,7 @@ export function RunsPanel() {
         ))}
         <span> · {runs.filter((r) => r.flag).length} flagged</span>
       </p>
+      <AnalyzeRuns agentId={agentId} />
       <ul className="runs__list" aria-label="Runs">
         {runs.map((run) => (
           <li key={run.id} className="runs__item">

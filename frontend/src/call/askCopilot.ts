@@ -11,6 +11,9 @@ export function nodePath(transcript: TranscriptEntry[]): string[] {
   return path;
 }
 
+/** What "Analyze runs" sends: the intent is fully known, so it goes without the user editing it. */
+export const ANALYZE_RUNS_MESSAGE = "Review this agent's production runs. Tell me what went wrong and improve the agent.";
+
 export const WENT_WRONG = "What went wrong: ";
 
 /** The message "Ask Copilot" puts in the input: the transcript, the node path, and an open question for the user to finish. */

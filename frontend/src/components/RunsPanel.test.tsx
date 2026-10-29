@@ -1,6 +1,8 @@
 import { act, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ANALYZE_RUNS_MESSAGE } from "../call/askCopilot";
+import { chatOf, resetCopilotStore, setCopilotStreamer, useCopilotStore } from "../copilot/copilotStore";
 import type { Agent, Run } from "../model";
 import { resetRunsStore, useRunsStore } from "../runs/runsStore";
 import { useAgentStore } from "../store";
@@ -28,7 +30,8 @@ const runs = [
 
 beforeEach(() => {
   resetRunsStore();
-  useAgentStore.setState({ agentId: "demo", agent });
+  resetCopilotStore();
+  useAgentStore.setState({ agentId: "demo", agent, dockTab: "runs" });
 });
 
 describe("RunsPanel", () => {
@@ -84,5 +87,32 @@ describe("RunsPanel", () => {
     expect(useRunsStore.getState().selected).not.toBeNull();
     act(() => unmount());
     expect(useRunsStore.getState().selected).toBeNull();
+  });
+
+  describe("Analyze runs", () => {
+    it("opens the Copilot tab and sends the review request with the working copy, once", async () => {
+      const streamer = vi.fn(async function* () {
+        yield { event: "done" as const };
+      });
+      const restore = setCopilotStreamer(streamer);
+      mockApi({ "GET /api/agents/demo/runs": () => json(runs) });
+      renderApp(<RunsPanel />);
+      await userEvent.click(await screen.findByRole("button", { name: "Analyze runs" }));
+      expect(useAgentStore.getState().dockTab).toBe("copilot");
+      expect(chatOf(useCopilotStore.getState().chats, "demo").messages[0]).toEqual({ role: "user", text: ANALYZE_RUNS_MESSAGE });
+      expect(streamer).toHaveBeenCalledTimes(1);
+      expect(streamer.mock.calls[0]).toEqual(["demo", ANALYZE_RUNS_MESSAGE, agent, expect.anything()]);
+      restore();
+    });
+
+    it("is disabled and says why while a turn is running", async () => {
+      useCopilotStore.setState({
+        chats: { demo: { messages: [], running: true, startedAt: null, focus: null, review: null } },
+      });
+      mockApi({ "GET /api/agents/demo/runs": () => json(runs) });
+      renderApp(<RunsPanel />);
+      expect(await screen.findByRole("button", { name: "Analyze runs" })).toBeDisabled();
+      expect(screen.getByText("The copilot is busy.")).toBeInTheDocument();
+    });
   });
 });
