@@ -990,3 +990,97 @@ button.issues__item:hover {
   gap: 8px;
   margin-top: 8px;
 }
+
+/* ---- copilot draft on the canvas ---- */
+.editor__canvas {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.review-banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-control);
+  font-size: 13px;
+}
+
+.node-card--added {
+  border-color: var(--positive);
+  animation: draft-fade-in 0.4s ease-out;
+}
+
+.node-card--changed {
+  border-color: var(--warning);
+  animation: draft-flash 0.8s ease-out;
+}
+
+.node-card--removed {
+  opacity: 0.4;
+  border-style: dashed;
+  border-color: var(--negative);
+}
+
+.react-flow__edge-path.edge--added {
+  stroke: var(--positive);
+}
+
+.react-flow__edge-path.edge--changed {
+  stroke: var(--warning);
+}
+
+.react-flow__edge-path.edge--removed {
+  stroke: var(--negative);
+  stroke-dasharray: 4 4;
+  opacity: 0.5;
+}
+
+.edge-label--added {
+  border-color: var(--positive);
+}
+
+.edge-label--changed {
+  border-color: var(--warning);
+}
+
+.edge-label--removed {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.inspector--readonly {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+@keyframes draft-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes draft-flash {
+  from {
+    background: var(--active);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node-card--added,
+  .node-card--changed {
+    animation: none;
+  }
+}

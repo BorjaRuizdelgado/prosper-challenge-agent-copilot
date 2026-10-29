@@ -19,8 +19,8 @@ export function NodeCard({ data, selected }: NodeProps<CardNode>) {
   const edges = node.edges ?? [];
   const kind = node.end ? "end" : edges.some((e) => Object.keys(e.properties ?? {}).length) ? "collect" : "greeting";
   return (
-    <div className={`node-card${selected ? " node-card--selected" : ""}${active ? " node-card--active" : ""}${copilotFocus ? " node-card--copilot" : ""}`}
-      data-active={active || undefined} data-copilot-focus={copilotFocus || undefined} style={{ width: NODE_WIDTH }}>
+    <div className={`node-card${selected ? " node-card--selected" : ""}${active ? " node-card--active" : ""}${copilotFocus ? " node-card--copilot" : ""}${data.change ? ` node-card--${data.change}` : ""}`}
+      data-active={active || undefined} data-copilot-focus={copilotFocus || undefined} data-change={data.change} style={{ width: NODE_WIDTH }}>
       {/* Loose connection mode lets every handle start or receive a connection. The centre of the left
           side is where edges end, so that handle only receives and lets the edge's own drag anchor
           (retargeting) through; every side has a separate "new edge" handle for starting edges. */}

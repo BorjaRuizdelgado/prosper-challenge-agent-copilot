@@ -4,6 +4,7 @@ import { useAgentStore } from "../store";
 import { useValidation } from "../useValidation";
 import { Dock } from "./Dock";
 import { GraphCanvas } from "./GraphCanvas";
+import { ReviewBanner } from "./ReviewBanner";
 import { SaveBar } from "./SaveBar";
 
 export function AgentEditor() {
@@ -45,7 +46,10 @@ export function AgentEditor() {
         <SaveBar />
       </header>
       <div className="editor__body">
-        <GraphCanvas agent={agent} positions={positions} />
+        <div className="editor__canvas">
+          <ReviewBanner />
+          <GraphCanvas agent={agent} positions={positions} />
+        </div>
         <Dock />
       </div>
     </div>

@@ -1,9 +1,7 @@
-import { useState } from "react";
-import { applyProposalToEditor, isProposalStale } from "../copilot/applyProposal";
 import { type AgentDiff, diffAgents, type FieldChange } from "../copilot/diffAgents";
-import { type Proposal, useCopilotStore } from "../copilot/copilotStore";
+import type { Proposal } from "../copilot/copilotStore";
 import { blockingIssues } from "../store";
-import { ConfirmDialog } from "./ConfirmDialog";
+import { useProposalActions } from "./useProposalActions";
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
@@ -67,17 +65,10 @@ function Changes({ diff }: { diff: AgentDiff }) {
 
 /** What the copilot proposed: counts, the issues left, a collapsed Changes list, Apply and Discard. */
 export function ProposalCard({ agentId, index, proposal }: { agentId: string; index: number; proposal: Proposal }) {
-  const [confirming, setConfirming] = useState(false);
-  const setStatus = useCopilotStore((s) => s.setProposalStatus);
+  const { onApply, onDiscard, dialog } = useProposalActions(agentId, index, proposal);
   const diff = diffAgents(proposal.base, proposal.agent);
   const blocking = blockingIssues(proposal.issues).length > 0;
   const pending = proposal.status === "pending";
-
-  const apply = () => {
-    setConfirming(false);
-    applyProposalToEditor(proposal);
-    setStatus(agentId, index, "applied");
-  };
 
   return (
     <section className={`proposal proposal--${proposal.status}`} aria-label="Proposal">
@@ -95,25 +86,17 @@ export function ProposalCard({ agentId, index, proposal }: { agentId: string; in
       <Changes diff={diff} />
       {pending ? (
         <div className="proposal__actions">
-          <button type="button" className="primary" onClick={() => (isProposalStale(proposal) ? setConfirming(true) : apply())}>
+          <button type="button" className="primary" onClick={onApply}>
             Apply
           </button>
-          <button type="button" onClick={() => setStatus(agentId, index, "discarded")}>
+          <button type="button" onClick={onDiscard}>
             Discard
           </button>
         </div>
       ) : (
         <p className="copilot__note">{proposal.status === "applied" ? "Applied." : "Discarded."}</p>
       )}
-      {confirming && (
-        <ConfirmDialog
-          title="Replace your newer edits?"
-          message="You edited the agent after this proposal was made. Applying it replaces those edits."
-          confirmLabel="Apply anyway"
-          onConfirm={apply}
-          onClose={() => setConfirming(false)}
-        />
-      )}
+      {dialog}
     </section>
   );
 }
