@@ -59,6 +59,7 @@ def test_edit_step_falls_back_to_the_agent():
         ("Read", {"file_path": "/w/.claude/skills/prosper-blueprints/SKILL.md"}, "Reading skill"),
         ("Write", {"file_path": "/w/drafts/clinic.json"}, "Writing agent"),
         ("Skill", {"skill": "prosper-blueprints"}, "Loading Prosper Blueprints"),
+        ("Skill", {"skill": "prosper-run-review"}, "Loading run review"),
     ],
 )
 def test_other_step_labels(tool, tool_input, label):
