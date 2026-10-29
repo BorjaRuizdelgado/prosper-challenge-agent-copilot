@@ -3,6 +3,7 @@ import { useAgentStore } from "../store";
 import { CallPanel } from "./CallPanel";
 import { CopilotPanel } from "./CopilotPanel";
 import { Inspector } from "./Inspector";
+import { RunsPanel } from "./RunsPanel";
 import { JsonPanel } from "./JsonPanel";
 import { IssuesPanel } from "./IssuesPanel";
 import { SettingsForm } from "./SettingsForm";
@@ -13,12 +14,13 @@ interface DockTab {
   component: ComponentType;
 }
 
-/** Register a component here to add a dock tab (JSON, Issues, Call, Copilot…). */
+/** Register a component here to add a dock tab (JSON, Issues, Call, Runs, Copilot…). */
 export const DOCK_TABS: DockTab[] = [{ id: "inspector", label: "Inspector", component: Inspector },
   { id: "issues", label: "Issues", component: IssuesPanel },
   { id: "json", label: "JSON", component: JsonPanel },
   { id: "settings", label: "Settings", component: SettingsForm },
   { id: "call", label: "Call", component: CallPanel },
+  { id: "runs", label: "Runs", component: RunsPanel },
   { id: "copilot", label: "Copilot", component: CopilotPanel },
 ];
 
