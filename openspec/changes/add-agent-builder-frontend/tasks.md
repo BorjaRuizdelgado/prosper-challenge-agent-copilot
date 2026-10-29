@@ -8,7 +8,7 @@ Each group is a vertical slice that ends with something usable and verified in t
 - [x] 1.2 Backend: add `backend/api/` FastAPI app with `GET /api/agents` over `backend/agents/*.json`, seed from `example_flow.json` when empty, id validation helper, and `fastapi`/`pytest`/`httpx` deps via `uv`. Verify: `uv run pytest` covers seed, listing, and rejected ids (`../x`, uppercase).
 - [x] 1.3 Frontend: scaffold `frontend/` (Vite, React, TS, router, Vitest, CSS tokens + IBM Plex from the dealt `framed-sheet` style), app shell (tinted frame, sidebar with product mark, white sheet), Vite proxies `/api` and `/voice`. Verify: `npm run build` and `npm test` pass; shell renders at laptop width.
 - [ ] 1.4 Sidebar lists agents from the API with loading, empty and error+retry states and routes `/agents/:id` to a placeholder editor. Verify: Vitest for the three states; manual check in the browser.
-- [ ] 1.5 Makefile: `api`, `frontend`, `dev` (all three processes), `test`; update `README.md` quickstart and `.gitignore` (`frontend/node_modules`, `frontend/dist`, `.taste-skill/`, `backend/agents/` runtime files except the seed policy). Verify: `make dev` serves the list at the Vite URL.
+- [x] 1.5 Makefile: `api`, `frontend`, `dev` (all three processes), `test`; update `README.md` quickstart and `.gitignore` (`frontend/node_modules`, `frontend/dist`, `.taste-skill/`, `backend/agents/` runtime files except the seed policy). Verify: `make dev` serves the list at the Vite URL.
 
 ## 2. Agent lifecycle (create, rename, duplicate, delete)
 

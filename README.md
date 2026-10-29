@@ -31,12 +31,25 @@ uv run --directory backend python bot.py   # run the agent
 \
 Remember to update the `.env` file accordingly.
 
+## Agent builder UI (Phase 1, in progress)
+
+Needs **Node 20+** in addition to the above.
+
+```bash
+make dev    # agents API :8000 + voice runner :7860 + Vite :5173
+make test   # pytest + Vitest
+```
+
+Open `http://localhost:5173`. Agents are JSON files in `backend/agents/` (git-ignored; seeded from `example_flow.json` on first run). Run pieces separately with `make api` / `make frontend`.
+
 ## Layout
 
 | Path | Responsibility |
 | --- | --- |
 | `backend/bot.py` | The voice pipeline (WebRTC + ElevenLabs STT/TTS + OpenAI LLM). Loads an agent JSON via `AgentBuilder` and runs it. No graph logic lives here. |
 | `backend/agent_builder/` | All agent-building code. `schema.py` = the declarative `AgentConfig` / `Node` / `Edge` contract; `builder.py` = `AgentBuilder`, which loads + validates the JSON and compiles it into a Pipecat Flows graph. |
+| `backend/api/` | FastAPI app that lists/edits agent JSON files in `backend/agents/` for the UI. |
+| `frontend/` | Vite + React + TypeScript agent builder UI. |
 | `backend/example_flow.json` | The example agent **as data** — a clinic scheduler. The artifact the Phase 2 Composer generates/edits. |
 
 To run a different agent, point `AGENT_FLOW` in `bot.py` at another JSON file.

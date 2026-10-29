@@ -3,7 +3,7 @@
 
 PROJECT := backend
 
-.PHONY: help install run clean
+.PHONY: help install run api frontend dev test clean
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -15,6 +15,20 @@ install: ## Create the venv and install dependencies (from uv.lock)
 run: ## Run the voice agent (then open http://localhost:7860/client)
 	uv run --directory $(PROJECT) python bot.py
 
+api: ## Run the agents API on :8000
+	uv run --directory $(PROJECT) uvicorn api.app:app --port 8000 --reload
+
+frontend: ## Run the Vite dev server on :5173 (proxies /api and /voice)
+	cd frontend && npm install && npm run dev
+
+dev: ## Run API, voice runner and frontend together (open http://localhost:5173)
+	@trap 'kill 0' INT TERM EXIT; \
+		$(MAKE) api & $(MAKE) run & $(MAKE) frontend & wait
+
+test: ## Run backend (pytest) and frontend (Vitest) tests
+	uv run --directory $(PROJECT) pytest
+	cd frontend && npm install && npm test
+
 clean: ## Remove the venv and Python caches
-	rm -rf $(PROJECT)/.venv
+	rm -rf $(PROJECT)/.venv frontend/node_modules frontend/dist
 	find $(PROJECT) -type d -name __pycache__ -prune -exec rm -rf {} +
