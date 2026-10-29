@@ -399,7 +399,7 @@ button:disabled {
 }
 
 .dock {
-  width: 320px;
+  width: 360px;
   flex: none;
   display: flex;
   flex-direction: column;
@@ -408,12 +408,18 @@ button:disabled {
 
 .dock__tabs {
   display: flex;
-  gap: 4px;
-  padding: 8px 12px 0;
+  padding: 8px 8px 0;
   border-bottom: 1px solid var(--border);
+  overflow-x: auto;
 }
 
+/* Tabs share the row equally so every one stays visible; overflow scroll is only a fallback. */
 .dock__tabs button {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 6px 4px;
+  font-size: 13px;
+  white-space: nowrap;
   border: none;
   border-bottom: 2px solid transparent;
   border-radius: 0;
