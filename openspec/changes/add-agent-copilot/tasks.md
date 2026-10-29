@@ -22,7 +22,7 @@ Each group is a vertical slice that ends with something usable and verified. Tes
 ## 4. Copilot API
 
 - [x] 4.1 Add `POST /api/copilot/{agent_id}` (body `{message, agent}`, SSE response with the events in design Decision 6), `POST /api/copilot/{agent_id}/reset`, a per-agent lock returning 409 for a concurrent turn, interrupting the runner and releasing the lock when the client disconnects, and dependency injection of the runner. Verify: pytest with a fake runner covers the event sequence, a 409 on a concurrent turn, a disconnect mid-turn (runner interrupted, lock released), reset, an invalid agent id and a setup error.
-- [ ] 4.2 Vite already proxies `/api`; confirm the SSE stream is not buffered through the proxy. Verify: `curl -N` through the Vite port shows events arriving one by one during a real turn.
+- [x] 4.2 Vite already proxies `/api`; confirm the SSE stream is not buffered through the proxy. Verify: `curl -N` through the Vite port shows events arriving one by one during a real turn.
 
 ## 5. Copilot tab: chat and streaming
 

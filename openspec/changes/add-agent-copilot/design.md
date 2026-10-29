@@ -107,6 +107,8 @@ The SDK call sits behind a `run_turn(...) -> AsyncIterator[Event]` seam so endpo
 
 *Task 2.5 manual run* (real CLI login, `example_flow.json`, "add a goodbye sentence to the end node"): events arrived as `step` (Reading agent), `step` (Editing confirm, `node: confirm`), `draft`, `step` (Validating: 0 issues), `text`, `proposal`, `done`. Because the reply comes after the tool calls, `text` deltas arrive at the end of a turn; the steps carry the progress before that.
 
+*Task 4.2 proxy check* (`curl -N` through the Vite dev server, real CLI login, same edit as above): events reached the client as they were produced, not at the end (`step` at +0s, `step`/`draft`/`step` about 5s later, `text` deltas about 4s after that, then `proposal` and `done`). Vite's proxy needs no change; the endpoint sets `Cache-Control: no-cache` and `X-Accel-Buffering: no` for proxies that would buffer.
+
 ### 7. Sessions: in-memory map of agent id to SDK session id
 
 On each turn the runner resumes the stored session id for that agent, and stores the new one from the result message. A per-agent `asyncio.Lock` rejects a second concurrent turn with 409. Restarting the API forgets conversations; acceptable for a local tool.
