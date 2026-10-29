@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Agent, Issue } from "../model";
+import type { Agent, Finding, Issue } from "../model";
 import { type CopilotEvent, resetCopilot, streamCopilot } from "./client";
 
 export interface Step {
@@ -21,6 +21,8 @@ export type ChatMessage =
       role: "assistant";
       text: string;
       steps: Step[];
+      /** What the review of the agent's production runs found; the last `findings` event of the turn. */
+      findings?: Finding[];
       proposal?: Proposal;
       error?: { message: string; setup: boolean };
       stopped?: boolean;
@@ -154,6 +156,7 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
             // A step without a node (validating) keeps the last focus; only the end of the turn clears it.
             if (e.node) patch(agentId, (chat) => ({ ...chat, focus: e.node! }));
           }
+          else if (e.event === "findings") patchReply(agentId, () => ({ findings: e.findings }));
           else if (e.event === "draft") patch(agentId, (chat) => ({ ...chat, review: { base: agent, agent: e.agent } }));
           else if (e.event === "text") patchReply(agentId, (m) => ({ text: m.text + e.delta }));
           else if (e.event === "proposal") {

@@ -104,3 +104,12 @@ export interface Run {
   transcript: RunLine[];
   path: RunStep[];
 }
+
+/** One cause the copilot found in an agent's production runs; `runs` are the ids that show it, `node` is the node it is about. */
+export interface Finding {
+  title: string;
+  runs: string[];
+  cause: string;
+  fix: string;
+  node?: string;
+}
