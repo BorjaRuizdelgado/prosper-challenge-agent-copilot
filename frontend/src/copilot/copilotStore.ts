@@ -33,9 +33,14 @@ export interface Chat {
   startedAt: number | null;
   /** The node the copilot is reading or editing right now (`step.node`); the canvas pulses it. Null when idle. */
   focus: string | null;
+  /**
+   * What the canvas shows instead of the working copy: the latest draft (while the turn runs) or the
+   * pending proposal (after it), with the working copy it was made from. Null when the canvas shows the working copy.
+   */
+  review: { base: Agent; agent: Agent } | null;
 }
 
-const emptyChat: Chat = { messages: [], running: false, startedAt: null, focus: null };
+const emptyChat: Chat = { messages: [], running: false, startedAt: null, focus: null, review: null };
 
 export type Streamer = (agentId: string, message: string, agent: Agent, signal: AbortSignal) => AsyncIterable<CopilotEvent>;
 
@@ -58,6 +63,8 @@ export interface CopilotStore {
   stop: (agentId: string) => void;
   /** Sets the status of the proposal on the assistant message at `index` (Apply and Discard). */
   setProposalStatus: (agentId: string, index: number, status: Proposal["status"]) => void;
+  /** Shows the working copy on the canvas again; the proposal stays pending in the conversation. */
+  hideReview: (agentId: string) => void;
   /** Clears the conversation and the server-side session. */
   reset: (agentId: string) => Promise<void>;
 }
@@ -99,9 +106,12 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
             // A step without a node (validating) keeps the last focus; only the end of the turn clears it.
             if (e.node) patch(agentId, (chat) => ({ ...chat, focus: e.node! }));
           }
+          else if (e.event === "draft") patch(agentId, (chat) => ({ ...chat, review: { base: agent, agent: e.agent } }));
           else if (e.event === "text") patchReply(agentId, (m) => ({ text: m.text + e.delta }));
-          else if (e.event === "proposal")
+          else if (e.event === "proposal") {
             patchReply(agentId, () => ({ proposal: { agent: e.agent, issues: e.issues, base: agent, status: "pending" } }));
+            patch(agentId, (chat) => ({ ...chat, review: { base: agent, agent: e.agent } }));
+          }
           else if (e.event === "error") patchReply(agentId, () => ({ error: { message: e.message, setup: !!e.setup } }));
           else if (e.event === "done") break;
         }
@@ -110,13 +120,20 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
       } finally {
         if (controllers.get(agentId) === controller) controllers.delete(agentId);
         if (controller.signal.aborted) patchReply(agentId, () => ({ stopped: true }));
-        patch(agentId, (chat) => ({ ...chat, running: false, startedAt: null, focus: null }));
+        // Only a proposal keeps the canvas on the draft; a stopped, failed or no-change turn restores the working copy.
+        patch(agentId, (chat) => {
+          const last = chat.messages[chat.messages.length - 1];
+          const keep = last?.role === "assistant" && last.proposal?.status === "pending" && !controller.signal.aborted;
+          return { ...chat, running: false, startedAt: null, focus: null, review: keep ? chat.review : null };
+        });
       }
     },
     stop: (agentId) => controllers.get(agentId)?.abort(),
+    hideReview: (agentId) => patch(agentId, (chat) => ({ ...chat, review: null })),
     setProposalStatus: (agentId, index, status) =>
       patch(agentId, (chat) => ({
         ...chat,
+        review: status === "pending" ? chat.review : null,
         messages: chat.messages.map((m, i) =>
           i === index && m.role === "assistant" && m.proposal ? { ...m, proposal: { ...m.proposal, status } } : m,
         ),

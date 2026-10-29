@@ -158,7 +158,65 @@ describe("copilotStore", () => {
     const sent = useCopilotStore.getState().send("a", "go", base);
     await useCopilotStore.getState().reset("a");
     await sent;
-    expect(chat()).toEqual({ messages: [], running: false, startedAt: null, focus: null });
+    expect(chat()).toEqual({ messages: [], running: false, startedAt: null, focus: null, review: null });
     expect(fetchMock).toHaveBeenCalledWith("/api/copilot/a/reset", { method: "POST" });
+  });
+
+  describe("review (what the canvas shows)", () => {
+    const draft = { ...base, name: "draft" } as Agent;
+    const status = (i = 1) => (chat().messages[i] as { proposal?: { status: string } }).proposal?.status;
+
+    it("follows draft events with the working copy as base and stays on the proposal after the turn", async () => {
+      const c = controlled();
+      install(c.streamer);
+      const sent = useCopilotStore.getState().send("a", "go", base);
+      expect(chat().review).toBeNull();
+      c.push({ event: "draft", agent: draft });
+      await vi.waitFor(() => expect(chat().review).toEqual({ base, agent: draft }));
+      c.push({ event: "proposal", agent: proposed, issues: [] });
+      c.push({ event: "done" });
+      await sent;
+      expect(chat().review).toEqual({ base, agent: proposed });
+    });
+
+    it("is cleared when the turn ends without a proposal, fails or is stopped", async () => {
+      install(stream([{ event: "draft", agent: draft }, { event: "done" }]));
+      await useCopilotStore.getState().send("a", "go", base);
+      expect(chat().review).toBeNull();
+
+      install(stream([{ event: "draft", agent: draft }, { event: "error", message: "boom" }]));
+      await useCopilotStore.getState().send("a", "again", base);
+      expect(chat().review).toBeNull();
+
+      const c = controlled();
+      install(c.streamer);
+      const sent = useCopilotStore.getState().send("a", "stop me", base);
+      c.push({ event: "draft", agent: draft });
+      await vi.waitFor(() => expect(chat().review).not.toBeNull());
+      useCopilotStore.getState().stop("a");
+      await sent;
+      expect(chat().review).toBeNull();
+    });
+
+    it("Hide, Apply and Discard return the canvas to the working copy", async () => {
+      for (const act of [
+        () => useCopilotStore.getState().hideReview("a"),
+        () => useCopilotStore.getState().setProposalStatus("a", 1, "applied"),
+        () => useCopilotStore.getState().setProposalStatus("a", 1, "discarded"),
+      ]) {
+        resetCopilotStore();
+        install(stream([{ event: "proposal", agent: proposed, issues: [] }, { event: "done" }]));
+        await useCopilotStore.getState().send("a", "go", base);
+        expect(chat().review).not.toBeNull();
+        act();
+        expect(chat().review).toBeNull();
+      }
+      // Hiding keeps the proposal pending so it can still be applied from the card.
+      resetCopilotStore();
+      install(stream([{ event: "proposal", agent: proposed, issues: [] }, { event: "done" }]));
+      await useCopilotStore.getState().send("a", "go", base);
+      useCopilotStore.getState().hideReview("a");
+      expect(status()).toBe("pending");
+    });
   });
 });

@@ -16,7 +16,7 @@ const props = (name: string) =>
 const focus = (agentId: string, node: string | null) =>
   act(() =>
     useCopilotStore.setState({
-      chats: { [agentId]: { messages: [], running: node !== null, startedAt: null, focus: node } },
+      chats: { [agentId]: { messages: [], running: node !== null, startedAt: null, focus: node, review: null } },
     }),
   );
 

@@ -34,6 +34,7 @@ function seed(proposal: Partial<Proposal> = {}) {
         running: false,
         startedAt: null,
         focus: null,
+        review: null,
       },
     },
   });
