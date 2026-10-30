@@ -101,12 +101,12 @@ test("when the turn ends the banner offers Apply, Discard and Hide; Hide and Dis
   await userEvent.click(within(banner).getByRole("button", { name: "Hide" }));
   expect(screen.queryByRole("status", { name: "Copilot review" })).not.toBeInTheDocument();
   expect(card(screen.getByTestId("canvas"), "old")).not.toHaveAttribute("data-change");
-  expect(screen.queryByText("fresh")).not.toBeInTheDocument();
+  expect(within(screen.getByTestId("canvas")).queryByText("fresh")).not.toBeInTheDocument();
   expect(useAgentStore.getState().dirty).toBe(false);
 
   show(false);
   await userEvent.click(within(screen.getByRole("status", { name: "Copilot review" })).getByRole("button", { name: "Discard" }));
-  expect(screen.queryByText("fresh")).not.toBeInTheDocument();
+  expect(within(screen.getByTestId("canvas")).queryByText("fresh")).not.toBeInTheDocument();
   expect(useAgentStore.getState().agent).toBe(working);
   expect(useAgentStore.getState().dirty).toBe(false);
 });

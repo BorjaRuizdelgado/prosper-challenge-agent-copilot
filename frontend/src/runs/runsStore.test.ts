@@ -74,11 +74,11 @@ describe("runPath", () => {
 
 describe("closing the open run", () => {
   it("clears it when the dock leaves the Runs tab, not when it arrives", () => {
-    useAgentStore.setState({ agentId: "a", dockTab: "copilot" });
+    useAgentStore.setState({ agentId: "a", dockTab: "call" });
     useRunsStore.getState().select("a", "r-1");
     useAgentStore.getState().setDockTab("runs");
     expect(useRunsStore.getState().selected).toEqual({ agentId: "a", runId: "r-1" });
-    useAgentStore.getState().setDockTab("copilot");
+    useAgentStore.getState().setDockTab("call");
     expect(useRunsStore.getState().selected).toBeNull();
   });
 });

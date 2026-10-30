@@ -25,14 +25,14 @@ The voice runner (Pipecat pipeline, ElevenLabs STT/TTS, OpenAI LLM, Pipecat Flow
 
 ### Components
 
-- **Editor UI** (`frontend/`, Vite + React + TypeScript). Agent list, graph canvas (React Flow, dagre auto-layout) and a dock with Inspector, Issues, JSON, Settings and Call tabs. All edits go through actions on one Zustand store that holds the working copy of the agent. A separate call store holds the call state, transcript and active node.
+- **Editor UI** (`frontend/`, Vite + React + TypeScript). A home page listing the agents and an editor with a top bar (agent switcher, Build / Test call / Runs tabs, Save), the Copilot panel on the left, the graph canvas (React Flow, dagre auto-layout top to bottom, with a Graph / JSON switch) and one panel on the right that belongs to the current tab. All edits go through actions on one Zustand store that holds the working copy of the agent. A separate call store holds the call state, transcript and active node.
 - **Agents API** (`backend/api/`, FastAPI). CRUD on `/api/agents` plus `POST /api/agents/validate`. Agents are files in `backend/agents/<id>.json`, seeded from `example_flow.json`.
-- **Voice runner** (`backend/bot.py`, provided). Started by the Call tab with `{agent_id}` in the session body; loads that agent and runs it.
+- **Voice runner** (`backend/bot.py`, provided). Started by the Test call tab with `{agent_id}` in the session body; loads that agent and runs it.
 
 ### Decisions
 
 - **Files, not a database.** Single-user local tool. Writes are atomic (temp file + rename), so a failed save leaves the previous version. Ids must be a lowercase slug, so a path cannot escape the directory.
-- **One validator.** Rules live in one Python function used by the runner and the API. The UI does not reimplement them; it debounces calls to `/validate` and renders the result. Two small UI-side checks exist only for immediate feedback: the JSON tab refuses documents the canvas cannot draw, and the edge form refuses invalid function names as you type.
+- **One validator.** Rules live in one Python function used by the runner and the API. The UI does not reimplement them; it debounces calls to `/validate` and renders the result. Two small UI-side checks exist only for immediate feedback: the JSON view refuses documents the canvas cannot draw, and the edge form refuses invalid function names as you type.
 - **Layout in the agent JSON.** Positions travel with the agent (duplicate, export, Copilot edits). Nodes without a position are auto-laid out.
 
 ## How it was built
@@ -75,16 +75,16 @@ Delivered as stacked PRs, one per slice in `tasks.md`:
 - **Agent JSON contract** (`agent_builder/schema.py`, `frontend/src/model.ts`): the Copilot reads and writes the same document as the editor and the runner. Nodes without a `layout` position are auto-laid out, so generated agents need no coordinates.
 - **Validation** (`POST /api/agents/validate`): structured issues with node and edge locations, so generated or edited agents can be checked and fixed in a loop before a human sees them.
 - **Store actions** (`frontend/src/store.ts`): `replaceAgent`, `updateNode`, `addEdge`, `renameNode`... apply changes with the same cascades and dirty tracking as manual edits.
-- **Dock registry** (`frontend/src/components/Dock.tsx`): a Copilot panel is one more registered tab next to Inspector, Issues, JSON, Settings and Call.
+- **Dock registry** (`frontend/src/components/Dock.tsx`): a Copilot panel is one more registered tab next to Inspector, Issues, JSON, Settings and Call. (The editor redesign below later gave the Copilot its own panel and folded the other tabs into Build, Test call and Runs.)
 - **Call events** (`node_changed` RTVI messages, transcript in `frontend/src/call/callStore.ts`): which nodes a call went through and what was said, the raw material for spotting issues in calls.
 
 ## Phase 2: the Agent Copilot
 
-A chat tab in the editor that turns natural language into validated changes to the open agent: build one from pasted call guidelines, make a targeted edit, or fix an agent after a test call. The user reviews a diff on the canvas and presses Apply; nothing is saved without the normal Save.
+A chat panel beside the canvas that turns natural language into validated changes to the open agent: build one from pasted call guidelines, make a targeted edit, or fix an agent after a test call. The user reviews a diff on the canvas and presses Apply; nothing is saved without the normal Save.
 
 ```mermaid
 flowchart LR
-    Panel["Copilot tab + canvas<br/>frontend/src/copilot"]
+    Panel["Copilot panel + canvas<br/>frontend/src/copilot"]
     Endpoint["POST /api/copilot/{id}<br/>SSE · backend/api/copilot.py"]
     Runner["run_turn<br/>Claude Agent SDK"]
     CLI["claude CLI<br/>(login or API key)"]
@@ -108,7 +108,7 @@ An agent graph is a JSON document, and "read the file, make small edits, run the
 
 ### The draft and validate loop
 
-Each turn the API writes the editor's working copy (unsaved edits included) to a draft file, with stable key order so string edits match reliably. The model may only read and edit that file and read the skill; a path guard resolves `..` and symlinks and denies the rest, and Bash, web and sub-agent tools are not allowed. It must call `validate_agent`, the same validator behind the Issues tab and the voice runner, after its last edit and fix what it reports before answering. The draft is overwritten every turn, so a discarded proposal never leaks into the next one. Edits are small by construction (`Edit` on one node), which keeps the diff reviewable.
+Each turn the API writes the editor's working copy (unsaved edits included) to a draft file, with stable key order so string edits match reliably. The model may only read and edit that file and read the skill; a path guard resolves `..` and symlinks and denies the rest, and Bash, web and sub-agent tools are not allowed. It must call `validate_agent`, the same validator behind the editor's checks and the voice runner, after its last edit and fix what it reports before answering. The draft is overwritten every turn, so a discarded proposal never leaks into the next one. Edits are small by construction (`Edit` on one node), which keeps the diff reviewable.
 
 ### Review before apply
 
@@ -171,3 +171,15 @@ flowchart LR
 - **Versions and deploy.** Apply edits the working copy and Save writes the file, as before; the runs belong to the version they were recorded on, and a node a later edit removes is labelled *missing*.
 - **Cancel and reschedule as their own paths.** The model hands them to staff and asks, because the runs carry no scheduling policy.
 - **Several agents at once.** Analysis is per open agent.
+
+## Editor redesign for the demo
+
+The Phase 1 layout put the agent list in a left sidebar and every feature in a seven-tab dock on the right (Inspector, Issues, JSON, Settings, Call, Runs, Copilot), with the graph drawn small in between. The editor was reorganised around how it is used, without changing any behaviour or API:
+
+- **Home and switcher.** `/` is a page listing the agents (new, rename, duplicate, delete); in the editor the same list opens from the agent's name in the top bar (`AgentList` with a `page` and a `menu` variant, `AgentSwitcher`).
+- **Three modes instead of seven tabs.** The top bar's tabs are **Build**, **Test call** and **Runs**, and each owns the right-hand panel. Build shows the agent's checks and settings when nothing is selected and the node or edge form when something is, with a back arrow; the issue count in the top bar opens the checks. JSON became a Graph / JSON switch on the canvas.
+- **The Copilot always beside the canvas.** It has its own left panel (toggle in the top bar, Cmd/Ctrl+K focuses it). *Ask Copilot* and *Analyze runs* call `openCopilot()` instead of switching tabs, so a selected run stays drawn on the canvas while it is discussed.
+- **A readable graph.** Auto layout runs top to bottom with edges entering a node's top, which fits the tall canvas: the demo agents render at about 0.75x instead of 0.5x. Node cards are larger, and the node and function names are set in the mono face as identifiers.
+- **Look.** A sage frame with white panels and hairlines (no shadows at rest), deep teal kept for live state (start node, selection, the node a call is in, the edge it took), a near-black primary button, and short transitions that respect reduced motion.
+
+Tests that depended on the old layout (sidebar links, the Copilot tab, the run summary text, the layout direction) were updated to the new structure; Vitest and the Playwright smoke spec pass.

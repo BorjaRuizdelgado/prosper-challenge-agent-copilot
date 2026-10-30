@@ -161,7 +161,7 @@ test("a type the form does not edit is shown as it is and kept, with extra keywo
   render(<Inspector />);
   const type = screen.getAllByLabelText("Type of address")[0] as HTMLSelectElement;
   expect(type.value).toBe("object");
-  expect(screen.getAllByText(/nested schema; edit it in the JSON tab/)[0]).toBeInTheDocument();
+  expect(screen.getAllByText(/nested schema; edit it in the JSON view/)[0]).toBeInTheDocument();
   fireEvent.change(screen.getAllByLabelText("Description of address")[0], { target: { value: "Home" } });
   expect(edge().properties!.address).toEqual({ ...nested, description: "Home" });
 });

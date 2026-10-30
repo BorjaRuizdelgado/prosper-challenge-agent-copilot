@@ -99,6 +99,13 @@ export interface AgentState {
   dockTab: string;
   select: (selection: Selection) => void;
   setDockTab: (tab: string) => void;
+  /** Whether the copilot panel is shown beside the canvas; kept across agents. */
+  copilotOpen: boolean;
+  openCopilot: () => void;
+  toggleCopilot: () => void;
+  /** What the canvas area shows: the node graph or the agent as JSON. */
+  canvasView: "graph" | "json";
+  setCanvasView: (view: "graph" | "json") => void;
   updateNode: (name: string, patch: NodePatch) => void;
   /** Renames a node and rewrites every reference to it; refuses blank or duplicate names. */
   renameNode: (from: string, to: string) => RenameResult;
@@ -148,10 +155,12 @@ const empty = {
   issues: [] as Issue[],
   validated: false,
   dockTab: "inspector",
+  canvasView: "graph" as "graph" | "json",
 };
 
 export const useAgentStore = create<AgentState>((set, get) => ({
   ...empty,
+  copilotOpen: true,
   async load(id) {
     set({ ...empty, agentId: id, status: "loading" });
     try {
@@ -374,5 +383,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   select: (selection) => set(selection ? { selection, dockTab: "inspector" } : { selection }),
   setIssues: (issues) => set(issues ? { issues, validated: true } : { validated: false }),
   setDockTab: (dockTab) => set({ dockTab }),
+  openCopilot: () => set({ copilotOpen: true }),
+  toggleCopilot: () => set((s) => ({ copilotOpen: !s.copilotOpen })),
+  setCanvasView: (canvasView) => set({ canvasView }),
   reset: () => set(empty),
 }));

@@ -1,26 +1,47 @@
-/* Design tokens: "framed-sheet" style — one tinted frame, one white sheet, hairlines, no shadows. */
+/*
+ * Design tokens: "framed-sheet" style, with Prosper's face — a sage frame taken from the clinic's world,
+ * white panels with one hairline and no shadow, and a deep clinical teal kept for data and live state
+ * (the start node, the selection, the node a call is in). The one filled button is near-black.
+ */
 :root {
-  --ground: #f9fbfc;
+  --ground: #eef2f0;
   --surface: #ffffff;
-  --raised: #f4f6f8;
-  --active: #ebedee;
-  --border: #e8eaec;
-  --rule: #f0f1f2;
-  --control: #cdced1;
-  --text: #131416;
-  --muted: #5d5f60;
-  --accent: #1b6c80;
+  --raised: #f6f8f7;
+  --well: #f3f6f5;
+  --active: #e3e9e6;
+  --border: #dfe5e2;
+  --rule: #edf1ef;
+  --control: #c7cfcb;
+  --dots: #d3dbd7;
+  --text: #121715;
+  --muted: #56605c;
+  --primary: #141a18;
+  --accent: #0d6b66;
+  --accent-soft: #dcefec;
+  --accent-ink: #08403d;
   --positive: #1e7b4f;
   --negative: #c4242a;
   --warning: #92400e;
+  --pill-positive-bg: #dcfae5;
+  --pill-positive-ink: #04250e;
+  --pill-negative-bg: #ffedea;
+  --pill-negative-ink: #831c1e;
+  --pill-warning-bg: #fff6e0;
+  --pill-warning-ink: #8a3c0b;
+  --pill-neutral-bg: #e9eeec;
+  --pill-neutral-ink: #353b38;
 
-  --radius-card: 8px;
-  --radius-control: 6px;
-  --radius-sheet: 16px;
-  --sheet-inset: 8px;
+  --radius-panel: 14px;
+  --radius-card: 12px;
+  --radius-control: 8px;
+  --gap: 8px;
+  --control-height: 32px;
 
   --font-sans: "IBM Plex Sans", Inter, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --shadow-float: 0 8px 24px rgb(18 23 21 / 0.12), 0 1px 3px rgb(18 23 21 / 0.08);
 }
 
 * {
@@ -35,14 +56,19 @@ body,
 }
 
 body {
-  background: var(--raised);
+  background: var(--ground);
   color: var(--text);
   font-family: var(--font-sans);
   font-size: 14px;
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+::selection {
+  background: var(--accent-soft);
 }

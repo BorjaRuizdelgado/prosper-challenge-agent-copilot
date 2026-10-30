@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { buildCallMessage } from "../call/askCopilot";
 import { useCallStore } from "../call/callStore";
 import { useCopilotStore } from "../copilot/copilotStore";
+import { MODELS, VOICES } from "../options";
 import { blockingIssues, useAgentStore } from "../store";
 
 const STATE_LABEL = { idle: "Ready", connecting: "Connecting…", live: "Live", ended: "Call ended", failed: "Call failed" } as const;
@@ -13,7 +14,8 @@ export function CallPanel() {
   const saving = useAgentStore((s) => s.saveStatus === "saving");
   const blocking = useAgentStore((s) => blockingIssues(s.issues).length);
   const save = useAgentStore((s) => s.save);
-  const setDockTab = useAgentStore((s) => s.setDockTab);
+  const openCopilot = useAgentStore((s) => s.openCopilot);
+  const agent = useAgentStore((s) => s.agent);
   const { state, message, muted, transcript, start, hangUp, toggleMute } = useCallStore();
   const end = useRef<HTMLLIElement>(null);
   useEffect(() => end.current?.scrollIntoView?.({ block: "end" }), [transcript]);
@@ -29,7 +31,7 @@ export function CallPanel() {
 
   const askCopilot = () => {
     useCopilotStore.getState().setPrefill(buildCallMessage(transcript));
-    setDockTab("copilot");
+    openCopilot();
   };
 
   return (
@@ -66,6 +68,28 @@ export function CallPanel() {
             Ask Copilot
           </button>
         </div>
+      )}
+      {agent && state !== "live" && transcript.length === 0 && (
+        <dl className="call__setup" aria-label="Call setup">
+          <div>
+            <dt>Starts at</dt>
+            <dd className="mono">{agent.initial_node || "—"}</dd>
+          </div>
+          <div>
+            <dt>Voice</dt>
+            <dd>{VOICES.find((v) => v.value === (agent.voice_id ?? VOICES[0].value))?.label ?? agent.voice_id}</dd>
+          </div>
+          <div>
+            <dt>Model</dt>
+            <dd>{MODELS.find((m) => m.value === (agent.model ?? MODELS[0].value))?.label ?? agent.model}</dd>
+          </div>
+        </dl>
+      )}
+      {state === "idle" && transcript.length === 0 && (
+        <p className="field__hint">
+          Talk to the agent through your microphone. The canvas follows the call: the node the agent is in glows and the edge it
+          took lights up.
+        </p>
       )}
       {!busy && blockedReason && <p className="field__hint">{blockedReason}</p>}
       {!busy && !blockedReason && dirty && (

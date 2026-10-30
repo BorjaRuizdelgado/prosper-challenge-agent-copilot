@@ -30,11 +30,11 @@ test("auto layout places every node without overlaps", () => {
   }
 });
 
-test("auto layout flows left to right from the initial node", () => {
+test("auto layout flows top to bottom from the initial node", () => {
   const p = autoLayout(agent);
 
-  expect(p.a.x).toBeLessThan(p.b.x);
-  expect(p.b.x).toBeLessThan(p.d.x);
+  expect(p.a.y).toBeLessThan(p.b.y);
+  expect(p.b.y).toBeLessThan(p.d.y);
 });
 
 test("auto layout tolerates cycles and dangling targets", () => {

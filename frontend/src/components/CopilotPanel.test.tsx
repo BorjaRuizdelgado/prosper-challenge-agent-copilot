@@ -6,7 +6,7 @@ import { resetCopilotStore, setCopilotStreamer, type Streamer } from "../copilot
 import type { Agent } from "../model";
 import { useAgentStore } from "../store";
 import { renderApp } from "../test/helpers";
-import { Dock } from "./Dock";
+import { ModeTabs } from "./Dock";
 import { CopilotPanel, EXAMPLES, SETUP_HELP } from "./CopilotPanel";
 
 const agent = { name: "a", initial_node: "n", nodes: [{ name: "n" }] } as unknown as Agent;
@@ -46,9 +46,9 @@ function controlled() {
 const type = async (text: string) => userEvent.type(screen.getByLabelText("Message to the copilot"), text);
 
 describe("CopilotPanel", () => {
-  it("is registered as a dock tab", () => {
-    renderApp(<Dock />);
-    expect(screen.getByRole("tab", { name: "Copilot" })).toHaveAttribute("aria-selected", "true");
+  it("is not a dock tab: it has its own panel beside the canvas", () => {
+    renderApp(<ModeTabs />);
+    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual(["Build", "Test call", "Runs"]);
   });
 
   it("shows the empty state with example requests that fill the input", async () => {

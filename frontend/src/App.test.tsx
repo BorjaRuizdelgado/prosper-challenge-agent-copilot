@@ -5,10 +5,11 @@ import { json, mockFetch, renderApp } from "./test/helpers";
 
 afterEach(() => vi.unstubAllGlobals());
 
-test("renders the shell with the product mark and an empty sheet", () => {
+test("renders the home page with the product mark and the agents", () => {
   mockFetch(json([]));
   renderApp(<App />);
 
-  expect(screen.getByText("Agent Builder")).toBeInTheDocument();
+  expect(screen.getByText("Prosper")).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 1, name: "Voice agents" })).toBeInTheDocument();
   expect(screen.getByRole("main")).toHaveTextContent("Select an agent");
 });

@@ -174,7 +174,7 @@ function ParamRow({ node, edge, name }: { node: AgentNode; edge: Edge; name: str
       )}
       {!editable && (
         <p className="field__hint">
-          A {type} parameter has a nested schema; edit it in the JSON tab.
+          A {type} parameter has a nested schema; edit it in the JSON view.
         </p>
       )}
       {ENUMERABLE.includes(type) && (

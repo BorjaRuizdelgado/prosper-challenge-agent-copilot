@@ -11,7 +11,7 @@ The editor SHALL render each node as a card showing its name, a summary of its t
 
 #### Scenario: Open an agent without saved layout
 - **WHEN** an agent with no `layout` is opened
-- **THEN** nodes are laid out automatically left to right with no overlaps and the view fits the whole graph
+- **THEN** nodes are laid out automatically top to bottom with no overlaps and the view fits the whole graph
 
 #### Scenario: Open an agent with saved layout
 - **WHEN** an agent with a `layout` is opened

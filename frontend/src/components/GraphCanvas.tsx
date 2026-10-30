@@ -11,7 +11,7 @@ import { NodeCard } from "./NodeCard";
 
 const nodeTypes = { card: NodeCard };
 const edgeTypes = { labelled: LabelEdge };
-const FIT = { padding: 0.2, maxZoom: 1 };
+const FIT = { padding: 0.08, maxZoom: 1 };
 
 /** Refits the graph when the canvas changes size (window resize), so no node ends up behind the dock. */
 function FitOnResize() {
@@ -84,7 +84,7 @@ export function GraphCanvas({ agent, positions }: { agent: Agent; positions: Rec
         >
           <FitOnResize />
           <FitOnDraftChange count={nodes.length} />
-          <Background gap={20} color="var(--control)" />
+          <Background gap={24} size={1.2} color="var(--dots)" />
           <Controls showInteractive={false} />
         </ReactFlow>
       </ReactFlowProvider>

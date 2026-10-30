@@ -58,11 +58,11 @@ The voice backend SHALL load the agent chosen at session start by id and SHALL f
 - **THEN** the session fails with an error naming the id
 
 ### Requirement: Send a finished call to the copilot
-After a call ends with a non-empty transcript, the Call tab SHALL offer "Ask Copilot". It SHALL open the Copilot tab with a message prefilled with the transcript and the nodes the call went through, and leave the user to say what went wrong before sending.
+After a call ends with a non-empty transcript, the Test call tab SHALL offer "Ask Copilot". It SHALL open the Copilot panel with a message prefilled with the transcript and the nodes the call went through, and leave the user to say what went wrong before sending.
 
 #### Scenario: Ask Copilot after a call
 - **WHEN** a call has ended with a transcript and the user clicks "Ask Copilot"
-- **THEN** the Copilot tab opens with the transcript and node path in the input, the cursor placed for the user to describe the problem, and nothing is sent until the user sends it
+- **THEN** the Copilot panel opens with the transcript and node path in the input, the cursor placed for the user to describe the problem, and nothing is sent until the user sends it
 
 #### Scenario: No transcript
 - **WHEN** a call failed before anyone spoke
