@@ -19,7 +19,7 @@ Each group is a vertical slice that ends with something usable and verified. Bac
 
 ## 3. New from guidelines
 
-- [ ] 3.1 `api.ts` (`createAgent(name, guidelines?)`, `getGuidelines`, `saveGuidelines`, `listSampleGuidelines`) and the model types. Verify: `npm run typecheck`.
+- [x] 3.1 `api.ts` (`createAgent(name, guidelines?)`, `getGuidelines`, `saveGuidelines`, `listSampleGuidelines`) and the model types. Verify: `npm run typecheck`.
 - [ ] 3.2 *New from guidelines* dialog in `AgentList` (page and menu variants, empty state included): name, textarea, file drop or input for `.md`/`.txt` with rejection of other types, *Use sample guidelines*. On confirm: create, navigate, open the Copilot, send the build message; the chat shows the guidelines chip. Verify: Vitest for the file accept/reject, the sample fill, and that `send` is called once with the fixed message after navigation.
 - [ ] 3.3 *Client guidelines* section in `SettingsForm` (view, Edit/Save/Cancel, Add, *Check coverage*). Verify: Vitest that saving calls `saveGuidelines` and leaves the agent store's dirty flag unchanged, and that *Check coverage* opens the Copilot and sends the fixed message once.
 
