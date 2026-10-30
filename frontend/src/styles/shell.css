@@ -2355,6 +2355,11 @@ button.issues__item:hover:not(:disabled) {
   display: flex;
   gap: 8px;
   margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.guidelines-dialog__tools > * {
+  white-space: nowrap;
 }
 
 .guidelines-dialog__file {
