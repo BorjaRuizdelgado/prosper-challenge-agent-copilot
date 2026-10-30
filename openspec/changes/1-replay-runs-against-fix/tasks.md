@@ -25,11 +25,11 @@ Each group is a vertical slice that ends with something usable and verified. Bac
 
 ## 4. Replay card and canvas
 
-- [ ] 4.1 `ReplayCard` under `ProposalCard`: summary line, one row per run (original outcome, before → after, reason, status), per-row Retry, setup message, *Replay calls* button when there are no results, label "Simulated text calls". Verify: Vitest for the summary text, row states and the button.
-- [ ] 4.2 Opening a row shows the *after* transcript and draws its path on the proposal on the canvas (overlay on the review state); closing removes it. Verify: Vitest that the right node and edge classes are set on the proposal's graph and are cleared on close.
-- [ ] 4.3 Extend the Playwright smoke spec: stub `/api/copilot` with findings and a proposal and `/replay` with canned results, then check that the card shows "Fixed" and opening a row highlights the path. Verify: `npm run e2e`.
+- [x] 4.1 `ReplayCard` under `ProposalCard`: summary line, one row per run (original outcome, before → after, reason, status), per-row Retry, setup message, *Replay calls* button when there are no results, label "Simulated text calls". Verify: Vitest for the summary text, row states and the button.
+- [x] 4.2 Opening a row shows the *after* transcript and draws its path on the proposal on the canvas (overlay on the review state); closing removes it. Verify: Vitest that the right node and edge classes are set on the proposal's graph and are cleared on close.
+- [x] 4.3 Extend the Playwright smoke spec: stub `/api/copilot` with findings and a proposal and `/replay` with canned results, then check that the card shows "Fixed" and opening a row highlights the path. Verify: `npm run e2e`.
 
-- [ ] 4.4 *Replay this call* in the run detail: replays against the working copy, shows the outcome, goal, reason and transcript, and draws the path; disabled with a reason while a copilot draft is on the canvas. Verify: Vitest with a fake replay client for the result view, the overlay and the disabled state.
+- [x] 4.4 *Replay this call* in the run detail: replays against the working copy, shows the outcome, goal, reason and transcript, and draws the path; disabled with a reason while a copilot draft is on the canvas. Verify: Vitest with a fake replay client for the result view, the overlay and the disabled state.
 
 ## 5. Demo readiness and real-model check
 
