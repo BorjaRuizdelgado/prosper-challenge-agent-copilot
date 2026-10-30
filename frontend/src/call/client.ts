@@ -43,7 +43,8 @@ export const createPipecatClient: CallClientFactory = (events) => {
     enableMic: true,
     enableCam: false,
   });
-  client.on(RTVIEvent.UserInput, (d) => d.final && events.onUserText(d.text));
+  // The runner (pipecat 1.4) sends `user-transcription` and never `user-input`, so listening for UserInput logs nothing.
+  client.on(RTVIEvent.UserTranscript, (d) => d.final && events.onUserText(d.text));
   // The same sentence arrives as "new", then once per spoken word ("in-progress") and "completed": take it once.
   client.on(RTVIEvent.BotOutput, (d) => {
     const first = d.spoken_status === undefined || d.spoken_status === "new";
