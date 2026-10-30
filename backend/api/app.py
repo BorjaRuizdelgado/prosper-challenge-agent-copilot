@@ -4,6 +4,7 @@ import json
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -12,6 +13,17 @@ from agent_builder.validation import validate_as_dicts
 
 from . import runs, store
 from .copilot import router as copilot_router
+from .replay import router as replay_router
+
+ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
+
+
+def load_env(path: Path = ENV_PATH) -> None:
+    """Make backend/.env visible (OPENAI_API_KEY for replay), as bot.py does; real env vars win."""
+    load_dotenv(path)
+
+
+load_env()
 
 
 @asynccontextmanager
@@ -22,6 +34,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="Agent builder API", lifespan=lifespan)
 app.include_router(copilot_router)
+app.include_router(replay_router)
 
 
 @app.get("/api/agents")
