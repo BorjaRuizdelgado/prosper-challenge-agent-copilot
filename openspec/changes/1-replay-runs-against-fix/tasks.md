@@ -4,7 +4,7 @@ Each group is a vertical slice that ends with something usable and verified. Bac
 
 ## 0. Demo placeholders
 
-- [ ] 0.1 Add a one-sentence `goal` to every run in `backend/demo/runs/*.json` and the optional `goal` to the `Run` type in `model.ts`. Verify: `test_demo_runs.py` asserts every demo run has a non-empty `goal`.
+- [x] 0.1 Add a one-sentence `goal` to every run in `backend/demo/runs/*.json` and the optional `goal` to the `Run` type in `model.ts`. Verify: `test_demo_runs.py` asserts every demo run has a non-empty `goal`.
 
 ## 1. Simulator
 
