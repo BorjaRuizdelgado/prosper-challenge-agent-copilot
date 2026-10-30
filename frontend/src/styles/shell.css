@@ -536,20 +536,66 @@ button:disabled {
 
 /* A centred 1120px column inside the sheet: intro 5 parts, the list 7, 64px apart. */
 .home__sheet {
+  flex: 1;
   margin: 0 8px 8px;
-  padding: 72px max(32px, calc((100% - 1120px) / 2)) 80px;
-  background: var(--surface);
+  padding: 88px max(32px, calc((100% - 1200px) / 2)) 88px;
+  background-color: var(--surface);
+  background-image: radial-gradient(var(--dots) 1px, transparent 1px);
+  background-size: 22px 22px;
+  background-position: 0 0;
   border: 1px solid var(--border);
   border-radius: var(--radius-panel);
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-  gap: 64px;
+  gap: 72px;
   align-content: start;
 }
 
 .home__intro {
   padding-top: 4px;
   max-width: 440px;
+  position: sticky;
+  top: 24px;
+  align-self: start;
+}
+
+.home__stats {
+  display: flex;
+  gap: 12px;
+  margin: 28px 0 0;
+  padding: 0;
+}
+
+.home__stat {
+  min-width: 112px;
+  padding: 14px 18px;
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+
+.home__stat dd {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.home__stat dt {
+  order: 2;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.home__stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.agents--page > nav {
+  box-shadow: 0 1px 2px rgb(18 23 21 / 0.04);
 }
 
 .home__title {
