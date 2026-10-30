@@ -91,3 +91,8 @@ def test_draft_tracker_skips_unparseable_unchanged_and_non_object_drafts():
 def test_findings_step_counts_the_findings():
     assert step_for_tool("mcp__copilot__report_findings", {"findings": [{}, {}]}, "") == {"label": "Reporting 2 findings"}
     assert step_for_tool("mcp__copilot__report_findings", {"findings": [{}]}, "") == {"label": "Reporting 1 finding"}
+
+
+def test_coverage_step_counts_covered_and_default_requirements():
+    reqs = [{"status": "covered"}, {"status": "default"}, {"status": "open"}]
+    assert step_for_tool("mcp__copilot__report_coverage", {"requirements": reqs}, "") == {"label": "Reporting coverage (2/3)"}

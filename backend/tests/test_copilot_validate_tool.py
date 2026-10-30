@@ -3,7 +3,7 @@ import json
 import pytest
 
 from copilot import workspace
-from copilot.validate_tool import FULL_FINDINGS_TOOL_NAME, FULL_TOOL_NAME, build_server, findings_report, validation_report
+from copilot.validate_tool import FULL_COVERAGE_TOOL_NAME, FULL_FINDINGS_TOOL_NAME, FULL_TOOL_NAME, build_server, coverage_report, findings_report, validation_report
 
 CLEAN = {
     "name": "Clinic",
@@ -93,3 +93,63 @@ def test_findings_for_an_agent_without_runs_are_rejected(runs_dir):
 
 def test_server_registers_both_tools():
     assert FULL_FINDINGS_TOOL_NAME == "mcp__copilot__report_findings"
+
+
+def req(id, status="covered", nodes=("a",), **extra):
+    return {"id": id, "text": f"Requirement {id}", "quote": "q", "status": status, "nodes": list(nodes), **extra}
+
+
+def question(id="q1", requirements=("r2",)):
+    return {"id": id, "question": "Which?", "default": "Hand off.", "requirements": list(requirements)}
+
+
+@pytest.fixture
+def clean_draft():
+    workspace.write_draft("clinic", CLEAN)
+
+
+def test_valid_coverage_is_recorded(clean_draft):
+    text, is_error = coverage_report("clinic", [req("r1"), req("r2", "default", ["a", "b"]), req("r3", "open", [])], [question()])
+    assert not is_error and text == "Recorded coverage: 2 of 3 requirements, 1 question"
+
+
+def test_coverage_with_no_questions(clean_draft):
+    assert coverage_report("clinic", [req("r1")], []) == ("Recorded coverage: 1 of 1 requirements, 0 questions", False)
+
+
+def test_coverage_naming_an_unknown_node_lists_the_draft_nodes(clean_draft):
+    text, is_error = coverage_report("clinic", [req("r1", nodes=["a", "nope"])], [])
+    assert is_error and "r1" in text and "nope" in text and "a, b" in text
+
+
+def test_duplicate_requirement_ids_are_rejected(clean_draft):
+    text, is_error = coverage_report("clinic", [req("r1"), req("r1")], [])
+    assert is_error and "Duplicate requirement id r1" in text
+
+
+def test_covered_or_default_without_a_node_is_rejected(clean_draft):
+    text, is_error = coverage_report("clinic", [req("r1", nodes=[]), req("r2", "default", [])], [question()])
+    assert is_error and "r1 is covered but names no node" in text and "r2 is default but names no node" in text
+
+
+def test_a_default_without_a_question_is_rejected(clean_draft):
+    text, is_error = coverage_report("clinic", [req("r1", "default")], [])
+    assert is_error and "r1 is a default but no question asks about it" in text
+
+
+def test_a_question_about_an_unknown_requirement_is_rejected(clean_draft):
+    text, is_error = coverage_report("clinic", [req("r1")], [question(requirements=["r9"])])
+    assert is_error and "unknown requirement r9" in text
+
+
+def test_an_invalid_status_is_rejected(clean_draft):
+    text, is_error = coverage_report("clinic", [req("r1", "maybe")], [])
+    assert is_error and "maybe" in text
+
+
+def test_coverage_without_a_draft_is_an_error():
+    assert coverage_report("clinic", [req("r1")], [])[1]
+
+
+def test_server_registers_the_coverage_tool():
+    assert FULL_COVERAGE_TOOL_NAME == "mcp__copilot__report_coverage"

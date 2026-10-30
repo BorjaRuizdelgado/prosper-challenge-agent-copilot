@@ -7,7 +7,7 @@ import json
 import re
 from typing import Optional
 
-from copilot.validate_tool import FULL_FINDINGS_TOOL_NAME, FULL_TOOL_NAME
+from copilot.validate_tool import FULL_COVERAGE_TOOL_NAME, FULL_FINDINGS_TOOL_NAME, FULL_TOOL_NAME, coverage_count
 
 NAME_RE = re.compile(r'"name"\s*:\s*"((?:[^"\\]|\\.)*)"')
 
@@ -63,6 +63,9 @@ def step_for_tool(tool: str, tool_input: dict, draft_text: str) -> Optional[dict
     if tool == FULL_FINDINGS_TOOL_NAME:
         count = len(tool_input.get("findings", []))
         return {"label": f"Reporting {count} finding" + ("" if count == 1 else "s")}
+    if tool == FULL_COVERAGE_TOOL_NAME:
+        covered, total = coverage_count(tool_input.get("requirements", []))
+        return {"label": f"Reporting coverage ({covered}/{total})"}
     return {"label": f"Using {tool}"}
 
 
