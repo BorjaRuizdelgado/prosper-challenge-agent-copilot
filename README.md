@@ -92,7 +92,7 @@ The **Copilot** panel chats with an AI that edits the open agent (backend: `back
 
 ### Client guidelines (demo)
 
-Two samples ship with the dialog. **Harbor Dental, reschedule line** is the one to try first: one page, seven rules and two deliberate gaps (no cancellation notice window, no front-desk number), so a correct build is checkable by eye: about seven requirements, two questions with safe defaults, and after *Use sample client reply* and *Send* no questions left. **Maple Family Practice** is the larger, realistic one (about 640 words, many more requirements and questions, varying per run).
+Two samples ship with the dialog. **Harbor Dental, reschedule line** is the one to try first: one page, seven rules and two deliberate gaps (no cancellation notice window, no front-desk number), so a correct build is checkable by eye: about seven requirements, two questions with safe defaults, and after *Use sample client reply* and *Send* no questions left. **Maple Family Practice** is the larger, realistic one (about 640 words, many more requirements and questions, varying per run; `docs/guidelines-demo.md`). `docs/simple-demo.md` has the rule-to-graph table, the check's measured runs and the browser run with the real copilot.
 
 ```bash
 make dev    # open http://localhost:5173, New from guidelines, Use sample: Harbor Dental Reschedule, Create and build

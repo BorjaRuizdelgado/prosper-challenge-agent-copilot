@@ -27,7 +27,11 @@ Playwright driving the Vite app against a throwaway agents directory seeded with
 
 **Full path: New from guidelines, sample, Create.** The coverage card arrived 179.0 s after Create (the graph grew while it ran): *Covers 31 of 31 requirements · 6 questions for the client* (24 covered, 7 covered with a default). Planted gaps asked as questions: (a), (b), (c) and (d). Not asked: (e). So 4 of 5 on the demo model. *Copy as email* put the six numbered questions with their defaults on the clipboard. *Use sample client reply* filled the input (601 characters) without sending.
 
-**Not verified in the browser:** after *Send* of the sample reply, my script waited for a second coverage card and timed out at 400 s. The request reached the API (HTTP 200), but I did not record what the page showed, so the updated card, its time in the UI and the final Apply step (steps 6 and 7 of the full path) were not observed. The answer turn itself is measured in section 1 (28 to 41 s). Task 5.2 is therefore left unticked. Screenshots from the run are not committed.
+**Not verified in the browser:** after *Send* of the sample reply, my script waited for a second coverage card and timed out at 400 s. The request reached the API (HTTP 200), but I did not record what the page showed, so the updated card, its time in the UI and the final Apply step (steps 6 and 7 of the full path) were not observed. The answer turn itself is measured in section 1 (28 to 41 s). Task 5.2 is therefore left unticked (closed later, see the update below). Screenshots from the run are not committed.
+
+## Update: steps 6 and 7 observed (closes task 5.2 of change 2)
+
+The client-reply, *Send*, updated-card and *Apply* steps were run in the browser with the real copilot on the small sample, with timings: see `docs/simple-demo.md` ("Browser run with the real copilot"). The earlier timeout after *Send* did not reproduce (the updated card came 23.6 s after *Send*). That run used Harbor Dental, not Maple, so the Maple-specific numbers above stand as measured.
 
 ## Known issues
 
