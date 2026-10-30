@@ -5,7 +5,7 @@ Each group is a vertical slice that ends with something usable and verified. Bac
 ## 1. Guidelines stored with the agent
 
 - [x] 1.1 `store`: `get_guidelines`, `save_guidelines` (atomic), copy on duplicate, delete on delete; `create_agent(name, guidelines=None)`. Verify: pytest for create with and without guidelines, duplicate copies, delete removes, and the agent list still shows only agents.
-- [ ] 1.2 API: `POST /api/agents` with optional `guidelines` (≤ 50 KB, else `422`), `GET`/`PUT /api/agents/{id}/guidelines` (`404` when none), `GET /api/demo/guidelines`. Verify: pytest for each, including invalid id `400` and oversize `422`.
+- [x] 1.2 API: `POST /api/agents` with optional `guidelines` (≤ 50 KB, else `422`), `GET`/`PUT /api/agents/{id}/guidelines` (`404` when none), `GET /api/demo/guidelines`. Verify: pytest for each, including invalid id `400` and oversize `422`.
 - [ ] 1.3 Write `backend/demo/guidelines/maple-family-practice.md` with the content and planted gaps in design Decision 7. Verify: pytest that `GET /api/demo/guidelines` returns it, and a manual read that every gap in Decision 7 is present.
 
 - [ ] 1.4 Demo placeholders (design Decision 8): write `maple-family-practice.reply.md` and `demo-riverside-scheduler.guidelines.md`; `GET /api/demo/guidelines` returns `reply`; `demo/seed.py` stores the scheduler's guidelines. Verify: pytest that seeding stores them and re-seeding resets an edited copy, and that the sample endpoint includes `reply`.
