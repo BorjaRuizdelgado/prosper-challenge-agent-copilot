@@ -248,7 +248,11 @@ test("guidelines: create from the sample, see the coverage card and its question
 
   await page.goto("/");
   await page.getByRole("button", { name: "New from guidelines" }).click();
-  await page.getByRole("button", { name: "Use sample guidelines" }).click();
+  const samples = page.getByRole("button", { name: /^Use sample:/ });
+  await expect(samples).toHaveText(["Use sample: Harbor Dental Reschedule", "Use sample: Maple Family Practice"]);
+  await samples.first().click();
+  await expect(page.getByRole("dialog").getByLabel("Name", { exact: true })).toHaveValue("Harbor Dental Reschedule");
+  await expect(page.getByRole("dialog").getByRole("textbox", { name: "Guidelines" })).toHaveValue(/reschedule line/);
   await page.getByRole("button", { name: /^create/i }).click();
   await expect(page).toHaveURL(/\/agents\//);
 
@@ -265,7 +269,7 @@ test("guidelines: create from the sample, see the coverage card and its question
   await expect(page.locator(".react-flow__node", { hasText: "cancel_appointment" })).toBeVisible();
 
   await card.getByRole("button", { name: "Use sample client reply" }).click();
-  await expect(page.getByRole("textbox", { name: "Message to the copilot" })).not.toHaveValue("");
+  await expect(page.getByRole("textbox", { name: "Message to the copilot" })).toHaveValue(/555-0142/);
   expect(messages).toHaveLength(1);
 
   await card.getByRole("button", { name: "Re-check coverage" }).click();

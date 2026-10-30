@@ -36,10 +36,11 @@ function seed(c: Coverage = coverage, running = false) {
 }
 
 const sample = { name: "maple", text: "Sample guidelines.", reply: "Sample client reply." };
+const small = { name: "harbor", text: "Small sample guidelines.", reply: "Small client reply." };
 function guidelines(text: string | null) {
   mockApi({
     "GET /api/agents/demo/guidelines": () => (text === null ? json({}, 404) : json({ text })),
-    "GET /api/demo/guidelines": () => json([sample]),
+    "GET /api/demo/guidelines": () => json([small, sample]),
   });
 }
 
@@ -144,6 +145,23 @@ describe("CoverageCard", () => {
     await waitFor(() => expect(screen.getByRole("textbox", { name: "Message to the copilot" })).toHaveValue(sample.reply));
     expect(sent).not.toHaveBeenCalled();
     restore();
+  });
+
+  it("offers each sample's own reply, whichever sample the guidelines equal", async () => {
+    seed();
+    guidelines(small.text);
+    renderApp(<CopilotPanel />);
+    await userEvent.click(await screen.findByRole("button", { name: "Use sample client reply" }));
+    await waitFor(() => expect(screen.getByRole("textbox", { name: "Message to the copilot" })).toHaveValue(small.reply));
+  });
+
+  it("does not offer the sample reply for edited sample text", async () => {
+    seed();
+    guidelines(`${small.text} Edited.`);
+    renderApp(<CopilotPanel />);
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledWith("/api/demo/guidelines", expect.anything()));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(screen.queryByRole("button", { name: "Use sample client reply" })).not.toBeInTheDocument();
   });
 
   it("does not offer the sample reply for the user's own guidelines", async () => {
