@@ -1812,6 +1812,7 @@ button.issues__item:hover:not(:disabled) {
 
 /* ---- copilot proposal and findings ---- */
 .proposal,
+.coverage,
 .findings {
   margin-top: 10px;
   padding: 12px 14px;
@@ -2398,4 +2399,84 @@ button.issues__item:hover:not(:disabled) {
   font-size: 12px;
   font-weight: 400;
   color: var(--muted, inherit);
+}
+
+/* ---- coverage card ---- */
+.coverage__title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.coverage ul,
+.coverage ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.coverage__group {
+  margin-top: 10px;
+}
+
+.coverage__status {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted, inherit);
+}
+
+.coverage__status--open {
+  color: var(--danger, #b3261e);
+}
+
+.coverage__req {
+  padding: 8px 10px;
+  background: var(--surface);
+  border-radius: 10px;
+  outline: 1px solid transparent;
+  display: grid;
+  gap: 4px;
+  transition: outline-color 120ms ease;
+}
+
+.coverage__req:hover {
+  outline-color: var(--accent);
+}
+
+.coverage__note,
+.coverage__default {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.coverage__default {
+  display: block;
+}
+
+.coverage__nodes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.coverage__node {
+  min-height: 24px;
+  padding: 0 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.coverage__questions {
+  list-style: decimal inside;
+}
+
+.coverage__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
 }

@@ -1,6 +1,7 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { chatOf, type ChatMessage, useCopilotStore } from "../copilot/copilotStore";
 import { useAgentStore } from "../store";
+import { CoverageCard } from "./CoverageCard";
 import { FindingsCard } from "./FindingsCard";
 import { ProposalCard } from "./ProposalCard";
 
@@ -42,6 +43,7 @@ function Reply({ agentId, index, message, running, elapsed }: { agentId: string;
         </p>
       )}
       {message.findings && <FindingsCard agentId={agentId} findings={message.findings} />}
+      {message.coverage && <CoverageCard agentId={agentId} coverage={message.coverage} />}
       {message.proposal && <ProposalCard agentId={agentId} index={index} proposal={message.proposal} />}
       {message.stopped && <p className="copilot__note">Stopped.</p>}
       {message.error && (
