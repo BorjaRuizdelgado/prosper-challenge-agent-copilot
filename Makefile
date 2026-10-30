@@ -44,8 +44,8 @@ down: ## Stop the API, voice runner and frontend (by process and by port)
 demo: ## Seed the demo agents into the agents directory, resetting them if they exist
 	uv run --directory $(PROJECT) python -m demo.seed
 
-check-guidelines: ## Check a real copilot build of a sample (SAMPLE=name, MODEL=haiku|sonnet); needs the claude CLI
-	uv run --directory $(PROJECT) python -m demo.check_build $(SAMPLE) $(if $(MODEL),--model $(MODEL))
+check-guidelines: ## Check a real copilot build of a sample (SAMPLE=name, MODEL=haiku|sonnet, DUMP=file); needs the claude CLI
+	uv run --directory $(PROJECT) python -m demo.check_build $(SAMPLE) $(if $(MODEL),--model $(MODEL)) $(if $(DUMP),--dump $(DUMP))
 
 test: ## Run backend (pytest), frontend (Vitest) and the Playwright smoke spec
 	uv run --directory $(PROJECT) pytest

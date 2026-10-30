@@ -173,7 +173,9 @@ def test_main_exit_codes_and_output(agents_dir, monkeypatch, capsys):
     good = scripted(
         [coverage_event(GOOD_COVERAGE), proposal_event(GOOD_DRAFT)], [coverage_event(CLOSED), proposal_event(REPLY_DRAFT)]
     )
-    assert check_build.main(["--model", "sonnet"], run=good) == 0
+    dump = agents_dir / "dump.json"
+    assert check_build.main(["--model", "sonnet", "--dump", str(dump)], run=good) == 0
+    assert json.loads(dump.read_text())["reply"]["changed_agent"] is True
     out = capsys.readouterr().out
     assert "[PASS] build topic:cancel" in out and "expectations hold" in out
     import os

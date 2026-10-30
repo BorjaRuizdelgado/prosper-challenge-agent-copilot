@@ -1,6 +1,6 @@
 """Check a real copilot build of a sample against its expectations.
 
-    python -m demo.check_build [sample] [--model haiku|sonnet|opus]
+    python -m demo.check_build [sample] [--model haiku|sonnet|opus] [--dump FILE]
 
 Runs the build turn and then the sample client reply on a throwaway agent, and prints one row
 per expectation. Needs a logged-in `claude` CLI; it is never run by pytest (the comparison in
@@ -129,7 +129,7 @@ def _issues(turn: dict) -> list[dict]:
     return [i for i in (turn["proposal"] or {}).get("issues", []) if i.get("severity") == "error"]
 
 
-async def check(sample: str, run: Runner, store_module=None) -> tuple[list[tuple[str, Result]], dict]:
+async def check(sample: str, run: Runner, store_module=None, dump: dict | None = None) -> tuple[list[tuple[str, Result]], dict]:
     """Build the sample, then send its reply. Returns [(phase, Result)] and a summary dict."""
     from api import store
 
@@ -150,6 +150,9 @@ async def check(sample: str, run: Runner, store_module=None) -> tuple[list[tuple
             break
         draft = (turn["proposal"] or {}).get("agent", agent)
         coverage = turn["coverage"]
+        summary[phase]["changed_agent"] = turn["proposal"] is not None
+        if dump is not None:
+            dump[phase] = {"coverage": coverage, "draft": draft, "changed_agent": turn["proposal"] is not None}
         summary[phase]["requirements"] = len((coverage or {}).get("requirements", []))
         summary[phase]["questions"] = len((coverage or {}).get("questions", []))
         errors = _issues(turn)
@@ -166,7 +169,8 @@ def format_rows(rows: list[tuple[str, Result]], summary: dict) -> str:
     for phase in ("build", "reply"):
         if phase in summary:
             s = summary[phase]
-            lines.append(f"  {phase}: {s['seconds']} s, {s.get('requirements', '-')} requirements, {s.get('questions', '-')} questions, {s['steps']} steps")
+            changed = "" if s.get("changed_agent", True) else ", the copilot did not change the agent"
+            lines.append(f"  {phase}: {s['seconds']} s, {s.get('requirements', '-')} requirements, {s.get('questions', '-')} questions, {s['steps']} steps{changed}")
     failed = sum(1 for _, r in rows if not r.ok)
     lines.append(f"{len(rows) - failed} of {len(rows)} expectations hold" + ("" if not failed else f", {failed} failed"))
     return "\n".join(lines)
@@ -175,6 +179,7 @@ def format_rows(rows: list[tuple[str, Result]], summary: dict) -> str:
 def main(argv: list[str] | None = None, run: Runner | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m demo.check_build", description=__doc__.split("\n\n")[0])
     parser.add_argument("sample", nargs="?", default=DEFAULT_SAMPLE, help=f"sample name (default {DEFAULT_SAMPLE})")
+    parser.add_argument("--dump", metavar="FILE", help="also write the coverage reports and drafts of both turns to FILE as JSON")
     parser.add_argument("--model", help="copilot model alias, sets COPILOT_MODEL (default haiku)")
     args = parser.parse_args(argv)
     if args.model:
@@ -186,8 +191,11 @@ def main(argv: list[str] | None = None, run: Runner | None = None) -> int:
         run = runner.run_turn
     with tempfile.TemporaryDirectory() as tmp:
         os.environ["AGENTS_DIR"] = tmp
-        rows, summary = asyncio.run(check(args.sample, run))
+        dump: dict = {}
+        rows, summary = asyncio.run(check(args.sample, run, dump=dump))
         _cleanup_workspace(tmp)
+    if args.dump:
+        Path(args.dump).write_text(json.dumps(dump, indent=2, ensure_ascii=False))
     print(format_rows(rows, summary))
     return 0 if rows and all(r.ok for _, r in rows) else 1
 

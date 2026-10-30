@@ -22,7 +22,7 @@ Backend for the Agent Copilot (OpenSpec change `add-agent-copilot`). Claude Code
 make check-guidelines                          # harbor-dental-reschedule on Haiku
 make check-guidelines MODEL=sonnet             # same, on Sonnet
 make check-guidelines SAMPLE=<name> MODEL=<alias>
-python -m demo.check_build [sample] [--model MODEL]   # from backend/, what the target runs
+python -m demo.check_build [sample] [--model MODEL] [--dump FILE]   # from backend/, what the target runs; --dump saves both turns' coverage and drafts as JSON
 ```
 
 It needs the logged-in `claude` CLI and is never run by pytest (`tests/test_check_build.py` covers the comparison with hand-made data and the runner with a scripted fake copilot). Keyword matching is crude on purpose; review a failing row before calling it a regression. Measured runs: `docs/simple-demo.md`.
