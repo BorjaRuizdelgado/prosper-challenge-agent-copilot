@@ -14,9 +14,9 @@ Each group is a vertical slice that ends with something usable and verified. Bac
 
 ## 2. Replay API
 
-- [ ] 2.1 Load `backend/.env` in `api/app.py`. Verify: pytest that `OPENAI_API_KEY` from a temp `.env` is visible to the replay module.
-- [ ] 2.2 `POST /api/agents/{id}/replay` (design Decision 4): SSE `started`, `result`, `error`, `done`; 4 jobs in parallel; unknown run ids rejected (`400`); no key → one setup `error`; a failure on one job → an `error` for that job only; disconnect cancels. Verify: pytest with an injected fake replay function for the event order, the setup error, a per-job error and an unknown id.
-- [ ] 2.3 Document the replay package and endpoint in `backend/copilot/README.md` (or a new `backend/replay/README.md`), and the key requirement in `README.md`. Verify: the README lists the endpoint, its events and the key.
+- [x] 2.1 Load `backend/.env` in `api/app.py`. Verify: pytest that `OPENAI_API_KEY` from a temp `.env` is visible to the replay module.
+- [x] 2.2 `POST /api/agents/{id}/replay` (design Decision 4): SSE `started`, `result`, `error`, `done`; 4 jobs in parallel; unknown run ids rejected (`400`); no key → one setup `error`; a failure on one job → an `error` for that job only; disconnect cancels. Verify: pytest with an injected fake replay function for the event order, the setup error, a per-job error and an unknown id.
+- [x] 2.3 Document the replay package and endpoint in `backend/copilot/README.md` (or a new `backend/replay/README.md`), and the key requirement in `README.md`. Verify: the README lists the endpoint, its events and the key.
 
 ## 3. Selection, scoring and the store
 
