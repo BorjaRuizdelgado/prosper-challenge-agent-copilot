@@ -3,7 +3,7 @@
 
 PROJECT := backend
 
-.PHONY: help install run api frontend dev up down demo check-guidelines test clean
+.PHONY: help install run api frontend dev up down demo demo-check check-guidelines test clean
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -43,6 +43,9 @@ down: ## Stop the API, voice runner and frontend (by process and by port)
 
 demo: ## Seed the demo agents into the agents directory, resetting them if they exist
 	uv run --directory $(PROJECT) python -m demo.seed
+
+demo-check: ## Replay every demo run against the seeded agents (before only) and print the table; needs OPENAI_API_KEY (ARGS='--agent ID --run ID')
+	uv run --directory $(PROJECT) python -m replay.check $(ARGS)
 
 check-guidelines: ## Check a real copilot build of a sample (SAMPLE=name, MODEL=haiku|sonnet, DUMP=file); needs the claude CLI
 	uv run --directory $(PROJECT) python -m demo.check_build $(SAMPLE) $(if $(MODEL),--model $(MODEL)) $(if $(DUMP),--dump $(DUMP))
