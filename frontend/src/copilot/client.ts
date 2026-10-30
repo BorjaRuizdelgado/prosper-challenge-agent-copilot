@@ -14,20 +14,20 @@ export type CopilotEvent =
 const KNOWN = new Set(["step", "text", "findings", "coverage", "draft", "proposal", "done", "error"]);
 
 /** Splits an SSE byte stream into typed events; a block may arrive split across any number of chunks. */
-export async function* parseSse(body: ReadableStream<Uint8Array>): AsyncGenerator<CopilotEvent> {
+export async function* parseSse<T = CopilotEvent>(body: ReadableStream<Uint8Array>, known: ReadonlySet<string> = KNOWN): AsyncGenerator<T> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
-  const parse = (block: string): CopilotEvent | null => {
+  const parse = (block: string): T | null => {
     let name = "";
     const data: string[] = [];
     for (const line of block.split("\n")) {
       if (line.startsWith("event:")) name = line.slice(6).trim();
       else if (line.startsWith("data:")) data.push(line.slice(5).replace(/^ /, ""));
     }
-    if (!KNOWN.has(name)) return null;
+    if (!known.has(name)) return null;
     try {
-      return { event: name, ...(data.length ? JSON.parse(data.join("\n")) : {}) } as CopilotEvent;
+      return { event: name, ...(data.length ? JSON.parse(data.join("\n")) : {}) } as T;
     } catch {
       return null;
     }
