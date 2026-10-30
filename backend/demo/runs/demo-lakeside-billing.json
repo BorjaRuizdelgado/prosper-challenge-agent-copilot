@@ -1,6 +1,7 @@
 [
   {
     "id": "r-3001",
+    "goal": "Find out whether the clinic accepts Blue Cross insurance.",
     "started_at": "2026-10-12T09:30:00Z",
     "duration_s": 52,
     "outcome": "completed",
@@ -49,6 +50,7 @@
   },
   {
     "id": "r-3002",
+    "goal": "Find out when the billing office is open.",
     "started_at": "2026-10-13T10:45:00Z",
     "duration_s": 48,
     "outcome": "completed",
@@ -97,6 +99,7 @@
   },
   {
     "id": "r-3003",
+    "goal": "Find out how to pay a medical bill.",
     "started_at": "2026-10-14T13:10:00Z",
     "duration_s": 55,
     "outcome": "completed",
@@ -145,6 +148,7 @@
   },
   {
     "id": "r-3004",
+    "goal": "Get help with a possible double charge for the last visit.",
     "started_at": "2026-10-15T09:05:00Z",
     "duration_s": 40,
     "outcome": "transferred",
@@ -175,6 +179,7 @@
   },
   {
     "id": "r-3005",
+    "goal": "Find out the current account balance.",
     "started_at": "2026-10-16T11:50:00Z",
     "duration_s": 37,
     "outcome": "transferred",
@@ -205,6 +210,7 @@
   },
   {
     "id": "r-3006",
+    "goal": "Check the status of an August insurance claim.",
     "started_at": "2026-10-19T15:25:00Z",
     "duration_s": 44,
     "outcome": "transferred",
@@ -235,6 +241,7 @@
   },
   {
     "id": "r-3007",
+    "goal": "Find out whether payment is due before or after the visit.",
     "started_at": "2026-10-20T10:12:00Z",
     "duration_s": 51,
     "outcome": "completed",
@@ -283,6 +290,7 @@
   },
   {
     "id": "r-3008",
+    "goal": "Speak to a real person about billing.",
     "started_at": "2026-10-21T16:02:00Z",
     "duration_s": 63,
     "outcome": "abandoned",
