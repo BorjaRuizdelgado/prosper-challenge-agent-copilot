@@ -52,6 +52,23 @@ def draft_text(draft: dict) -> str:
     return "\n".join(lines)
 
 
+DIGIT_WORDS = {"zero": "0", "one": "1", "two": "2", "three": "3", "four": "4", "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9"}
+
+
+def _digits_only(text: str) -> str:
+    """The text with spelled-out digits as digits and every other separator dropped.
+
+    A voice agent should say a number digit by digit ("five five five, zero one four two"), so
+    `555-0142` and its spelled-out form must count as the same value.
+    """
+    words = re.sub(r"\b(" + "|".join(DIGIT_WORDS) + r")\b", lambda m: DIGIT_WORDS[m.group(1).lower()], text, flags=re.IGNORECASE)
+    return re.sub(r"[^0-9a-z]", "", words.lower())
+
+
+def contains_value(text: str, needle: str) -> bool:
+    return needle in text or _digits_only(needle) in _digits_only(text)
+
+
 def _node_texts(draft: dict) -> list[str]:
     return [draft_text(node) for node in draft.get("nodes", [])]
 
@@ -93,7 +110,8 @@ def evaluate(expected: dict, coverage: dict | None, draft: dict, phase: str) -> 
     else:
         text = draft_text(draft)
         for needle in expected.get("required_after_reply", []):
-            results.append(Result(f"has:{needle}", needle in text, "present" if needle in text else "missing from the draft"))
+            found = contains_value(text, needle)
+            results.append(Result(f"has:{needle}", found, "present" if found else "missing from the draft"))
         for gap in gaps:
             left = [q for q in questions if _asks_about(q, gap["question_any"])]
             if coverage is None:

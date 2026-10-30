@@ -94,6 +94,14 @@ def test_reply_phase_missing_number_fails():
     assert failed(evaluate(EXPECTED, CLOSED, draft, "reply")) == {"has:555-0142"}
 
 
+def test_reply_phase_accepts_the_number_spelled_out_for_voice():
+    spoken = node("policy", "We need 24 hours' notice. Say the number: five five five, zero one four two.")
+    draft = {**GOOD_DRAFT, "nodes": GOOD_DRAFT["nodes"] + [spoken]}
+    assert failed(evaluate(EXPECTED, CLOSED, draft, "reply")) == set()
+    wrong = node("policy", "24 hours. Say five five five, zero one four three.")
+    assert failed(evaluate(EXPECTED, CLOSED, {**GOOD_DRAFT, "nodes": GOOD_DRAFT["nodes"] + [wrong]}, "reply")) == {"has:555-0142"}
+
+
 def test_reply_phase_question_still_open_fails():
     assert failed(evaluate(EXPECTED, GOOD_COVERAGE, REPLY_DRAFT, "reply")) == {"closed:notice-window", "closed:front-desk-number"}
 
