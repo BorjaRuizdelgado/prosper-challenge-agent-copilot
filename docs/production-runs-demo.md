@@ -23,7 +23,7 @@ The message in rows 1 to 3 is the one *Analyze runs* sends. The UI itself (Runs 
 
 ## Replay check with a real model (change 1, tasks 5.0 to 5.2)
 
-Observed on 2026-10-30 with a real `OPENAI_API_KEY` (caller and judge on `gpt-4o-mini`; the agent side uses each agent's own model, which is `gpt-4o-mini` for the demo agents) and the default Haiku Copilot. Everything below is a single sample per run: the simulated caller, the judge and the Copilot all vary between runs. `make demo-check` needs `make demo` first and a key in `backend/.env`.
+Observed on 2026-10-30 with a real `OPENAI_API_KEY` (caller and judge on `gpt-4o-mini`; the agent side uses each agent's own configured model) and the default Haiku Copilot. Everything below is a single sample per run: the simulated caller, the judge and the Copilot all vary between runs. `make demo-check` needs `make demo` first and a key in `backend/.env`.
 
 ### What the real run changed
 
@@ -39,7 +39,7 @@ Scheduler, three runs (the cancel run and the two four-question runs):
 | --- | --- | --- | --- | --- |
 | r-1004 cancel (flagged) | abandoned | abandoned | no | yes |
 | r-1007 four questions (Tom Reyes) | stuck | completed | yes | no |
-| r-1008 four questions (Priya Shah) | stuck | completed (second sample: abandoned, not met) | yes (second sample: no) | flaky |
+| r-1008 four questions (Priya Shah) | stuck | completed | yes | no (in two later samples it did: abandoned, not met) |
 
 ### Before and after: Analyze runs and replay, in the UI
 
@@ -79,4 +79,4 @@ Both paths work as written. Findings: the first replay of r-1004 ends *Abandoned
 
 ### Cost of this check
 
-About 25 replay jobs for the scheduler three times (two UI runs plus the final one), 6 jobs for the other two agents and a handful for prompt checks: roughly 55 replays at about 15 small `gpt-4o-mini` calls each, plus three Copilot (Haiku) runs for the scheduler and one each for the other two agents.
+Roughly 55 replay jobs in all (three UI runs of the scheduler at 18 jobs each, a few single-run checks while tuning the caller, 6 jobs for the other two agents), each about 15 small `gpt-4o-mini` calls, plus three Copilot (Haiku) runs for the scheduler and one each for the other two agents.
