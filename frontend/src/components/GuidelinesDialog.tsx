@@ -1,4 +1,4 @@
-import { type ChangeEvent, type DragEvent, type FormEvent, useEffect, useState } from "react";
+import { type ChangeEvent, type DragEvent, type FormEvent, useEffect, useRef, useState } from "react";
 import { listSampleGuidelines, type SampleGuidelines } from "../api";
 import { Dialog } from "./Dialog";
 
@@ -20,6 +20,7 @@ export function GuidelinesDialog({ onSubmit, onClose }: Props) {
   const [text, setText] = useState("");
   const [source, setSource] = useState("Pasted guidelines");
   const [error, setError] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [samples, setSamples] = useState<SampleGuidelines[]>([]);
 
@@ -91,21 +92,22 @@ export function GuidelinesDialog({ onSubmit, onClose }: Props) {
           />
         </label>
         <div className="guidelines-dialog__tools">
-          <label className="ghost guidelines-dialog__file">
+          <button type="button" onClick={() => fileInput.current?.click()}>
             Choose a file
-            <input
-              type="file"
-              accept=".md,.markdown,.txt,text/plain,text/markdown"
-              aria-label="Guidelines file"
-              hidden
-              onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                void take(e.target.files?.[0]);
-                e.target.value = "";
-              }}
-            />
-          </label>
+          </button>
+          <input
+            ref={fileInput}
+            type="file"
+            accept=".md,.markdown,.txt,text/plain,text/markdown"
+            aria-label="Guidelines file"
+            hidden
+            onChange={(e: ChangeEvent<HTMLInputElement>) => {
+              void take(e.target.files?.[0]);
+              e.target.value = "";
+            }}
+          />
           {samples.map((sample) => (
-            <button key={sample.name} type="button" className="ghost" onClick={() => useSample(sample)}>
+            <button key={sample.name} type="button" onClick={() => useSample(sample)}>
               Use sample: {titleOf(sample.name)}
             </button>
           ))}

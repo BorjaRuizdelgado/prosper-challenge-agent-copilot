@@ -2362,13 +2362,6 @@ button.issues__item:hover:not(:disabled) {
   white-space: nowrap;
 }
 
-.guidelines-dialog__file {
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 10px;
-}
-
 .guidelines-dialog__error,
 .guidelines-section__error {
   margin: 8px 0 0;
