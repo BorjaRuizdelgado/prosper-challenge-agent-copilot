@@ -5,7 +5,7 @@ import { useCallStore } from "../call/callStore";
 import { chatOf, useCopilotStore } from "../copilot/copilotStore";
 import { issueMessages, worstSeverity } from "../issues";
 import { NODE_WIDTH } from "../layout";
-import { useRunPath } from "../runs/runsStore";
+import { useCanvasPath } from "../replay/replayView";
 import { useAgentStore } from "../store";
 
 const summary = (messages: { content: string }[] = []) => messages[0]?.content ?? "No task yet";
@@ -34,7 +34,7 @@ export function NodeCard({ data, selected }: NodeProps<CardNode>) {
   const issues = useAgentStore((s) => s.issues);
   const active = useCallStore((s) => s.activeNode === node.name);
   const agentId = useAgentStore((s) => s.agentId);
-  const runPath = useRunPath();
+  const runPath = useCanvasPath();
   const runState = runPath?.last === node.name ? "end" : runPath?.nodes.includes(node.name) ? "visited" : undefined;
   const copilotFocus = useCopilotStore((s) => chatOf(s.chats, agentId).focus === node.name);
   const severity = worstSeverity(issues, node.name);

@@ -1,7 +1,7 @@
 import { BaseEdge, EdgeLabelRenderer, type EdgeProps, Position, useStore } from "@xyflow/react";
 import { useRef } from "react";
 import { useCallStore } from "../call/callStore";
-import { useRunPath } from "../runs/runsStore";
+import { useCanvasPath } from "../replay/replayView";
 import { worstSeverity } from "../issues";
 import { useAgentStore } from "../store";
 
@@ -53,7 +53,7 @@ export function LabelEdge({ id, sourceX, sourceY, targetX, targetY, sourcePositi
   const [nodeName, fn] = id.split("::");
   const severity = useAgentStore((s) => worstSeverity(s.issues, nodeName, fn));
   const change = (data as { change?: string } | undefined)?.change;
-  const ran = useRunPath()?.edges.includes(id) ?? false;
+  const ran = useCanvasPath()?.edges.includes(id) ?? false;
   const taken = useCallStore((s) => s.lastTransition?.from === nodeName && s.lastTransition.via === fn);
 
   return (
