@@ -36,7 +36,7 @@ Conversation rules, mirroring Pipecat Flows' default (append) context strategy:
 - On a node: run its `pre_actions` (`tts_say` adds an agent line verbatim), set the system text to its role message, append its task messages as developer messages, and expose only its edges as tools.
 - An edge call returns `{"status": "success", **args}`, records `{node: target, via: function, args}` and enters the target, which then speaks.
 - After the agent speaks on a node, its `post_actions` run. An `end_conversation` action, or the implicit one on an `end` node, ends the call.
-- After 12 agent turns without an end, the replay stops with outcome `stuck`.
+- After 20 agent turns (12 was too tight once the intake is split into one node per question: a working booking call hit the limit on *after*) without an end, the replay stops with outcome `stuck`.
 
 The agent side uses the agent's `model` with default temperature, as the runtime does.
 

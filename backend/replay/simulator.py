@@ -25,7 +25,7 @@ class SimResult:
     ended: str = "stuck"  # "end" | "hangup" | "stuck"
 
 
-async def replay(agent: AgentConfig, caller, chat_client: ChatClient, max_turns: int = 12) -> SimResult:
+async def replay(agent: AgentConfig, caller, chat_client: ChatClient, max_turns: int = 20) -> SimResult:
     """Run one call. ``caller`` has ``async reply(transcript) -> str``."""
     nodes = build_nodes(agent)
     result = SimResult()
