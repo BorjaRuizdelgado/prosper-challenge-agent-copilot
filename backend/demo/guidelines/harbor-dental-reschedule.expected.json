@@ -6,7 +6,7 @@
     {"id": "reschedule", "any": ["reschedul", "move"]},
     {"id": "confirm-new-time", "any": ["repeat", "confirm"]},
     {"id": "no-medical-advice", "any": ["911", "swelling", "bleeding", "medical advice"]},
-    {"id": "appointment-not-found", "any": ["cannot find", "can't find", "not found", "unable to find", "no appointment"]},
+    {"id": "appointment-not-found", "any": ["cannot find", "can't find", "cannot be found", "not found", "not_found", "unable to find", "no appointment"]},
     {"id": "after-hours-message", "any": ["after hours", "after-hours", "outside", "closed", "take a message"]}
   ],
   "gaps": [
