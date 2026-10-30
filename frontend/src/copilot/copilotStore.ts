@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Agent, Finding, Issue } from "../model";
+import type { Agent, Coverage, Finding, Issue } from "../model";
 import { type CopilotEvent, resetCopilot, streamCopilot } from "./client";
 
 export interface Step {
@@ -15,14 +15,28 @@ export interface Proposal {
   status: "pending" | "applied" | "discarded";
 }
 
+/** The guidelines a build request refers to; the chat shows this instead of their text. */
+export interface GuidelinesChip {
+  name: string;
+  words: number;
+}
+
+/** The fixed request that builds an agent from its stored guidelines. */
+export const BUILD_FROM_GUIDELINES = "Build this agent from the client's guidelines.";
+
+/** The fixed request that checks an agent against its stored guidelines (also used by Re-check coverage). */
+export const CHECK_COVERAGE = "Check this agent against the client's guidelines and report coverage. Do not change the agent.";
+
 export type ChatMessage =
-  | { role: "user"; text: string }
+  | { role: "user"; text: string; guidelines?: GuidelinesChip }
   | {
       role: "assistant";
       text: string;
       steps: Step[];
       /** What the review of the agent's production runs found; the last `findings` event of the turn. */
       findings?: Finding[];
+      /** How the agent covers the client's guidelines; the last `coverage` event of the turn. */
+      coverage?: Coverage;
       proposal?: Proposal;
       error?: { message: string; setup: boolean };
       stopped?: boolean;
@@ -63,7 +77,7 @@ export interface CopilotStore {
   prefill: string | null;
   setPrefill: (text: string | null) => void;
   /** Sends an instruction with the current working copy; resolves when the turn has ended. */
-  send: (agentId: string, message: string, agent: Agent) => Promise<void>;
+  send: (agentId: string, message: string, agent: Agent, guidelines?: GuidelinesChip) => Promise<void>;
   /** Aborts the running turn; its output so far stays, and it yields no proposal. */
   stop: (agentId: string) => void;
   /** Sets the status of the proposal on the assistant message at `index` (Apply and Discard). */
@@ -139,13 +153,13 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
     chats: loadChats(),
     prefill: null,
     setPrefill: (prefill) => set({ prefill }),
-    send: async (agentId, message, agent) => {
+    send: async (agentId, message, agent, guidelines) => {
       if (chatOf(get().chats, agentId).running || !message.trim()) return;
       const controller = new AbortController();
       controllers.set(agentId, controller);
       patch(agentId, (chat) => ({
         ...chat,
-        messages: [...chat.messages, { role: "user", text: message.trim() }, { role: "assistant", text: "", steps: [] }],
+        messages: [...chat.messages, { role: "user", text: message.trim(), ...(guidelines && { guidelines }) }, { role: "assistant", text: "", steps: [] }],
         running: true,
         startedAt: Date.now(),
       }));
@@ -159,6 +173,7 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
             if (e.node) patch(agentId, (chat) => ({ ...chat, focus: e.node! }));
           }
           else if (e.event === "findings") patchReply(agentId, () => ({ findings: e.findings }));
+          else if (e.event === "coverage") patchReply(agentId, () => ({ coverage: { requirements: e.requirements, questions: e.questions } }));
           else if (e.event === "draft") patch(agentId, (chat) => ({ ...chat, review: { base: agent, agent: e.agent } }));
           else if (e.event === "text") patchReply(agentId, (m) => ({ text: m.text + e.delta }));
           else if (e.event === "proposal") {

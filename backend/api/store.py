@@ -129,10 +129,38 @@ def get_agent(agent_id: str) -> dict:
     return _record(agent_id, path, data)
 
 
-def create_agent(name: str) -> dict:
+def guidelines_path(agent_id: str) -> Path:
+    return agents_dir() / f"{validate_agent_id(agent_id)}.guidelines.md"
+
+
+def get_guidelines(agent_id: str) -> str | None:
+    """The agent's client guidelines, or None when it has none."""
+    try:
+        return guidelines_path(agent_id).read_text()
+    except FileNotFoundError:
+        return None
+
+
+def save_guidelines(agent_id: str, text: str) -> None:
+    """Write the guidelines atomically, next to the agent's JSON."""
+    path = guidelines_path(agent_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".tmp-", suffix=".md")
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(text)
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+
+
+def create_agent(name: str, guidelines: str | None = None) -> dict:
     agent_id = new_agent_id(name)
     path = agent_path(agent_id)
     _write_atomic(path, starter_agent(name))
+    if guidelines is not None:
+        save_guidelines(agent_id, guidelines)
     return get_agent(agent_id)
 
 
@@ -150,6 +178,9 @@ def duplicate_agent(agent_id: str) -> dict:
     copy = {**data, "name": f"{data.get('name', agent_id)} copy"}
     new_id = new_agent_id(copy["name"])
     _write_atomic(agent_path(new_id), copy)
+    guidelines = get_guidelines(agent_id)
+    if guidelines is not None:
+        save_guidelines(new_id, guidelines)
     return get_agent(new_id)
 
 
@@ -158,3 +189,4 @@ def delete_agent(agent_id: str) -> None:
         agent_path(agent_id).unlink()
     except FileNotFoundError:
         raise AgentNotFound(agent_id) from None
+    guidelines_path(agent_id).unlink(missing_ok=True)

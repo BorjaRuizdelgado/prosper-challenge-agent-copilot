@@ -1,0 +1,21 @@
+{
+  "order": 1,
+  "topics": [
+    {"id": "identify", "any": ["birth", "dob"]},
+    {"id": "cancel", "any": ["cancel"]},
+    {"id": "reschedule", "any": ["reschedul", "move"]},
+    {"id": "confirm-new-time", "any": ["repeat", "confirm"]},
+    {"id": "no-medical-advice", "any": ["911", "swelling", "bleeding", "medical advice"]},
+    {"id": "appointment-not-found", "any": ["cannot find", "can't find", "cannot be found", "not found", "not_found", "unable to find", "no appointment"]},
+    {"id": "after-hours-message", "any": ["after hours", "after-hours", "outside", "closed", "take a message"]}
+  ],
+  "gaps": [
+    {"id": "notice-window", "question_any": ["notice", "hours before", "in advance", "how far"]},
+    {"id": "front-desk-number", "question_any": ["phone", "number"]}
+  ],
+  "forbidden_before_reply": [
+    {"id": "invented-number", "pattern": "\\d{3}[-. ]?\\d{4}"},
+    {"id": "invented-window", "pattern": "\\b\\d+\\s*(hours?|days?)\\b"}
+  ],
+  "required_after_reply": ["24", "555-0142"]
+}

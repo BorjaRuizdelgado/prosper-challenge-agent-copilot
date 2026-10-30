@@ -11,6 +11,7 @@ from claude_agent_sdk import (
     UserMessage,
 )
 
+from api import store
 from copilot import runner, workspace
 
 pytestmark = pytest.mark.anyio
@@ -80,6 +81,7 @@ class FakeClient:
 @pytest.fixture(autouse=True)
 def isolated(tmp_path, monkeypatch):
     monkeypatch.setenv("COPILOT_WORKSPACE", str(tmp_path))
+    monkeypatch.setenv("AGENTS_DIR", str(tmp_path / "agents"))
     runner._sessions.clear()
     FakeClient.instances.clear()
 
@@ -211,7 +213,7 @@ async def test_options_confine_the_copilot():
     options = FakeClient.instances[0].options
     assert options.setting_sources == ["project"]
     assert options.cwd == str(workspace.workspace_dir())
-    assert options.allowed_tools == ["Skill", "mcp__copilot__validate_agent", "mcp__copilot__report_findings"]
+    assert options.allowed_tools == ["Skill", "mcp__copilot__validate_agent", "mcp__copilot__report_findings", "mcp__copilot__report_coverage"]
     assert "Bash" in options.disallowed_tools
     assert options.include_partial_messages is True
 
@@ -295,3 +297,64 @@ async def test_a_rejected_findings_call_sends_no_findings_and_the_retry_wins():
     ])
     assert names(events) == ["step", "step", "findings", "done"]
     assert events[2]["data"] == {"findings": corrected}
+
+
+async def test_prompt_points_at_the_guidelines_file_of_an_agent_with_guidelines(tmp_path, monkeypatch):
+    store.save_guidelines("clinic", "# Maple\nBook visits.")
+    await collect([result()])
+    assert FakeClient.instances[0].prompt == (
+        "The agent draft is drafts/clinic.json. The client's guidelines are in guidelines/clinic.md.\n\ndo it"
+    )
+    assert (workspace.workspace_dir() / "guidelines" / "clinic.md").read_text() == "# Maple\nBook visits."
+
+
+async def test_no_guidelines_means_no_file_no_prompt_line_and_no_stale_file(tmp_path, monkeypatch):
+    stale = workspace.guidelines_path("clinic")
+    stale.parent.mkdir(parents=True)
+    stale.write_text("old")
+    await collect([result()])
+    assert not stale.exists()
+    assert "guidelines" not in FakeClient.instances[0].prompt
+
+
+COVERAGE = {
+    "requirements": [
+        {"id": "r1", "text": "Greet", "quote": "q", "status": "covered", "nodes": ["a"]},
+        {"id": "r2", "text": "Cancel", "quote": "", "status": "default", "nodes": ["b"]},
+    ],
+    "questions": [{"id": "q1", "question": "Cancel window?", "default": "Hand off.", "requirements": ["r2"]}],
+}
+
+
+async def test_coverage_event_order_is_step_coverage_proposal_done():
+    def retask(d):
+        d["nodes"][1]["task_messages"] = ["Say goodbye."]
+
+    events = await collect([
+        tool_use("1", "Edit", old_string="Bye.", new_string="Say goodbye."),
+        edit_draft(retask),
+        tool_result("1"),
+        tool_use("2", "mcp__copilot__report_coverage", **COVERAGE),
+        tool_result("2", [{"type": "text", "text": "Recorded coverage: 2 of 2 requirements, 1 question"}]),
+        result(),
+    ])
+    assert names(events) == ["step", "draft", "step", "coverage", "proposal", "done"]
+    assert events[2]["data"] == {"label": "Reporting coverage (2/2)"}
+    assert events[3]["data"] == COVERAGE
+
+
+async def test_a_rejected_coverage_call_sends_no_coverage_and_the_retry_wins():
+    corrected = {**COVERAGE, "questions": []}
+    events = await collect([
+        tool_use("1", "mcp__copilot__report_coverage", **COVERAGE),
+        tool_result("1", "Requirement r2 is a default but no question asks about it.", True),
+        tool_use("2", "mcp__copilot__report_coverage", **corrected),
+        tool_result("2", "Recorded coverage"),
+        result(),
+    ])
+    assert names(events) == ["step", "step", "coverage", "done"]
+    assert events[2]["data"] == corrected
+
+
+def test_the_coverage_tool_is_allowed_without_a_prompt():
+    assert "mcp__copilot__report_coverage" in runner._options("clinic").allowed_tools

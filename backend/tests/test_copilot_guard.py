@@ -137,3 +137,48 @@ def test_a_symlinked_own_runs_file_to_elsewhere_is_denied(ws):
     (workspace.runs_dir() / "clinic.txt").symlink_to(ws.parent / "secret.json")
     # The directory is resolved, the file is not followed: a swapped-in link resolves outside and fails.
     assert not allowed("Read", workspace.runs_dir() / "clinic.txt")
+
+
+@pytest.fixture
+def guidelines(ws):
+    for agent in ("clinic", "other"):
+        path = workspace.guidelines_path(agent)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("guidelines")
+    return workspace.guidelines_dir()
+
+
+def test_own_guidelines_are_read_only(guidelines):
+    assert allowed("Read", guidelines / "clinic.md")
+    assert allowed("Read", "guidelines/clinic.md")
+    assert not allowed("Edit", guidelines / "clinic.md")
+    assert not allowed("Write", "guidelines/clinic.md")
+
+
+@pytest.mark.parametrize("tool", ["Read", "Edit", "Write"])
+def test_another_agents_guidelines_are_denied(guidelines, tool):
+    assert not allowed(tool, guidelines / "other.md")
+    assert not allowed(tool, "guidelines/other.md")
+
+
+@pytest.mark.parametrize("path", ["guidelines", "guidelines/new.md", "guidelines/../guidelines/other.md", "drafts/../guidelines/other.md"])
+def test_the_rest_of_the_guidelines_directory_is_denied(guidelines, path):
+    assert not allowed("Read", path)
+
+
+def test_guidelines_path_variants_resolve_to_the_real_file(guidelines):
+    assert allowed("Read", "drafts/../guidelines/clinic.md")
+    assert allowed("Read", "./guidelines/./clinic.md")
+
+
+def test_symlinks_cannot_reach_another_agents_guidelines(guidelines, ws):
+    (guidelines / "link.md").symlink_to(guidelines / "other.md")
+    assert not allowed("Read", guidelines / "link.md")
+    (ws / "alias").symlink_to(guidelines / "other.md")
+    assert not allowed("Read", ws / "alias")
+
+
+def test_a_symlinked_own_guidelines_file_to_elsewhere_is_denied(ws):
+    workspace.guidelines_dir().mkdir(parents=True, exist_ok=True)
+    (workspace.guidelines_dir() / "clinic.md").symlink_to(ws.parent / "secret.json")
+    assert not allowed("Read", workspace.guidelines_dir() / "clinic.md")

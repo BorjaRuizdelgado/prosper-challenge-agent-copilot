@@ -13,6 +13,16 @@ export interface AgentRecord {
   updated_at: string;
 }
 
+export interface GuidelinesText {
+  text: string;
+}
+
+export interface SampleGuidelines {
+  name: string;
+  text: string;
+  reply?: string;
+}
+
 async function request<T>(url: string, init: RequestInit, failure: string): Promise<T> {
   const res = await fetch(url, init);
   if (!res.ok) throw new Error(`${failure} (${res.status})`);
@@ -30,8 +40,23 @@ export const listAgents = () => request<AgentSummary[]>("/api/agents", {}, "Coul
 export const getAgent = (id: string) =>
   request<AgentRecord>(`/api/agents/${id}`, {}, "Could not load the agent");
 
-export const createAgent = (name: string) =>
-  request<AgentRecord>("/api/agents", sendJson("POST", { name }), "Could not create the agent");
+export const createAgent = (name: string, guidelines?: string) =>
+  request<AgentRecord>("/api/agents", sendJson("POST", guidelines === undefined ? { name } : { name, guidelines }), "Could not create the agent");
+
+/** The client guidelines stored with an agent, or null when it has none. */
+export async function getGuidelines(id: string): Promise<string | null> {
+  const res = await fetch(`/api/agents/${id}/guidelines`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Could not load the guidelines (${res.status})`);
+  return ((await res.json()) as GuidelinesText).text;
+}
+
+export const saveGuidelines = (id: string, text: string) =>
+  request<GuidelinesText>(`/api/agents/${id}/guidelines`, sendJson("PUT", { text }), "Could not save the guidelines");
+
+/** Sample client guidelines for the dialog's *Use sample: ...* buttons; `reply` is the sample client reply. */
+export const listSampleGuidelines = () =>
+  request<SampleGuidelines[]>("/api/demo/guidelines", {}, "Could not load the sample guidelines");
 
 export const duplicateAgent = (id: string) =>
   request<AgentRecord>(`/api/agents/${id}/duplicate`, sendJson("POST"), "Could not duplicate the agent");

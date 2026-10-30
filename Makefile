@@ -3,11 +3,11 @@
 
 PROJECT := backend
 
-.PHONY: help install run api frontend dev up down demo test clean
+.PHONY: help install run api frontend dev up down demo check-guidelines test clean
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
-		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
+		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
 install: ## Create the venv and install dependencies (from uv.lock)
 	uv sync --directory $(PROJECT)
@@ -43,6 +43,9 @@ down: ## Stop the API, voice runner and frontend (by process and by port)
 
 demo: ## Seed the demo agents into the agents directory, resetting them if they exist
 	uv run --directory $(PROJECT) python -m demo.seed
+
+check-guidelines: ## Check a real copilot build of a sample (SAMPLE=name, MODEL=haiku|sonnet, DUMP=file); needs the claude CLI
+	uv run --directory $(PROJECT) python -m demo.check_build $(SAMPLE) $(if $(MODEL),--model $(MODEL)) $(if $(DUMP),--dump $(DUMP))
 
 test: ## Run backend (pytest), frontend (Vitest) and the Playwright smoke spec
 	uv run --directory $(PROJECT) pytest

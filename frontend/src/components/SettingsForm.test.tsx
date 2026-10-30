@@ -1,6 +1,8 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, expect, test } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { CHECK_COVERAGE, resetCopilotStore, setCopilotStreamer } from "../copilot/copilotStore";
+import { json, mockApi } from "../test/helpers";
 import type { Agent } from "../model";
 import { useAgentStore } from "../store";
 import { SettingsForm } from "./SettingsForm";
@@ -65,4 +67,57 @@ test("choosing a curated model after a custom one replaces it", async () => {
   await userEvent.selectOptions(screen.getByLabelText("Model"), "gpt-4o-mini");
 
   expect(current().model).toBe("gpt-4o-mini");
+});
+
+// Client guidelines section
+const withGuidelines = (text: string | null) => {
+  const puts: unknown[] = [];
+  mockApi({
+    "GET /api/agents/g-1/guidelines": () => (text === null ? json({}, 404) : json({ text })),
+    "PUT /api/agents/g-1/guidelines": () => json({ text: "x" }),
+  });
+  const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+  cleanup();
+  useAgentStore.setState({ status: "ready", agent: agent(), agentId: "g-1", positions: {}, dirty: false, copilotOpen: false });
+  render(<SettingsForm />);
+  return { puts, fetchMock };
+};
+
+afterEach(() => vi.unstubAllGlobals());
+
+test("saving guidelines calls the api and leaves the dirty flag alone", async () => {
+  const { fetchMock } = withGuidelines("Open 9-5.");
+  expect(await screen.findByText("Open 9-5.")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Edit" }));
+  const box = screen.getByLabelText("Guidelines text");
+  await userEvent.clear(box);
+  await userEvent.type(box, "Open 8-6.");
+  await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+  await waitFor(() => expect(screen.getByText("Open 8-6.")).toBeInTheDocument());
+  const put = fetchMock.mock.calls.find((c) => c[1]?.method === "PUT")!;
+  expect(put[0]).toBe("/api/agents/g-1/guidelines");
+  expect(JSON.parse(put[1].body)).toEqual({ text: "Open 8-6." });
+  expect(useAgentStore.getState().dirty).toBe(false);
+});
+
+test("an agent without guidelines offers to add them", async () => {
+  withGuidelines(null);
+  expect(await screen.findByRole("button", { name: "Add guidelines" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Check coverage" })).not.toBeInTheDocument();
+});
+
+test("Check coverage opens the Copilot and sends the fixed message once", async () => {
+  resetCopilotStore();
+  const calls: string[] = [];
+  const restore = setCopilotStreamer(async function* (_id, message) {
+    calls.push(message);
+    yield { event: "done" } as never;
+  });
+  withGuidelines("Open 9-5.");
+  await userEvent.click(await screen.findByRole("button", { name: "Check coverage" }));
+
+  await waitFor(() => expect(calls).toEqual([CHECK_COVERAGE]));
+  expect(useAgentStore.getState().copilotOpen).toBe(true);
+  restore();
 });

@@ -1,7 +1,7 @@
 #
 # The copilot's sandbox on disk. Claude Code edits one draft file per agent; the API
 # writes the editor's working copy there before each turn and reads it back after.
-# `.claude/skills/` is committed (the Prosper Blueprints and run review skills); `drafts/` and `runs/` are scratch.
+# `.claude/skills/` is committed (the Prosper Blueprints and run review skills); `drafts/`, `runs/` and `guidelines/` are scratch.
 #
 
 import json
@@ -28,6 +28,10 @@ def runs_dir() -> Path:
     return workspace_dir() / "runs"
 
 
+def guidelines_dir() -> Path:
+    return workspace_dir() / "guidelines"
+
+
 def skills_dir() -> Path:
     return workspace_dir() / ".claude" / "skills"
 
@@ -42,6 +46,10 @@ def draft_path(agent_id: str) -> Path:
 
 def runs_path(agent_id: str) -> Path:
     return runs_dir() / f"{validate_agent_id(agent_id)}.txt"
+
+
+def guidelines_path(agent_id: str) -> Path:
+    return guidelines_dir() / f"{validate_agent_id(agent_id)}.md"
 
 
 def dump_agent(agent: dict) -> str:
@@ -64,6 +72,17 @@ def write_runs(agent_id: str, runs: list[dict]) -> Path | None:
         return None
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(render_runs(runs), encoding="utf-8")
+    return path
+
+
+def write_guidelines(agent_id: str, text: str | None) -> Path | None:
+    """Writes the client's guidelines for the copilot to read; with none, removes a stale file and returns None."""
+    path = guidelines_path(agent_id)
+    if not text:
+        path.unlink(missing_ok=True)
+        return None
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
     return path
 
 

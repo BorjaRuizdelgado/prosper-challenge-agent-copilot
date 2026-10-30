@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
+import { clearCall } from "../call/callStore";
 import { blockingIssues, useAgentStore } from "../store";
 import { useValidation } from "../useValidation";
 import { AgentMark, ProductMark } from "./AgentMark";
@@ -70,7 +71,10 @@ export function AgentEditor() {
 
   useEffect(() => {
     if (id) void load(id);
-    return reset;
+    return () => {
+      reset();
+      clearCall(); // a call (live or finished) never follows you to another agent
+    };
   }, [id, load, reset]);
 
   // Cmd/Ctrl+K puts the cursor in the copilot from anywhere in the editor.

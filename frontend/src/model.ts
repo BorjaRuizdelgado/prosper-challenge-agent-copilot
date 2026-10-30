@@ -113,3 +113,29 @@ export interface Finding {
   fix: string;
   node?: string;
 }
+
+export type RequirementStatus = "covered" | "default" | "open";
+
+/** One rule found in the client's guidelines, with the quote it came from and the nodes that implement it. */
+export interface Requirement {
+  id: string;
+  text: string;
+  quote: string;
+  status: RequirementStatus;
+  nodes: string[];
+  note?: string;
+}
+
+/** One question for the client, with the default the agent follows until they answer. */
+export interface ClientQuestion {
+  id: string;
+  question: string;
+  default: string;
+  requirements: string[];
+}
+
+/** The copilot's coverage report on the client's guidelines. */
+export interface Coverage {
+  requirements: Requirement[];
+  questions: ClientQuestion[];
+}

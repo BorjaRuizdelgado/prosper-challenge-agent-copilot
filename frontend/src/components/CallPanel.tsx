@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { buildCallMessage } from "../call/askCopilot";
-import { useCallStore } from "../call/callStore";
+import { clearCall, useCallStore } from "../call/callStore";
 import { useCopilotStore } from "../copilot/copilotStore";
 import { MODELS, VOICES } from "../options";
 import { blockingIssues, useAgentStore } from "../store";
@@ -17,8 +17,16 @@ export function CallPanel() {
   const openCopilot = useAgentStore((s) => s.openCopilot);
   const agent = useAgentStore((s) => s.agent);
   const { state, message, muted, transcript, start, hangUp, toggleMute } = useCallStore();
+  // Opening the tab starts a fresh session; only a call still in progress is kept.
+  useEffect(() => {
+    const { state } = useCallStore.getState();
+    if (state !== "connecting" && state !== "live") clearCall();
+  }, []);
   const end = useRef<HTMLLIElement>(null);
-  useEffect(() => end.current?.scrollIntoView?.({ block: "end" }), [transcript]);
+  useEffect(() => {
+    // Braces matter: scrollIntoView() may return a value, which React would treat as the effect's cleanup.
+    end.current?.scrollIntoView?.({ block: "end" });
+  }, [transcript]);
 
   const busy = state === "connecting" || state === "live";
   const blockedReason = blocking > 0 ? `Fix the ${blocking} error${blocking === 1 ? "" : "s"} in Issues before calling.` : null;

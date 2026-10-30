@@ -263,6 +263,40 @@ describe("findings", () => {
   });
 });
 
+const coverage = {
+  requirements: [
+    { id: "r1", text: "Book visits", quote: "We book visits.", status: "covered" as const, nodes: ["greeting"] },
+    { id: "r2", text: "Cancel", quote: "", status: "default" as const, nodes: ["greeting"] },
+  ],
+  questions: [{ id: "q1", question: "Notice period?", default: "Hand off to staff", requirements: ["r2"] }],
+};
+
+describe("coverage", () => {
+  it("attaches to the assistant message and the last event wins", async () => {
+    install(stream([
+      { event: "coverage", requirements: [], questions: [] },
+      { event: "coverage", ...coverage },
+      { event: "proposal", agent: proposed, issues: [] },
+      { event: "done" },
+    ]));
+    await useCopilotStore.getState().send("a", "build", base);
+    expect(reply().coverage).toEqual(coverage);
+    expect(reply().proposal?.status).toBe("pending");
+  });
+
+  it("is not set on a turn that reports none", async () => {
+    install(stream([{ event: "text", delta: "Fine." }, { event: "done" }]));
+    await useCopilotStore.getState().send("a", "hi", base);
+    expect(reply().coverage).toBeUndefined();
+  });
+
+  it("comes back after a reload", async () => {
+    install(stream([{ event: "coverage", ...coverage }, { event: "done" }]));
+    await useCopilotStore.getState().send("a", "check", base);
+    expect((loadChats().a.messages.at(-1) as { coverage?: unknown }).coverage).toEqual(coverage);
+  });
+});
+
 describe("persistence across a page reload", () => {
   it("keeps the conversation and brings back a pending proposal's draft", async () => {
     install(stream([{ event: "text", delta: "Added it." }, { event: "proposal", agent: proposed, issues: [] }, { event: "done" }]));

@@ -69,6 +69,22 @@ Build it in two passes so the graph appears early on the canvas and fills in nod
 
 The first `Write` must stay a skeleton: every task message is a single short stub sentence, even when you already know the full text. Writing finished nodes in the first pass defeats the point, because the user watches the graph fill in. Then validate. Derive the steps from the user's guidelines; do not invent policies they did not state.
 
+### From the client's guidelines
+
+When the message names a guidelines file ("The client's guidelines are in guidelines/<id>.md"), the agent is built from that document:
+
+1. **Read the guidelines file first**, before the draft and before any edit.
+2. **List the requirements to yourself** (do not write them down): each rule, hour, script or policy the document states, with the words it comes from.
+3. **Build with the skeleton-first method** above.
+4. **Defaults, not questions.** For each policy the agent needs that the guidelines do not state, build the safe default (hand off to staff, promise no time or fee) and do not stop to ask. The questions go to the client in the coverage report.
+   Hunt for what the document leaves out, not only what it states. For each rule it gives, ask what a caller would need next: a time limit or notice period on a cancel or reschedule, a named list where it says "most" or "major", how long a visit or slot lasts, a phone number or address it mentions but does not give, what to do when the caller is not the patient, what happens outside the hours. If the document is silent on one, it is a `default` requirement with a question, even when the rest of that topic is covered.
+5. **Validate, then report.** After `validate_agent` shows no errors, call `report_coverage` once, after your last edit. It takes `requirements`: every requirement with `id`, `text`, `quote` (the client's words, empty when the document is silent), `status` and `nodes`; and `questions`: one for each `default` or `open` requirement, with the `default` the agent follows until the client answers. Status is `covered` when the guidelines state it and a node implements it, `default` when you built a safe default, `open` when nothing in the draft handles it. Every `covered` and `default` requirement names at least one existing node, and every `default` requirement appears in a question. If the tool reports a problem, fix the report (or the draft) and call it again.
+
+Two other requests use the same file:
+
+- **Check coverage.** When asked to check coverage, read the guidelines and the draft, then call `report_coverage`. Make no edits unless asked.
+- **Client answers.** When the user pastes or relays the client's answers to your questions, edit only the parts the answers name, validate, then call `report_coverage` again with the updated statuses and the answered questions removed.
+
 ## Blueprints
 
 Complete, valid agents to copy structure and tone from. Read the one closest to the request; do not copy it verbatim.
