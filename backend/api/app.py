@@ -1,5 +1,6 @@
 """FastAPI app for the agent builder UI. Run: uvicorn api.app:app --port 8000"""
 
+import json
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -92,8 +93,16 @@ def sample_guidelines() -> list[dict]:
         reply = path.with_suffix(".reply.md")
         if reply.exists():
             sample["reply"] = reply.read_text()
-        samples.append(sample)
-    return samples
+        samples.append((_sample_order(path), sample))
+    return [sample for _, sample in sorted(samples, key=lambda s: (s[0], s[1]["name"]))]
+
+
+def _sample_order(path) -> int:
+    """The `order` key of the sample's `.expected.json`; samples without one go last."""
+    try:
+        return int(json.loads(path.with_suffix(".expected.json").read_text()).get("order", 1000))
+    except (OSError, ValueError, AttributeError):
+        return 1000
 
 
 @app.get("/api/agents/{agent_id}/runs")
