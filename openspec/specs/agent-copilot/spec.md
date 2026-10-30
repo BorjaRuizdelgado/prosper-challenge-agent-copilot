@@ -7,10 +7,10 @@ Lets a user create and change the open agent by describing what they want in pla
 ## Requirements
 
 ### Requirement: Copilot panel in the editor
-The editor SHALL offer a Copilot tab in the dock for the open agent, with a message input, the conversation so far, and an empty state that suggests what to ask.
+The editor SHALL offer a Copilot panel beside the canvas for the open agent, shown by default and toggled from the top bar, with a message input, the conversation so far, and an empty state that suggests what to ask.
 
 #### Scenario: Open the copilot
-- **WHEN** the user opens an agent and selects the Copilot tab
+- **WHEN** the user opens an agent with the Copilot panel shown
 - **THEN** the panel shows a message input and example requests, such as building an agent from guidelines or changing a step
 
 ### Requirement: Instructions produce a proposed change
@@ -61,11 +61,11 @@ While a turn is running, the canvas SHALL show the copilot's draft and update it
 - **THEN** `offer_times` is highlighted while it is edited and stays marked as changed, and no other node moves
 
 ### Requirement: Inspect a proposal directly
-While the canvas shows a draft or proposal, the user SHALL be able to select any node or edge and read its proposed content in the Inspector, read-only. Showing a proposal SHALL NOT change the working copy or mark the agent as unsaved.
+While the canvas shows a draft or proposal, the user SHALL be able to select any node or edge and read its proposed content in the Build panel, read-only. Showing a proposal SHALL NOT change the working copy or mark the agent as unsaved.
 
 #### Scenario: Inspect a proposed node
 - **WHEN** the user clicks a node marked as added in a proposal
-- **THEN** the Inspector shows its proposed instructions and edges, with editing disabled
+- **THEN** the Build panel shows its proposed instructions and edges, with editing disabled
 
 #### Scenario: Hide the proposal
 - **WHEN** the user clicks Hide or Discard
@@ -148,11 +148,11 @@ When the copilot backend cannot start (no Claude login or API key, or the Claude
 - **THEN** the panel shows a setup message naming both options, and editing, saving and test calls still work
 
 ### Requirement: Analyze an agent's production runs
-The Runs tab SHALL offer "Analyze runs", which opens the Copilot tab and sends a turn asking the copilot to review the open agent's runs and improve it. The turn SHALL start from the editor's working copy like any other turn. "Analyze runs" SHALL be unavailable while a copilot turn is running for that agent or when the agent has no runs.
+The Runs tab SHALL offer "Analyze runs", which opens the Copilot panel (keeping the Runs tab open) and sends a turn asking the copilot to review the open agent's runs and improve it. The turn SHALL start from the editor's working copy like any other turn. "Analyze runs" SHALL be unavailable while a copilot turn is running for that agent or when the agent has no runs.
 
 #### Scenario: Analyze in one click
 - **WHEN** the user clicks "Analyze runs" on a demo agent
-- **THEN** the Copilot tab opens with the request shown as the user's message and the copilot starts working without further input
+- **THEN** the Copilot panel opens with the request shown as the user's message and the copilot starts working without further input
 
 #### Scenario: Turn already running
 - **WHEN** a copilot turn is running for the open agent
@@ -188,8 +188,8 @@ When the runs show that the agent cannot finish what callers ask for (calls stuc
 - **THEN** the proposal adds the steps callers needed to finish (confirming the pharmacy, a confirmation and goodbye), a human handoff for anything the agent cannot decide, the emergency exit and an end node, and the reply names the runs that motivated each part
 
 ### Requirement: Ask the copilot about one run
-Each run in the Runs tab SHALL offer "Ask Copilot", which opens the Copilot tab with the run's transcript, its node path, its outcome and flag, and `What went wrong: ` prefilled in the input. Nothing SHALL be sent until the user sends it.
+Each run in the Runs tab SHALL offer "Ask Copilot", which opens the Copilot panel with the run's transcript, its node path, its outcome and flag, and `What went wrong: ` prefilled in the input. Nothing SHALL be sent until the user sends it.
 
 #### Scenario: Ask about a flagged run
 - **WHEN** the user clicks "Ask Copilot" on a flagged run
-- **THEN** the Copilot tab opens with that run's transcript, path, outcome and flag in the input, the cursor at the end, and no turn started
+- **THEN** the Copilot panel opens with that run's transcript, path, outcome and flag in the input, the cursor at the end, and no turn started

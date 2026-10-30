@@ -40,7 +40,7 @@ The system SHALL accept saving an agent that has validation issues, SHALL return
 - **THEN** the save succeeds and the response lists an error issue naming the node and edge
 
 ### Requirement: Agents list UI
-The UI SHALL show all agents in a sidebar, let the user create, rename, duplicate and delete them (with delete confirmation), and open one into the editor via a shareable URL.
+The UI SHALL list all agents on a home page and in a switcher opened from the open agent's name in the editor's top bar, let the user create, rename, duplicate and delete them (with delete confirmation), and open one into the editor via a shareable URL.
 
 #### Scenario: Create and open
 - **WHEN** the user clicks "New agent" and enters a name

@@ -7,6 +7,8 @@ import { runPath, useRunsStore } from "../runs/runsStore";
 import { useAgentStore } from "../store";
 
 const OUTCOMES: RunOutcome[] = ["completed", "transferred", "abandoned", "stuck"];
+/** Outcomes that need a look; their counts turn red when above zero. */
+const BAD: RunOutcome[] = ["abandoned", "stuck"];
 
 const duration = (s: number) => (s >= 60 ? `${Math.floor(s / 60)}m${String(s % 60).padStart(2, "0")}s` : `${s}s`);
 const when = (iso: string) => new Date(iso).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
@@ -20,10 +22,10 @@ const notes = (path: RunStep[]) =>
 
 function RunDetail({ run }: { run: Run }) {
   const agent = useAgentStore((s) => s.agent);
-  const setDockTab = useAgentStore((s) => s.setDockTab);
+  const openCopilot = useAgentStore((s) => s.openCopilot);
   const ask = () => {
     useCopilotStore.getState().setPrefill(buildRunMessage(run));
-    setDockTab("copilot");
+    openCopilot();
   };
   const { missing } = agent ? runPath(run, agent) : { missing: [] as string[] };
   return (
@@ -59,11 +61,11 @@ function RunDetail({ run }: { run: Run }) {
 /** Opens the Copilot tab and sends the review request with the working copy; unavailable while a turn runs. */
 function AnalyzeRuns({ agentId }: { agentId: string }) {
   const agent = useAgentStore((s) => s.agent);
-  const setDockTab = useAgentStore((s) => s.setDockTab);
+  const openCopilot = useAgentStore((s) => s.openCopilot);
   const busy = useCopilotStore((s) => chatOf(s.chats, agentId).running);
   const analyze = () => {
     if (!agent) return;
-    setDockTab("copilot");
+    openCopilot();
     void useCopilotStore.getState().send(agentId, ANALYZE_RUNS_MESSAGE, agent);
   };
   return (
@@ -102,13 +104,18 @@ export function RunsPanel() {
   const open = selected?.agentId === agentId ? selected.runId : null;
   return (
     <div className="runs">
-      <p className="runs__summary" data-testid="runs-summary">
-        <strong>{runs.length} runs</strong>
-        {OUTCOMES.map((o) => (
-          <span key={o}> · {runs.filter((r) => r.outcome === o).length} {o}</span>
+      <dl className="runs__summary" data-testid="runs-summary">
+        {[
+          ["Runs", runs.length, false],
+          ...OUTCOMES.map((o) => [o[0].toUpperCase() + o.slice(1), runs.filter((r) => r.outcome === o).length, BAD.includes(o)] as const),
+          ["Flagged", runs.filter((r) => r.flag).length, true],
+        ].map(([label, count, bad]) => (
+          <div key={label as string} className={`runs__stat${bad && count ? " runs__stat--bad" : ""}${count ? "" : " runs__stat--zero"}`}>
+            <dt>{label}</dt>
+            <dd>{count}</dd>
+          </div>
         ))}
-        <span> · {runs.filter((r) => r.flag).length} flagged</span>
-      </p>
+      </dl>
       <AnalyzeRuns agentId={agentId} />
       <ul className="runs__list" aria-label="Runs">
         {runs.map((run) => (

@@ -1,17 +1,17 @@
 import dagre from "@dagrejs/dagre";
 import type { Agent, Position } from "./model";
 
-export const NODE_WIDTH = 248;
-export const NODE_HEIGHT = 112;
-const EDGE_ROW = 22;
+export const NODE_WIDTH = 264;
+export const NODE_HEIGHT = 124;
+const EDGE_ROW = 28;
 
 /** Card height grows with the number of outgoing edges (one handle row each). */
 export const nodeHeight = (edgeCount: number) => NODE_HEIGHT + Math.max(0, edgeCount - 1) * EDGE_ROW;
 
-/** Left-to-right dagre layout of every node. Returns top-left positions by node name. */
+/** Top-to-bottom dagre layout of every node. Returns top-left positions by node name. */
 export function autoLayout(agent: Agent): Record<string, Position> {
   const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: "LR", nodesep: 48, ranksep: 96, marginx: 24, marginy: 24 });
+  g.setGraph({ rankdir: "TB", nodesep: 48, ranksep: 72, marginx: 24, marginy: 24 });
   g.setDefaultEdgeLabel(() => ({}));
   for (const n of agent.nodes) {
     g.setNode(n.name, { width: NODE_WIDTH, height: nodeHeight(n.edges?.length ?? 0) });

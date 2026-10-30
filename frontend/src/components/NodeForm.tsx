@@ -172,7 +172,7 @@ function ActionsField({ node, field, label }: { node: AgentNode; field: "pre_act
                   </label>
                 </>
               ) : (
-                <p className="field__hint">Not an action the agent can run. Remove it, or edit it in the JSON tab.</p>
+                <p className="field__hint">Not an action the agent can run. Remove it, or edit it in the JSON view.</p>
               )}
             </li>
           );

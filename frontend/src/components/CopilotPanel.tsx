@@ -59,6 +59,7 @@ export function CopilotPanel() {
   const agent = useAgentStore((s) => s.agent);
   const chat = useCopilotStore((s) => chatOf(s.chats, agentId));
   const { send, stop, reset } = useCopilotStore.getState();
+  const toggleCopilot = useAgentStore((s) => s.toggleCopilot);
   const [draft, setDraft] = useState("");
   const prefill = useCopilotStore((s) => s.prefill);
   const input = useRef<HTMLTextAreaElement>(null);
@@ -97,14 +98,21 @@ export function CopilotPanel() {
 
   return (
     <div className="copilot">
-      <div className="copilot__bar">
-        <button type="button" onClick={() => void reset(agentId)} disabled={chat.messages.length === 0}>
+      <header className="copilot__bar">
+        <h2 className="panel__title">Copilot</h2>
+        <button type="button" className="ghost" onClick={() => void reset(agentId)} disabled={chat.messages.length === 0}>
           New chat
         </button>
-      </div>
+        <button type="button" className="ghost copilot__close" aria-label="Hide the copilot" onClick={toggleCopilot}>
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+            <path d="m4 4 8 8M12 4l-8 8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        </button>
+      </header>
       {chat.messages.length === 0 ? (
         <div className="copilot__empty">
-          <p>Describe what the agent should do, or how to change it.</p>
+          <p className="copilot__intro">What should {agent.name} do?</p>
+          <p className="copilot__lede">Describe what the agent should do, or how to change it. Changes appear on the canvas as a draft you apply or discard.</p>
           <ul aria-label="Example requests">
             {EXAMPLES.map((example) => (
               <li key={example}>
@@ -136,13 +144,14 @@ export function CopilotPanel() {
           submit();
         }}
       >
+        <div className="copilot__composer">
         <textarea
           ref={input}
           aria-label="Message to the copilot"
           rows={3}
           value={draft}
           disabled={chat.running}
-          placeholder="Ask the copilot…"
+          placeholder="Ask the copilot to build or change this agent…"
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={onKeyDown}
         />
@@ -155,6 +164,7 @@ export function CopilotPanel() {
             Send
           </button>
         )}
+        </div>
       </form>
     </div>
   );

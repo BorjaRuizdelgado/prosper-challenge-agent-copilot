@@ -13,6 +13,9 @@ const record = (id: string, name: string) => ({
 
 afterEach(() => vi.unstubAllGlobals());
 
+/** In the editor the agents live in the switcher menu next to the agent's name. */
+const openSwitcher = () => userEvent.click(screen.getByRole("button", { name: "Switch agent" }));
+
 const calls = (fn: ReturnType<typeof vi.fn>) =>
   fn.mock.calls.map(([url, init]) => `${init?.method ?? "GET"} ${url}`);
 
@@ -119,8 +122,9 @@ test("confirming delete removes the agent and leaves its editor", async () => {
     "DELETE /api/agents/a-1": () => new Response(null, { status: 204 }),
   });
   renderApp(<App />, "/agents/a-1");
-  await screen.findByRole("link", { name: /Scheduler/ });
   expect(await screen.findByRole("heading", { name: "Scheduler" })).toBeInTheDocument();
+  await openSwitcher();
+  await screen.findByRole("link", { name: /Scheduler/ });
 
   await userEvent.click(screen.getByRole("button", { name: "Delete Scheduler" }));
   await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete" }));
@@ -137,12 +141,15 @@ test("a failed delete brings the agent back and keeps the editor open", async ()
     "DELETE /api/agents/a-1": () => json({}, 500),
   });
   renderApp(<App />, "/agents/a-1");
+  await screen.findByRole("heading", { name: "Scheduler" });
+  await openSwitcher();
   await screen.findByRole("link", { name: /Scheduler/ });
 
   await userEvent.click(screen.getByRole("button", { name: "Delete Scheduler" }));
   await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete" }));
 
-  expect(await screen.findByRole("status")).toHaveTextContent("Could not delete the agent (500)");
+  // The editor's own checks are a status too, so look for the toast by its text.
+  expect(await screen.findByText("Could not delete the agent (500)")).toBeInTheDocument();
   expect(screen.getByRole("link", { name: /Scheduler/ })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: "Scheduler" })).toBeInTheDocument();
 });
@@ -153,7 +160,7 @@ const fullRecord = (name: string) => ({
   updated_at: "2026-01-02T00:00:00Z",
 });
 
-test("renaming the open agent from the sidebar updates the editor, so its next save keeps the new name", async () => {
+test("renaming the open agent from the switcher updates the editor, so its next save keeps the new name", async () => {
   mockApi({
     "GET /api/agents": () => json([summary]),
     "GET /api/agents/a-1": () => json(fullRecord("Scheduler")),
@@ -164,7 +171,8 @@ test("renaming the open agent from the sidebar updates the editor, so its next s
   renderApp(<App />, "/agents/a-1");
   await screen.findByRole("heading", { name: "Scheduler" });
 
-  await userEvent.click(screen.getByRole("button", { name: "Rename Scheduler" }));
+  await openSwitcher();
+  await userEvent.click(await screen.findByRole("button", { name: "Rename Scheduler" }));
   const input = within(screen.getByRole("dialog")).getByLabelText("Name");
   await userEvent.clear(input);
   await userEvent.type(input, "Booker{Enter}");
@@ -179,7 +187,7 @@ test("renaming the open agent from the sidebar updates the editor, so its next s
   expect(saved).toMatchObject({ name: "Booker" });
 });
 
-test("saving from the editor updates the agent's name and node count in the sidebar", async () => {
+test("saving from the editor updates the agent's name and node count in the switcher", async () => {
   mockApi({
     "GET /api/agents": () => json([{ ...summary, node_count: 1 }]),
     "GET /api/agents/a-1": () => json(fullRecord("Scheduler")),
@@ -189,14 +197,17 @@ test("saving from the editor updates the agent's name and node count in the side
   renderApp(<App />, "/agents/a-1");
   await screen.findByRole("heading", { name: "Scheduler" });
 
-  await userEvent.click(screen.getByRole("tab", { name: "Settings" }));
-  const name = screen.getByLabelText("Name");
+  // With nothing selected, Build shows the agent's settings.
+  const name = await screen.findByLabelText("Name");
   await userEvent.clear(name);
   await userEvent.type(name, "Front desk");
   await userEvent.click(screen.getByRole("button", { name: "Add node" }));
+  await openSwitcher();
   expect(screen.getByRole("link", { name: /Scheduler/ })).toHaveTextContent("1 node");
 
   await userEvent.click(screen.getByRole("button", { name: "Save" }));
+  await waitFor(() => expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Front desk"));
+  await openSwitcher();
   const link = await screen.findByRole("link", { name: /Front desk/ });
   expect(link).toHaveTextContent("2 nodes");
 });

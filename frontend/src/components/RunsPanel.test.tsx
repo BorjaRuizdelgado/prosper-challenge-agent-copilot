@@ -31,7 +31,7 @@ const runs = [
 beforeEach(() => {
   resetRunsStore();
   resetCopilotStore();
-  useAgentStore.setState({ agentId: "demo", agent, dockTab: "runs" });
+  useAgentStore.setState({ agentId: "demo", agent, dockTab: "runs", copilotOpen: false });
 });
 
 describe("RunsPanel", () => {
@@ -39,7 +39,7 @@ describe("RunsPanel", () => {
     mockApi({ "GET /api/agents/demo/runs": () => json(runs) });
     renderApp(<RunsPanel />);
     const summary = await screen.findByTestId("runs-summary");
-    expect(summary).toHaveTextContent("3 runs · 1 completed · 0 transferred · 1 abandoned · 1 stuck · 1 flagged");
+    expect(summary).toHaveTextContent("Runs3Completed1Transferred0Abandoned1Stuck1Flagged1");
     const rows = screen.getAllByRole("button", { expanded: false });
     expect(rows.map((r) => r.textContent)).toEqual([
       expect.stringContaining("Hi from r-new"),
@@ -85,7 +85,7 @@ describe("RunsPanel", () => {
     renderApp(<RunsPanel />);
     await userEvent.click(await screen.findByRole("button", { name: /Hi from r-mid/ }));
     expect(useRunsStore.getState().selected).not.toBeNull();
-    act(() => useAgentStore.getState().setDockTab("copilot"));
+    act(() => useAgentStore.getState().setDockTab("call"));
     expect(useRunsStore.getState().selected).toBeNull();
   });
 
@@ -102,14 +102,16 @@ describe("RunsPanel", () => {
     expect(prefill).toContain("Flag: Could not cancel.");
     expect(prefill).toContain("Outcome: stuck");
     expect(prefill?.endsWith("What went wrong: ")).toBe(true);
-    expect(useAgentStore.getState().dockTab).toBe("copilot");
+    // The copilot opens beside the Runs tab, so the run stays open on the canvas while it is discussed.
+    expect(useAgentStore.getState().copilotOpen).toBe(true);
+    expect(useRunsStore.getState().selected).not.toBeNull();
     expect(streamer).not.toHaveBeenCalled();
     expect(chatOf(useCopilotStore.getState().chats, "demo").messages).toEqual([]);
     restore();
   });
 
   describe("Analyze runs", () => {
-    it("opens the Copilot tab and sends the review request with the working copy, once", async () => {
+    it("opens the copilot and sends the review request with the working copy, once", async () => {
       const streamer = vi.fn(async function* () {
         yield { event: "done" as const };
       });
@@ -117,7 +119,7 @@ describe("RunsPanel", () => {
       mockApi({ "GET /api/agents/demo/runs": () => json(runs) });
       renderApp(<RunsPanel />);
       await userEvent.click(await screen.findByRole("button", { name: "Analyze runs" }));
-      expect(useAgentStore.getState().dockTab).toBe("copilot");
+      expect(useAgentStore.getState().copilotOpen).toBe(true);
       expect(chatOf(useCopilotStore.getState().chats, "demo").messages[0]).toEqual({ role: "user", text: ANALYZE_RUNS_MESSAGE });
       expect(streamer).toHaveBeenCalledTimes(1);
       expect(streamer.mock.calls[0]).toEqual(["demo", ANALYZE_RUNS_MESSAGE, agent, expect.anything()]);

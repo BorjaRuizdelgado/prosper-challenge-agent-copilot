@@ -6,6 +6,7 @@ import { fakeClientFactory } from "../call/fakeClient";
 import { useAgentStore } from "../store";
 import { renderApp } from "../test/helpers";
 import { Dock } from "./Dock";
+import { CopilotPanel } from "./CopilotPanel";
 import { resetCopilotStore } from "../copilot/copilotStore";
 import type { Agent } from "../model";
 import { CallPanel } from "./CallPanel";
@@ -95,7 +96,7 @@ describe("Ask Copilot", () => {
 
   beforeEach(() => {
     resetCopilotStore();
-    useAgentStore.setState({ agent, dockTab: "call" });
+    useAgentStore.setState({ agent, dockTab: "call", copilotOpen: false });
   });
 
   it("is not offered before a call, during one, or when nobody spoke", async () => {
@@ -108,10 +109,15 @@ describe("Ask Copilot", () => {
     expect(screen.queryByRole("button", { name: "Ask Copilot" })).not.toBeInTheDocument();
   });
 
-  it("opens the Copilot tab with the transcript in the input, cursor at the end, and sends nothing", async () => {
+  it("opens the copilot with the transcript in the input, cursor at the end, and sends nothing", async () => {
     const fetchSpy = vi.fn().mockResolvedValue(new Response("[]"));
     vi.stubGlobal("fetch", fetchSpy);
-    renderApp(<Dock />);
+    renderApp(
+      <>
+        <Dock />
+        <CopilotPanel />
+      </>,
+    );
     await finishedCall();
     await userEvent.click(screen.getByRole("button", { name: "Ask Copilot" }));
 
@@ -121,7 +127,8 @@ describe("Ask Copilot", () => {
     expect(input.value).toContain("Path: greeting");
     expect(input.value.endsWith("What went wrong: ")).toBe(true);
     await waitFor(() => expect(input.selectionStart).toBe(input.value.length));
-    expect(useAgentStore.getState().dockTab).toBe("copilot");
+    expect(useAgentStore.getState().copilotOpen).toBe(true);
+    expect(useAgentStore.getState().dockTab).toBe("call");
     expect(fetchSpy.mock.calls.some(([url]) => String(url).includes("/api/copilot"))).toBe(false);
   });
 });

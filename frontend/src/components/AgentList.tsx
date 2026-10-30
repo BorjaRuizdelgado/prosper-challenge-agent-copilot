@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { AgentMark } from "./AgentMark";
 import { useAgents } from "../agents";
 import type { AgentSummary } from "../api";
 import { ConfirmDialog } from "./ConfirmDialog";
@@ -10,13 +11,19 @@ type Dialog =
   | { kind: "rename"; agent: AgentSummary }
   | { kind: "delete"; agent: AgentSummary };
 
-export function AgentList() {
+const updated = (iso: string) => {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? null : date.toLocaleDateString([], { month: "short", day: "numeric" });
+};
+
+/** Every agent with its actions: the home page's list ("page") or the editor's switcher menu ("menu"). */
+export function AgentList({ variant = "page", onNavigate }: { variant?: "page" | "menu"; onNavigate?: () => void }) {
   const { state, reload, create, rename, duplicate, remove } = useAgents();
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const close = () => setDialog(null);
 
   const newButton = (
-    <button type="button" className="primary agent-list__new" onClick={() => setDialog({ kind: "create" })}>
+    <button type="button" className={`${variant === "page" ? "primary" : "ghost"} agent-list__new`} onClick={() => setDialog({ kind: "create" })}>
       New agent
     </button>
   );
@@ -41,18 +48,22 @@ export function AgentList() {
         <ul className="agent-list">
           {state.agents.map((a) => (
             <li key={a.id} className="agent-list__row">
-              <NavLink to={`/agents/${a.id}`} className="agent-list__item">
-                <span>{a.name}</span>
-                <span className="agent-list__meta">{a.node_count} {a.node_count === 1 ? "node" : "nodes"}</span>
+              <NavLink to={`/agents/${a.id}`} className="agent-list__item" onClick={onNavigate}>
+                <AgentMark name={a.name} />
+                <span className="agent-list__name">{a.name}</span>
+                <span className="agent-list__meta">
+                  {a.node_count} {a.node_count === 1 ? "node" : "nodes"}
+                  {variant === "page" && updated(a.updated_at) && <span className="agent-list__date"> · Updated {updated(a.updated_at)}</span>}
+                </span>
               </NavLink>
               <span className="agent-list__actions">
-                <button type="button" aria-label={`Rename ${a.name}`} onClick={() => setDialog({ kind: "rename", agent: a })}>
+                <button type="button" className="ghost" aria-label={`Rename ${a.name}`} onClick={() => setDialog({ kind: "rename", agent: a })}>
                   Rename
                 </button>
-                <button type="button" aria-label={`Duplicate ${a.name}`} onClick={() => duplicate(a.id)}>
+                <button type="button" className="ghost" aria-label={`Duplicate ${a.name}`} onClick={() => duplicate(a.id)}>
                   Copy
                 </button>
-                <button type="button" aria-label={`Delete ${a.name}`} onClick={() => setDialog({ kind: "delete", agent: a })}>
+                <button type="button" className="ghost agent-list__delete" aria-label={`Delete ${a.name}`} onClick={() => setDialog({ kind: "delete", agent: a })}>
                   Delete
                 </button>
               </span>
@@ -64,7 +75,7 @@ export function AgentList() {
   }
 
   return (
-    <>
+    <div className={`agents agents--${variant}`}>
       {newButton}
       {body}
       {dialog?.kind === "create" && (
@@ -102,6 +113,6 @@ export function AgentList() {
           }}
         />
       )}
-    </>
+    </div>
   );
 }

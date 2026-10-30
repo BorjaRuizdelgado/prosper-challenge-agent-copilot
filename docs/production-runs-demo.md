@@ -1,6 +1,6 @@
 # Production runs demo script
 
-Manual run of the `production-runs` and run-review scenarios (task 7.2). Needs a logged-in `claude` CLI (or `ANTHROPIC_API_KEY`). In the UI: `make demo`, `make dev`, open the demo agent, **Runs** tab. `make demo` resets the three demo agents, so run it again after an Apply + Save.
+Manual run of the `production-runs` and run-review scenarios (task 7.2). Needs a logged-in `claude` CLI (or `ANTHROPIC_API_KEY`). In the UI: `make demo`, `make dev`, open the demo agent, **Runs** tab (top bar). `make demo` resets the three demo agents, so run it again after an Apply + Save.
 
 Each row can be tried in the UI (Runs tab, *Analyze runs*) or without it, through `run_turn` (see "To watch a real turn" in `backend/copilot/README.md`; the agent is `backend/demo/agents/<id>.json` and the message is the one in the table). Observed through `run_turn` on 2026-10-30, with the default Haiku and with `COPILOT_MODEL=sonnet`.
 

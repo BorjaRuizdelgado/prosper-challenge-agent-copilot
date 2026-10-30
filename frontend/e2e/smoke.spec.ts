@@ -24,12 +24,13 @@ test("create, edit, save and reload an agent", async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
     await page.screenshot({ path: `test-results/editor-${width}.png` });
   }
-  // the seeded example: graph with edges, a selected node, and the Call tab
+  // the seeded example, opened from the agent switcher: graph with edges, a selected node, and the Test call tab
+  await page.getByRole("button", { name: "Switch agent" }).click();
   await page.getByRole("link", { name: /Prosper Scheduler/ }).click();
   await expect(page.locator(".react-flow__node")).toHaveCount(4);
   await page.locator(".react-flow__node").first().click();
   await page.screenshot({ path: "test-results/seeded-selected.png" });
-  await page.getByRole("tab", { name: "Call" }).click();
+  await page.getByRole("tab", { name: "Test call" }).click();
   await page.screenshot({ path: "test-results/seeded-call.png" });
   expect(errors).toEqual([]);
 });
@@ -73,7 +74,7 @@ test("copilot: send, see steps, apply the proposal, see the new node", async ({ 
   await page.getByRole("link", { name: /Prosper Scheduler/ }).click();
   await expect(page.locator(".react-flow__node")).toHaveCount(4);
 
-  await page.getByRole("tab", { name: "Copilot" }).click();
+  // The copilot panel is open beside the canvas.
   await page.getByRole("textbox", { name: "Message to the copilot" }).fill("Add a goodbye node");
   await page.getByRole("button", { name: "Send" }).click();
 
@@ -173,8 +174,8 @@ test("runs: select a run, analyze, see findings, open a run from one, apply the 
   await expect(page.locator(".react-flow__node")).toHaveCount(4);
 
   await page.getByRole("tab", { name: "Runs" }).click();
-  await expect(page.getByTestId("runs-summary")).toContainText("2 runs");
-  await expect(page.getByTestId("runs-summary")).toContainText("1 flagged");
+  await expect(page.getByTestId("runs-summary")).toContainText("Runs2");
+  await expect(page.getByTestId("runs-summary")).toContainText("Flagged1");
   await page.getByRole("button", { name: /stuck/ }).click();
   await expect(page.locator('.react-flow__node [data-run="end"]')).toContainText("collect_details");
   await expect(page.locator('.react-flow__node [data-run="visited"]')).toContainText("greeting");
@@ -189,7 +190,6 @@ test("runs: select a run, analyze, see findings, open a run from one, apply the 
   await expect(page.getByRole("tab", { name: "Runs" })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("button", { name: /abandoned/ })).toHaveAttribute("aria-expanded", "true");
 
-  await page.getByRole("tab", { name: "Copilot" }).click();
   await page.getByRole("region", { name: "Proposal" }).getByRole("button", { name: "Apply" }).click();
   await expect(page.getByTestId("save-status")).toHaveText("Unsaved changes");
   await expect(page.locator(".react-flow__node", { hasText: "cancel_appointment" })).toBeVisible();
