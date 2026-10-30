@@ -120,10 +120,11 @@ describe("ReplayCard", () => {
   });
 
   it("shows the setup message with Retry when replay could not start", () => {
-    seed({ status: "done", ids: [], runs: {}, error: { message: "Replay needs OPENAI_API_KEY in backend/.env.", setup: true } });
+    seed({ status: "done", ids: ["r-bad"], runs: {}, error: { message: "Replay needs OPENAI_API_KEY in backend/.env.", setup: true } });
     renderApp(<CopilotPanel />);
     expect(within(card()).getByRole("alert")).toHaveTextContent("Replay needs OPENAI_API_KEY");
     expect(within(card()).getByRole("button", { name: "Retry" })).toBeInTheDocument();
+    expect(within(card()).queryByRole("list", { name: "Replayed calls" })).toBeNull();
     expect(screen.getByRole("button", { name: "Apply" })).toBeEnabled();
   });
 

@@ -96,11 +96,14 @@ export function ReplayCard({ agentId, index, proposal, replay }: { agentId: stri
           {proposal.status === "pending" && <button type="button" onClick={() => void replayCalls(agentId, index)}>Retry</button>}
         </div>
       )}
+      {/* After a setup error nothing ran, so the rows would only say "Replaying…". */}
+      {!replay.error?.setup && (
       <ul className="replay__rows" aria-label="Replayed calls">
         {replay.ids.map((id) => (
           <Row key={id} agentId={agentId} index={index} id={id} run={allRuns.find((r) => r.id === id)} cls={score.classes[id] ?? "pending"} entry={replay.runs[id] ?? {}} />
         ))}
       </ul>
+      )}
     </section>
   );
 }

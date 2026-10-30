@@ -134,6 +134,15 @@ test("runs: select a run, analyze, see findings, open a run from one, apply the 
   ];
   await page.route("**/api/agents/*/runs", (route) => route.fulfill({ json: runs }));
 
+  // The review replays on its own; this test is about findings, so replay answers "no key" and never reaches OpenAI.
+  await page.route("**/api/agents/*/replay", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body: `event: error\ndata: ${JSON.stringify({ message: "Replay needs OPENAI_API_KEY in backend/.env.", setup: true })}\n\nevent: done\ndata: {}\n\n`,
+    }),
+  );
+
   let sentMessage = "";
   await page.route("**/api/copilot/*", async (route) => {
     const body = route.request().postDataJSON() as { message: string; agent: { nodes: Array<Record<string, unknown>> } };
@@ -197,6 +206,109 @@ test("runs: select a run, analyze, see findings, open a run from one, apply the 
   await expect(page.getByTestId("save-status")).toHaveText("Unsaved changes");
   await expect(page.locator(".react-flow__node", { hasText: "cancel_appointment" })).toBeVisible();
   await page.screenshot({ path: "test-results/runs-applied.png" });
+  expect(errors).toEqual([]);
+});
+
+// Replay: /runs, the copilot turn and /replay are all stubbed at the network edge (no OpenAI call is made). The
+// turn ends with findings and a proposal, so the replay card fills in by itself; opening a row draws the replayed
+// path on the proposal; with the draft still on the canvas "Replay this call" is disabled; after Apply it runs.
+test("replay: card shows Fixed, a row draws its path, Replay this call is disabled during a draft", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("console", (m) => m.type() === "error" && !isNoGuidelines(m) && errors.push(m.text()));
+  page.on("pageerror", (e) => errors.push(e.message));
+
+  const line = (speaker: string, text: string) => ({ speaker, text });
+  const runs = [
+    {
+      id: "r-9002", started_at: "2026-10-21T10:00:00Z", duration_s: 70, outcome: "abandoned", flag: "Caller wanted to cancel and could not.",
+      goal: "Cancel the Friday appointment",
+      transcript: [line("agent", "Would you like to book an appointment?"), line("caller", "I need to cancel instead.")],
+      path: [{ node: "greeting" }],
+    },
+    {
+      id: "r-9003", started_at: "2026-10-20T09:00:00Z", duration_s: 90, outcome: "completed", goal: "Book a checkup",
+      transcript: [line("agent", "Would you like to book an appointment?"), line("caller", "Yes please.")],
+      path: [{ node: "greeting" }, { node: "collect_details", via: "choose_intent", args: {} }],
+    },
+  ];
+  await page.route("**/api/agents/*/runs", (route) => route.fulfill({ json: runs }));
+
+  await page.route("**/api/copilot/*", async (route) => {
+    const body = route.request().postDataJSON() as { agent: { nodes: Array<Record<string, unknown>> } };
+    const agent = structuredClone(body.agent);
+    const first = agent.nodes[0] as { edges?: Array<Record<string, unknown>> };
+    agent.nodes.push({ name: "cancel_appointment", task_messages: [{ role: "developer", content: "Take the cancellation." }], post_actions: [{ type: "end_conversation" }] });
+    first.edges = [...(first.edges ?? []), { function: "cancel", description: "The caller wants to cancel.", target: "cancel_appointment" }];
+    const sse = (event: string, data: unknown) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+    await route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body: [
+        sse("findings", { findings: [{ title: "No way to cancel", runs: ["r-9002"], cause: "The greeting only offers booking.", fix: "Add a cancel path.", node: "greeting" }] }),
+        sse("draft", { agent }),
+        sse("text", { delta: "Added a cancel path." }),
+        sse("proposal", { agent, issues: [] }),
+        sse("done", {}),
+      ].join(""),
+    });
+  });
+
+  const replayBodies: Array<{ proposal?: unknown; run_ids: string[] }> = [];
+  await page.route("**/api/agents/*/replay", async (route) => {
+    const body = route.request().postDataJSON() as { proposal?: unknown; run_ids: string[] };
+    replayBodies.push(body);
+    const sse = (event: string, data: unknown) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+    const result = (run_id: string, version: string, outcome: string, goal_met: boolean, reason: string, path: unknown[]) =>
+      sse("result", { run_id, version, outcome, goal_met, reason, path, transcript: [line("agent", "Hello, how can I help?"), line("caller", run_id === "r-9002" ? "I need to cancel." : "Book me in."), line("agent", version === "after" ? "I will take that for you." : "Sorry, I can only book.")] });
+    const events = body.proposal
+      ? [
+          result("r-9002", "before", "abandoned", false, "The agent could only offer booking.", [{ node: "greeting" }]),
+          result("r-9002", "after", "completed", true, "The caller cancelled through the new node.", [{ node: "greeting" }, { node: "cancel_appointment", via: "cancel", args: {} }]),
+          result("r-9003", "before", "completed", true, "Booked.", [{ node: "greeting" }, { node: "collect_details", via: "choose_intent", args: {} }]),
+          result("r-9003", "after", "completed", true, "Booked.", [{ node: "greeting" }, { node: "collect_details", via: "choose_intent", args: {} }]),
+        ]
+      : [result("r-9002", "before", "stuck", false, "The agent could only offer booking.", [{ node: "greeting" }])];
+    await route.fulfill({ status: 200, contentType: "text/event-stream", body: [...events, sse("done", {})].join("") });
+  });
+
+  await page.goto("/");
+  await page.getByRole("link", { name: /Prosper Scheduler/ }).click();
+  await expect(page.locator(".react-flow__node")).toHaveCount(4);
+  await page.getByRole("tab", { name: "Runs" }).click();
+  await page.getByRole("button", { name: "Analyze runs" }).click();
+
+  const card = page.getByRole("region", { name: "Replay" });
+  await expect(card).toContainText("Fixed 1 of 1 failing call · 1 of 1 working call still works");
+  await expect(card).toContainText("Simulated text calls");
+  expect(replayBodies[0].run_ids).toEqual(["r-9002", "r-9003"]);
+  await expect(card.getByRole("listitem").first()).toContainText("Fixed");
+
+  // opening a row draws its path on the proposal: the new node ends the path
+  await card.getByRole("button", { name: /r-9002/ }).click();
+  await expect(card.getByRole("list", { name: "Transcript of r-9002 after" })).toContainText("I will take that for you.");
+  await expect(page.locator(".react-flow__node")).toHaveCount(5);
+  await expect(page.locator('.react-flow__node [data-run="end"]')).toContainText("cancel_appointment");
+  await expect(page.locator('.react-flow__node [data-run="visited"]')).toContainText("greeting");
+  await expect(page.locator(".react-flow__edge .edge--run")).toHaveCount(1);
+  await page.screenshot({ path: "test-results/replay-card.png" });
+  await card.getByRole("button", { name: /r-9002/ }).click();
+  await expect(page.locator('.react-flow__node [data-run="end"]')).toHaveCount(0);
+
+  // a copilot draft owns the canvas: Replay this call says why it is off
+  await page.locator(".runs__row", { hasText: "abandoned" }).click();
+  await expect(page.getByRole("button", { name: "Replay this call" })).toBeDisabled();
+  await expect(page.getByText("Apply or discard the copilot's draft first.")).toBeVisible();
+  await page.screenshot({ path: "test-results/replay-this-call-disabled.png" });
+
+  await page.getByRole("region", { name: "Proposal" }).getByRole("button", { name: "Apply" }).click();
+  await expect(page.getByRole("button", { name: "Replay this call" })).toBeEnabled();
+  await page.getByRole("button", { name: "Replay this call" }).click();
+  const section = page.getByRole("region", { name: "Replay this call" });
+  await expect(section).toContainText("Goal not met");
+  await expect(section).toContainText("The agent could only offer booking.");
+  expect(replayBodies[1].proposal).toBeUndefined();
+  await expect(page.locator('.react-flow__node [data-run="end"]')).toContainText("greeting");
+  await page.screenshot({ path: "test-results/replay-this-call.png" });
   expect(errors).toEqual([]);
 });
 
