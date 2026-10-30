@@ -1,9 +1,12 @@
-import { expect, test } from "@playwright/test";
+import { type ConsoleMessage, expect, test } from "@playwright/test";
+
+// An agent without guidelines answers 404 on purpose (the settings section then offers to add some); the browser logs that as a console error.
+const isNoGuidelines = (m: ConsoleMessage) => m.location().url.endsWith("/guidelines");
 
 // create -> edit -> save -> reload, against the real API with a temp agents dir.
 test("create, edit, save and reload an agent", async ({ page }) => {
   const errors: string[] = [];
-  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  page.on("console", (m) => m.type() === "error" && !isNoGuidelines(m) && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(e.message));
 
   await page.goto("/");
@@ -39,7 +42,7 @@ test("create, edit, save and reload an agent", async ({ page }) => {
 // canvas run against a canned SSE stream that adds a node to whatever agent the page sends.
 test("copilot: send, see steps, apply the proposal, see the new node", async ({ page }) => {
   const errors: string[] = [];
-  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  page.on("console", (m) => m.type() === "error" && !isNoGuidelines(m) && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(e.message));
 
   let sentMessage = "";
@@ -101,7 +104,7 @@ test("copilot: send, see steps, apply the proposal, see the new node", async ({ 
 // highlight), Analyze, findings card, a run link, Apply, the new node.
 test("runs: select a run, analyze, see findings, open a run from one, apply the fix", async ({ page }) => {
   const errors: string[] = [];
-  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  page.on("console", (m) => m.type() === "error" && !isNoGuidelines(m) && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(e.message));
 
   const runs = [
@@ -194,5 +197,80 @@ test("runs: select a run, analyze, see findings, open a run from one, apply the 
   await expect(page.getByTestId("save-status")).toHaveText("Unsaved changes");
   await expect(page.locator(".react-flow__node", { hasText: "cancel_appointment" })).toBeVisible();
   await page.screenshot({ path: "test-results/runs-applied.png" });
+  expect(errors).toEqual([]);
+});
+
+// New from guidelines: the real sample guidelines come from the API, the copilot turn is stubbed with a skeleton
+// draft, a coverage event and a proposal. The coverage card shows the count, the questions and the sample reply.
+test("guidelines: create from the sample, see the coverage card and its questions", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  const errors: string[] = [];
+  page.on("console", (m) => m.type() === "error" && !isNoGuidelines(m) && errors.push(m.text()));
+  page.on("pageerror", (e) => errors.push(e.message));
+
+  const messages: string[] = [];
+  await page.route("**/api/copilot/*", async (route) => {
+    const body = route.request().postDataJSON() as { message: string; agent: { nodes: Array<Record<string, unknown>> } };
+    messages.push(body.message);
+    const agent = structuredClone(body.agent) as typeof body.agent & { initial_node: string };
+    const first = agent.nodes[0] as { edges?: Array<Record<string, unknown>> };
+    agent.nodes.push({
+      name: "cancel_appointment",
+      task_messages: [{ role: "developer", content: "Take the cancellation and hand off to staff." }],
+      post_actions: [{ type: "end_conversation" }],
+    });
+    first.edges = [...(first.edges ?? []), { function: "cancel", description: "The caller wants to cancel.", target: "cancel_appointment" }];
+    const sse = (event: string, data: unknown) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+    await route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body: [
+        sse("step", { label: "Reading guidelines" }),
+        sse("draft", { agent }),
+        sse("step", { label: "Reporting coverage (2/3)" }),
+        sse("coverage", {
+          requirements: [
+            { id: "r1", text: "Greet the caller", quote: "Answer warmly.", status: "covered", nodes: ["greeting"] },
+            { id: "r2", text: "Cancel an appointment", quote: "Callers may cancel.", status: "default", nodes: ["cancel_appointment"], note: "No notice window stated" },
+            { id: "r3", text: "After-hours nurse line", quote: "Call the nurse line.", status: "open", nodes: [] },
+          ],
+          questions: [
+            { id: "q1", question: "How much notice is required to cancel?", default: "Hand off to staff", requirements: ["r2"] },
+            { id: "q2", question: "What is the nurse line number?", default: "Say staff will call back", requirements: ["r3"] },
+          ],
+        }),
+        sse("text", { delta: "Built a first version." }),
+        sse("proposal", { agent, issues: [] }),
+        sse("done", {}),
+      ].join(""),
+    });
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "New from guidelines" }).click();
+  await page.getByRole("button", { name: "Use sample guidelines" }).click();
+  await page.getByRole("button", { name: /^create/i }).click();
+  await expect(page).toHaveURL(/\/agents\//);
+
+  const card = page.getByRole("region", { name: "Coverage" });
+  await expect(card).toContainText("Covers 2 of 3 requirements · 2 questions for the client");
+  await expect(card.getByText("How much notice is required to cancel?")).toBeVisible();
+  expect(messages[0]).toBe("Build this agent from the client's guidelines.");
+
+  await card.getByRole("button", { name: "Copy as email" }).click();
+  await expect(page.getByText(/Questions copied/)).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain("1. How much notice is required to cancel?");
+
+  await card.getByRole("button", { name: "cancel_appointment" }).click();
+  await expect(page.locator(".react-flow__node", { hasText: "cancel_appointment" })).toBeVisible();
+
+  await card.getByRole("button", { name: "Use sample client reply" }).click();
+  await expect(page.getByRole("textbox", { name: "Message to the copilot" })).not.toHaveValue("");
+  expect(messages).toHaveLength(1);
+
+  await card.getByRole("button", { name: "Re-check coverage" }).click();
+  await expect.poll(() => messages.length).toBe(2);
+  expect(messages[1]).toContain("report coverage");
+  await page.screenshot({ path: "test-results/coverage-card.png" });
   expect(errors).toEqual([]);
 });
