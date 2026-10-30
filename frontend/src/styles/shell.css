@@ -2065,6 +2065,35 @@ button.issues__item:hover:not(:disabled) {
   margin: 4px 0 0;
 }
 
+/* ---- replay this call (run detail) ---- */
+.runs__replay {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.runs__replay-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.runs__replay-actions .replay__note,
+.runs__replay .field__hint,
+.runs__replay .replay__summary,
+.runs__replay .replay__reason {
+  margin: 0;
+}
+
+.runs__replay-result {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 /* ---- copilot draft on the canvas ---- */
 .review-banner {
   position: absolute;
