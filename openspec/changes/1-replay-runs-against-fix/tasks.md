@@ -9,7 +9,7 @@ Each group is a vertical slice that ends with something usable and verified. Bac
 ## 1. Simulator
 
 - [x] 1.1 `backend/replay/nodes.py`: build each node's system text, developer messages and tool definitions from `AgentConfig`. Verify: a parity pytest against `AgentBuilder._make_node` for the three demo agents and the three blueprints (role message, task messages, function names, descriptions, properties, required).
-- [ ] 1.2 `backend/replay/simulator.py` `replay(agent, caller, chat_client, max_turns=12)`: agent speaks first, edge calls move to the target and record `{node, via, args}`, `tts_say` spoken verbatim, `end_conversation` and `end` nodes end the call, turn limit → `stuck`, `[HANGUP]` from the caller ends it. Verify: pytest with scripted fake replies for a transition with args, a pre-action, an end node, a dead end that hits the limit, and a hang-up.
+- [x] 1.2 `backend/replay/simulator.py` `replay(agent, caller, chat_client, max_turns=12)`: agent speaks first, edge calls move to the target and record `{node, via, args}`, `tts_say` spoken verbatim, `end_conversation` and `end` nodes end the call, turn limit → `stuck`, `[HANGUP]` from the caller ends it. Verify: pytest with scripted fake replies for a transition with args, a pre-action, an end node, a dead end that hits the limit, and a hang-up.
 - [ ] 1.3 `replay/caller.py` (prompt in design Decision 2, goal from the run's `goal` or a cached one-line summary) and `replay/judge.py` (JSON-schema output, overrides in Decision 3). Verify: pytest that the caller prompt carries the original lines and the goal, and judge override cases (turn limit, emergency hang-up) with a fake client.
 
 ## 2. Replay API
