@@ -44,11 +44,24 @@ export const createPipecatClient: CallClientFactory = (events) => {
     enableCam: false,
   });
   client.on(RTVIEvent.UserInput, (d) => d.final && events.onUserText(d.text));
+  // The same sentence arrives as "new", then once per spoken word ("in-progress") and "completed": take it once.
   client.on(RTVIEvent.BotOutput, (d) => {
-    if ((d.output_type ?? d.aggregated_by) === "sentence") events.onBotText(d.text);
+    const first = d.spoken_status === undefined || d.spoken_status === "new";
+    if ((d.output_type ?? d.aggregated_by) === "sentence" && first) events.onBotText(d.text);
+  });
+  // The transport only delivers the bot's voice as a track; the browser plays it once it is attached to an <audio> element.
+  const speaker = new Audio();
+  speaker.autoplay = true;
+  client.on(RTVIEvent.TrackStarted, (track, participant) => {
+    if (track.kind !== "audio" || participant?.local) return;
+    speaker.srcObject = new MediaStream([track]);
+    void speaker.play().catch(() => {});
   });
   client.on(RTVIEvent.ServerMessage, (data) => events.onServerMessage(data));
-  client.on(RTVIEvent.Disconnected, () => events.onDisconnected());
+  client.on(RTVIEvent.Disconnected, () => {
+    speaker.srcObject = null;
+    events.onDisconnected();
+  });
 
   return {
     async connect(agentId) {

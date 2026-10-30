@@ -10,12 +10,14 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AgentsProvider } from "./agents";
 import { App } from "./App";
+import { RouteError } from "./components/RouteError";
 import { ToastProvider } from "./components/Toasts";
 
 // A data router is required for useBlocker (unsaved-changes guard).
 const router = createBrowserRouter([
   {
     path: "*",
+    errorElement: <RouteError />,
     element: (
       <ToastProvider>
         <AgentsProvider>

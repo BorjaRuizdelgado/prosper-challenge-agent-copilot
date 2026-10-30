@@ -1,7 +1,7 @@
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { resetCallStore, setCallClientFactory } from "../call/callStore";
+import { clearCall, resetCallStore, setCallClientFactory, useCallStore } from "../call/callStore";
 import { fakeClientFactory } from "../call/fakeClient";
 import { useAgentStore } from "../store";
 import { renderApp } from "../test/helpers";
@@ -130,5 +130,28 @@ describe("Ask Copilot", () => {
     expect(useAgentStore.getState().copilotOpen).toBe(true);
     expect(useAgentStore.getState().dockTab).toBe("call");
     expect(fetchSpy.mock.calls.some(([url]) => String(url).includes("/api/copilot"))).toBe(false);
+  });
+
+  it("opens with a fresh session: a finished call's transcript is gone", async () => {
+    useCallStore.setState({ state: "ended", transcript: [{ kind: "agent", text: "Hello from the last call" }] });
+    renderApp(<CallPanel />);
+    expect(screen.getByTestId("call-state")).toHaveTextContent("Ready");
+    expect(screen.queryByText(/Hello from the last call/)).not.toBeInTheDocument();
+  });
+
+  it("keeps a call that is still live when the panel opens", () => {
+    useCallStore.setState({ state: "live", transcript: [{ kind: "agent", text: "Still talking" }] });
+    renderApp(<CallPanel />);
+    expect(screen.getByText("Still talking")).toBeInTheDocument();
+  });
+
+  it("clearCall hangs up a live call and forgets it", async () => {
+    renderApp(<CallPanel />);
+    await userEvent.click(screen.getByRole("button", { name: "Test call" }));
+    await waitFor(() => expect(screen.getByTestId("call-state")).toHaveTextContent("Live"));
+    act(() => clearCall());
+    expect(fake.state.client!.disconnect).toHaveBeenCalled();
+    expect(useCallStore.getState().state).toBe("idle");
+    expect(useCallStore.getState().transcript).toEqual([]);
   });
 });

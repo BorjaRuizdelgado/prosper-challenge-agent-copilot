@@ -2478,3 +2478,17 @@ button.issues__item:hover:not(:disabled) {
   gap: 6px;
   margin-top: 12px;
 }
+
+.route-error {
+  max-width: 560px;
+  margin: 12vh auto 0;
+  padding: 0 16px;
+}
+
+.route-error pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 10px 12px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+}

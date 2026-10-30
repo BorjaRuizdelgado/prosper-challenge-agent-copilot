@@ -162,6 +162,14 @@ export const useCallStore = create<CallStore>((set, get) => {
   };
 });
 
+/** Ends any call and forgets it entirely: the call belongs to the agent it was started for. */
+export function clearCall() {
+  const session = client;
+  client = null;
+  useCallStore.setState({ ...initial });
+  void session?.disconnect().catch(() => {});
+}
+
 export const resetCallStore = () => {
   client = null;
   useCallStore.setState({ ...initial });
