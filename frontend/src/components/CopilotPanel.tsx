@@ -129,6 +129,11 @@ export function CopilotPanel() {
             m.role === "user" ? (
               <li key={i} className="copilot__msg copilot__msg--user">
                 {m.text}
+                {m.guidelines && (
+                  <span className="chip guidelines-chip">
+                    Guidelines: {m.guidelines.name} · {m.guidelines.words.toLocaleString()} words
+                  </span>
+                )}
               </li>
             ) : (
               <Reply key={i} agentId={agentId} index={i} message={m} running={chat.running && i === chat.messages.length - 1} elapsed={elapsed} />

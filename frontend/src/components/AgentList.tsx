@@ -4,10 +4,12 @@ import { AgentMark } from "./AgentMark";
 import { useAgents } from "../agents";
 import type { AgentSummary } from "../api";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { GuidelinesDialog } from "./GuidelinesDialog";
 import { NameDialog } from "./NameDialog";
 
 type Dialog =
   | { kind: "create" }
+  | { kind: "guidelines" }
   | { kind: "rename"; agent: AgentSummary }
   | { kind: "delete"; agent: AgentSummary };
 
@@ -18,14 +20,19 @@ const updated = (iso: string) => {
 
 /** Every agent with its actions: the home page's list ("page") or the editor's switcher menu ("menu"). */
 export function AgentList({ variant = "page", onNavigate }: { variant?: "page" | "menu"; onNavigate?: () => void }) {
-  const { state, reload, create, rename, duplicate, remove } = useAgents();
+  const { state, reload, create, rename, duplicate, remove, createFromGuidelines } = useAgents();
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const close = () => setDialog(null);
 
   const newButton = (
-    <button type="button" className={`${variant === "page" ? "primary" : "ghost"} agent-list__new`} onClick={() => setDialog({ kind: "create" })}>
-      New agent
-    </button>
+    <div className="agent-list__new-row">
+      <button type="button" className={`${variant === "page" ? "primary" : "ghost"} agent-list__new`} onClick={() => setDialog({ kind: "create" })}>
+        New agent
+      </button>
+      <button type="button" className="ghost agent-list__new" onClick={() => setDialog({ kind: "guidelines" })}>
+        New from guidelines
+      </button>
+    </div>
   );
 
   let body;
@@ -86,6 +93,16 @@ export function AgentList({ variant = "page", onNavigate }: { variant?: "page" |
           onSubmit={(name) => {
             close();
             create(name);
+          }}
+        />
+      )}
+      {dialog?.kind === "guidelines" && (
+        <GuidelinesDialog
+          onClose={close}
+          onSubmit={(name, guidelines, source) => {
+            close();
+            onNavigate?.();
+            void createFromGuidelines(name, guidelines, source);
           }}
         />
       )}

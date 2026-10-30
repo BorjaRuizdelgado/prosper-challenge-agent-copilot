@@ -15,8 +15,20 @@ export interface Proposal {
   status: "pending" | "applied" | "discarded";
 }
 
+/** The guidelines a build request refers to; the chat shows this instead of their text. */
+export interface GuidelinesChip {
+  name: string;
+  words: number;
+}
+
+/** The fixed request that builds an agent from its stored guidelines. */
+export const BUILD_FROM_GUIDELINES = "Build this agent from the client's guidelines.";
+
+/** The fixed request that checks an agent against its stored guidelines (also used by Re-check coverage). */
+export const CHECK_COVERAGE = "Check this agent against the client's guidelines and report coverage. Do not change the agent.";
+
 export type ChatMessage =
-  | { role: "user"; text: string }
+  | { role: "user"; text: string; guidelines?: GuidelinesChip }
   | {
       role: "assistant";
       text: string;
@@ -63,7 +75,7 @@ export interface CopilotStore {
   prefill: string | null;
   setPrefill: (text: string | null) => void;
   /** Sends an instruction with the current working copy; resolves when the turn has ended. */
-  send: (agentId: string, message: string, agent: Agent) => Promise<void>;
+  send: (agentId: string, message: string, agent: Agent, guidelines?: GuidelinesChip) => Promise<void>;
   /** Aborts the running turn; its output so far stays, and it yields no proposal. */
   stop: (agentId: string) => void;
   /** Sets the status of the proposal on the assistant message at `index` (Apply and Discard). */
@@ -139,13 +151,13 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
     chats: loadChats(),
     prefill: null,
     setPrefill: (prefill) => set({ prefill }),
-    send: async (agentId, message, agent) => {
+    send: async (agentId, message, agent, guidelines) => {
       if (chatOf(get().chats, agentId).running || !message.trim()) return;
       const controller = new AbortController();
       controllers.set(agentId, controller);
       patch(agentId, (chat) => ({
         ...chat,
-        messages: [...chat.messages, { role: "user", text: message.trim() }, { role: "assistant", text: "", steps: [] }],
+        messages: [...chat.messages, { role: "user", text: message.trim(), ...(guidelines && { guidelines }) }, { role: "assistant", text: "", steps: [] }],
         running: true,
         startedAt: Date.now(),
       }));

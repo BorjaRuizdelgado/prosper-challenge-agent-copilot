@@ -2334,3 +2334,68 @@ button.issues__item:hover:not(:disabled) {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* New from guidelines, and the guidelines section in settings */
+.agent-list__new-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.guidelines-chip {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.guidelines-dialog__tools,
+.guidelines-section__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.guidelines-dialog__file {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+}
+
+.guidelines-dialog__error,
+.guidelines-section__error {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--danger, #b42318);
+}
+
+.guidelines-dialog textarea[data-dragging],
+.dialog textarea[data-dragging] {
+  border-color: var(--accent);
+}
+
+.guidelines-section__title {
+  font-weight: 500;
+}
+
+.guidelines-section__text {
+  margin: 0;
+  max-height: 240px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  padding: 8px 10px;
+  border: 1px solid var(--control);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+}
+
+.guidelines-section__meta {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted, inherit);
+}

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import * as api from "./api";
 import type { AgentSummary } from "./api";
 import { useToast } from "./components/Toasts";
+import { BUILD_FROM_GUIDELINES, useCopilotStore } from "./copilot/copilotStore";
 import { useAgentStore } from "./store";
 
 type State =
@@ -14,6 +15,8 @@ interface AgentsApi {
   state: State;
   reload: () => void;
   create: (name: string) => Promise<void>;
+  /** Creates the agent with its guidelines, opens it with the Copilot and sends the build request. */
+  createFromGuidelines: (name: string, guidelines: string, source: string) => Promise<void>;
   rename: (id: string, name: string) => Promise<void>;
   duplicate: (id: string) => Promise<void>;
   remove: (id: string) => Promise<void>;
@@ -89,11 +92,12 @@ export function AgentsProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addAndOpen = async (call: () => Promise<api.AgentRecord>) => {
+  const addAndOpen = async (call: () => Promise<api.AgentRecord>, then?: (record: api.AgentRecord) => void) => {
     try {
       const record = await call();
       update((agents) => [summarize(record), ...agents]);
       navigate(`/agents/${record.id}`);
+      then?.(record);
     } catch (e) {
       toast((e as Error).message);
     }
@@ -103,6 +107,15 @@ export function AgentsProvider({ children }: { children: ReactNode }) {
     state,
     reload,
     create: (name) => addAndOpen(() => api.createAgent(name)),
+    createFromGuidelines: (name, guidelines, source) =>
+      addAndOpen(
+        () => api.createAgent(name, guidelines),
+        (record) => {
+          useAgentStore.getState().openCopilot();
+          const words = guidelines.trim().split(/\s+/).filter(Boolean).length;
+          void useCopilotStore.getState().send(record.id, BUILD_FROM_GUIDELINES, record.agent, { name: source, words });
+        },
+      ),
     duplicate: (id) => addAndOpen(() => api.duplicateAgent(id)),
     rename: async (id, name) => {
       const renamed = await optimistic(
