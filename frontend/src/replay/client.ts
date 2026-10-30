@@ -24,13 +24,13 @@ const KNOWN = new Set(["started", "result", "error", "done"]);
 const failure = (message: string, setup = false): ReplayEvent => ({ event: "error", message, setup });
 
 /**
- * Replays `runIds` against `base` and, when given, `proposal`, yielding events as they arrive. Transport
+ * Replays `runIds` against `base` (version before) and `proposal` (version after), yielding events as they arrive. Transport
  * problems come back as an `error` event so callers have a single path; aborting `signal` ends the stream quietly.
  */
 export async function* streamReplay(
   agentId: string,
   base: Agent,
-  proposal: Agent | null,
+  proposal: Agent,
   runIds: string[],
   signal?: AbortSignal,
 ): AsyncGenerator<ReplayEvent> {
