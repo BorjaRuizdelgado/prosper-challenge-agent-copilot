@@ -94,13 +94,14 @@ export interface RunStep {
   args?: Record<string, unknown>;
 }
 
-/** A (mocked) production call of an agent. `flag` is a note from the client. */
+/** A (mocked) production call of an agent. `flag` is a note from the client; `goal` is what the caller wanted (used to replay the call). */
 export interface Run {
   id: string;
   started_at: string;
   duration_s: number;
   outcome: RunOutcome;
   flag?: string;
+  goal?: string;
   transcript: RunLine[];
   path: RunStep[];
 }
