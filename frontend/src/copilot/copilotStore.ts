@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Agent, Finding, Issue } from "../model";
+import type { Agent, Coverage, Finding, Issue } from "../model";
 import { type CopilotEvent, resetCopilot, streamCopilot } from "./client";
 
 export interface Step {
@@ -35,6 +35,8 @@ export type ChatMessage =
       steps: Step[];
       /** What the review of the agent's production runs found; the last `findings` event of the turn. */
       findings?: Finding[];
+      /** How the agent covers the client's guidelines; the last `coverage` event of the turn. */
+      coverage?: Coverage;
       proposal?: Proposal;
       error?: { message: string; setup: boolean };
       stopped?: boolean;
@@ -171,6 +173,7 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
             if (e.node) patch(agentId, (chat) => ({ ...chat, focus: e.node! }));
           }
           else if (e.event === "findings") patchReply(agentId, () => ({ findings: e.findings }));
+          else if (e.event === "coverage") patchReply(agentId, () => ({ coverage: { requirements: e.requirements, questions: e.questions } }));
           else if (e.event === "draft") patch(agentId, (chat) => ({ ...chat, review: { base: agent, agent: e.agent } }));
           else if (e.event === "text") patchReply(agentId, (m) => ({ text: m.text + e.delta }));
           else if (e.event === "proposal") {

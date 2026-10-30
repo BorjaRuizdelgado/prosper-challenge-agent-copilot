@@ -35,6 +35,15 @@ describe("parseSse", () => {
     expect(events).toEqual([{ event: "findings", findings }]);
   });
 
+  it("parses a coverage event", async () => {
+    const data = {
+      requirements: [{ id: "r1", text: "Book visits", quote: "We book visits.", status: "covered", nodes: ["greeting"] }],
+      questions: [{ id: "q1", question: "Notice period?", default: "Hand off to staff", requirements: ["r1"] }],
+    };
+    const events = await collect(parseSse(body(`event: coverage\ndata: ${JSON.stringify(data)}\n\n`)));
+    expect(events).toEqual([{ event: "coverage", ...data }]);
+  });
+
   it("joins events split across chunks, even mid-line and mid-separator", async () => {
     const events = await collect(
       parseSse(body('event: te', 'xt\ndata: {"delta":"Hel', 'lo"}\n', '\nevent: text\ndata: {"delta":" you"}\n\n')),

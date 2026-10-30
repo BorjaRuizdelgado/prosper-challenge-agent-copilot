@@ -25,7 +25,7 @@ Each group is a vertical slice that ends with something usable and verified. Bac
 
 ## 4. Coverage card
 
-- [ ] 4.1 Copilot client and store: parse `coverage`, attach and persist it on the assistant message. Verify: Vitest for parsing and a reload restoring it.
+- [x] 4.1 Copilot client and store: parse `coverage`, attach and persist it on the assistant message. Verify: Vitest for parsing and a reload restoring it.
 - [ ] 4.2 `CoverageCard` above the proposal: count line, rows by status with node chips (hover focus, click select), questions with defaults, *Copy as email* (clipboard plus toast), *Re-check coverage* (sends the fixed message), *Use sample client reply* when the guidelines are a sample (prefills, does not send). Verify: Vitest for the count, grouping, the copied text format, the re-check send, and the sample-reply button shown only for a sample.
 - [ ] 4.3 Update `README.md` (Copilot section) and extend the Playwright smoke spec: stub `/api/copilot` with a skeleton draft, a coverage event and a proposal; create from the sample; see the coverage card and questions. Verify: `npm run e2e`.
 
