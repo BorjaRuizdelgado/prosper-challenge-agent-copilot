@@ -20,8 +20,8 @@ Each group is a vertical slice that ends with something usable and verified. Bac
 
 ## 3. Selection, scoring and the store
 
-- [ ] 3.1 `frontend/src/replay/client.ts` (SSE parser, reusing the copilot client's), and the pure functions `selectRuns` and `scoreReplay` (design Decision 5). Verify: Vitest for selection with and without findings (flagged and abandoned/stuck count as needing attention), the 3-run cap, and every scoring class, including not reproduced and broken.
-- [ ] 3.2 `copilotStore`: `replay` on the assistant message, persisted; start automatically on `done` when the turn has findings and a proposal; `replayCalls(agentId, index)` for the button; retry per run. Verify: Vitest that auto-start happens only with findings, that a reload keeps the results and marks running ones for retry, and that Apply during a replay leaves it running.
+- [x] 3.1 `frontend/src/replay/client.ts` (SSE parser, reusing the copilot client's), and the pure functions `selectRuns` and `scoreReplay` (design Decision 5). Verify: Vitest for selection with and without findings (flagged and abandoned/stuck count as needing attention), the 3-run cap, and every scoring class, including not reproduced and broken.
+- [x] 3.2 `copilotStore`: `replay` on the assistant message, persisted; start automatically on `done` when the turn has findings and a proposal; `replayCalls(agentId, index)` for the button; retry per run. Verify: Vitest that auto-start happens only with findings, that a reload keeps the results and marks running ones for retry, and that Apply during a replay leaves it running.
 
 ## 4. Replay card and canvas
 
