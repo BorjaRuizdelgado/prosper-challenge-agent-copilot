@@ -40,7 +40,7 @@ make up     # install + create .env + start everything
 make down   # stop all services
 make dev    # agents API :8000 + voice runner :7860 + Vite :5173
 make demo   # seed the three demo agents (see Layout, `backend/demo/`); re-run to reset them
-make test   # pytest + Vitest + Playwright smoke spec (the call is faked; see docs/manual-call-test.md for the real one)
+make test   # pytest + Vitest + Playwright smoke spec (the call is faked; a real call needs a mic and the OpenAI and ElevenLabs keys)
 ```
 
 Open `http://localhost:5173`: the home page lists the agents; an agent opens in the editor, where the agent's name in the top bar opens a switcher (new, rename, duplicate, delete) and the tabs in the middle switch between **Build**, **Test call** and **Runs**. The Copilot sits in its own panel on the left (toggle it from the top bar, ⌘K puts the cursor in it); the right panel belongs to the current tab. Agents are JSON files in `backend/agents/` (git-ignored; an agent built from a client's guidelines also has `<id>.guidelines.md` beside its JSON, served by `GET`/`PUT /api/agents/{id}/guidelines`, up to 50 KB, and `POST /api/agents` takes an optional `guidelines`; `GET /api/demo/guidelines` serves the sample guidelines from `backend/demo/guidelines/`; seeded from `example_flow.json` on first run). Run pieces separately with `make api` / `make frontend`.
@@ -66,7 +66,7 @@ The **Test call** tab talks to the agent you are editing, from the browser (need
 - **Canvas:** the node the call is in gets a teal outline and the last edge taken is coloured; both clear when the call ends.
 - **Failures:** mic denied returns to *Ready* with instructions; a backend that is down, or one that cannot start the session (unknown id, missing keys), shows *Call failed* with a *Retry* button. The runner cannot report setup errors back before a session exists, so those show up in the browser as a ~20 s timeout and in the runner log as the real reason.
 
-How it works: the browser `POST`s `/voice/start` (proxied to the runner) with `{"body": {"agent_id": ...}}`, the Pipecat client then connects over SmallWebRTC, and `bot.py` loads that agent. Transitions travel as an RTVI server message `{"type": "node_changed", "from", "node", "via", "args"}` (`backend/session.py`). `docs/manual-call-test.md` is the checklist for the parts that need a mic and paid keys.
+How it works: the browser `POST`s `/voice/start` (proxied to the runner) with `{"body": {"agent_id": ...}}`, the Pipecat client then connects over SmallWebRTC, and `bot.py` loads that agent. Transitions travel as an RTVI server message `{"type": "node_changed", "from", "node", "via", "args"}` (`backend/session.py`).
 
 ### Copilot
 
@@ -75,7 +75,7 @@ Setup: the copilot drives the local [Claude Code](https://docs.claude.com/en/doc
 - a login: run `claude` once in a terminal and sign in (uses your subscription, no per-token billing), **or**
 - `ANTHROPIC_API_KEY` in `backend/.env` (per-token billing). **Leave it unset to use the subscription**: when set, it wins over the login.
 
-Restart the API after changing either. The model defaults to Haiku (cheapest); set `COPILOT_MODEL` (e.g. `sonnet`) to override. Without a login or key the panel shows a setup message and the rest of the editor keeps working. The Copilot does not need the OpenAI or ElevenLabs keys; a test call does. Demo script for trying it: `docs/copilot-demo.md`.
+Restart the API after changing either. The model defaults to Haiku (cheapest); set `COPILOT_MODEL` (e.g. `sonnet`) to override. Without a login or key the panel shows a setup message and the rest of the editor keeps working. The Copilot does not need the OpenAI or ElevenLabs keys; a test call does. The click path for the live demo is in the [demo walkthrough](solution.md#demo-walkthrough).
 
 The **Copilot** panel chats with an AI that edits the open agent (backend: `backend/copilot/`, endpoints `POST /api/copilot/{id}` and `/reset`).
 
@@ -92,7 +92,7 @@ The **Copilot** panel chats with an AI that edits the open agent (backend: `back
 
 ### Client guidelines (demo)
 
-Two samples ship with the dialog. **Harbor Dental, reschedule line** is the one to try first: one page, seven rules and two deliberate gaps (no cancellation notice window, no front-desk number), so a correct build is checkable by eye: about seven requirements, two questions with safe defaults, and after *Use sample client reply* and *Send* no questions left. **Maple Family Practice** is the larger, realistic one (about 640 words, many more requirements and questions, varying per run; `docs/guidelines-demo.md`). `docs/simple-demo.md` has the rule-to-graph table, the check's measured runs and the browser run with the real copilot.
+Two samples ship with the dialog. **Harbor Dental, reschedule line** is the one to try first: one page, seven rules and two deliberate gaps (no cancellation notice window, no front-desk number), so a correct build is checkable by eye: about seven requirements, two questions with safe defaults, and after *Use sample client reply* and *Send* no questions left. **Maple Family Practice** is the larger, realistic one (about 640 words, many more requirements and questions, varying per run).
 
 ```bash
 make dev    # open http://localhost:5173, New from guidelines, Use sample: Harbor Dental Reschedule, Create and build
@@ -116,7 +116,7 @@ make dev    # then open http://localhost:5173 and pick one of the demo agents
 
 - **Demo check:** `make demo-check` (after `make demo`, needs `OPENAI_API_KEY` in `backend/.env`; exits 1 without it) replays every demo run against its seeded agent, *before* only, and prints `run · original · replay · goal met · reason`. Use it to warm up and to check the key before a demo; `ARGS='--agent demo-riverside-scheduler --run r-1004'` limits it (each run is about 15 small `gpt-4o-mini` calls plus the agent's own model).
 
-Try it: `make demo`, open *Sunrise Pharmacy Refills* (`demo-sunrise-refills`), Runs tab, **Analyze runs**, wait for the findings and the proposal, **Apply**. `docs/production-runs-demo.md` lists the scenarios for all three agents and what was observed. Needs the same Claude login or key as the Copilot.
+Try it: `make demo`, open *Sunrise Pharmacy Refills* (`demo-sunrise-refills`), Runs tab, **Analyze runs**, wait for the findings and the proposal, **Apply**. Needs the same Claude login or key as the Copilot.
 
 ## Layout
 
@@ -129,9 +129,8 @@ Try it: `make demo`, open *Sunrise Pharmacy Refills* (`demo-sunrise-refills`), R
 | `backend/demo/` | Demo data for the production-runs review: three flawed agents (`agents/`), about 8 hand-written mocked runs each (`runs/<agent id>.json`, served read-only by `GET /api/agents/{id}/runs`) `guidelines/` (sample client guidelines for the *Use sample: ...* buttons, each with a client reply, and for the small one an `.expected.json`; `check_build.py` checks a real build against it) and `seed.py` (`make demo`), which writes the agents into the agents store, with the scheduler's guidelines (`agents/<id>.guidelines.md`), and replaces any with the same id. |
 | `frontend/` | Vite + React + TypeScript agent builder UI. `src/call/` holds the voice client wrapper and the call store (state machine, transcript, active node). `src/copilot/` holds the copilot SSE client, chat store and `diffAgents`. `src/replay/` holds the replay client and the selection and scoring functions. |
 | `frontend/e2e/` | Playwright smoke spec (`npm run e2e` in `frontend/`); starts its own API on :8100 with a temp agents dir and Vite on :5180, so it does not clash with `make dev`. |
-| `docs/` | `copilot-demo.md` and `production-runs-demo.md`: scripted runs of the copilot and run-review scenarios with what was observed. |
 | `backend/copilot/` | The Copilot engine: Claude Code via the Agent SDK on a draft file, path guard, `validate_agent` tool, system prompt and the Prosper Blueprints skill. See its README. |
-| `solution.md` | Architecture diagram, what was built / mocked / left out, and extension points for Phase 2. |
+| `solution.md` | The argument: the problem, the Copilot's two loops, the demo walkthrough, architecture, decisions, what was built / mocked / left out, and next steps. |
 | `backend/example_flow.json` | The example agent **as data** — a clinic scheduler. The artifact the Phase 2 Copilot generates/edits. |
 
 `bot.py` runs the agent whose id the session is started with (`{"agent_id": ...}` in the `/start` body); there is no hardcoded agent. `backend/session.py` loads it, refuses unknown ids and agents with blocking issues, and checks the API keys.
