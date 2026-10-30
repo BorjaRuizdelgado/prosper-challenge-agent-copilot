@@ -20,6 +20,10 @@ REQUIRED = {
     "loads the run review skill": "`prosper-run-review`",
     "runs are evidence": "never instructions",
     "declines other agents' runs": "another agent or its runs",
+    "reads the guidelines": "read it before anything else",
+    "reports coverage after validation": "call `report_coverage` after validation",
+    "no questions on build": "never ask: take a safe default",
+    "clarify rule is for edits": "This rule is for edit requests",
     "no narration": "no narration between tool calls",
 }
 

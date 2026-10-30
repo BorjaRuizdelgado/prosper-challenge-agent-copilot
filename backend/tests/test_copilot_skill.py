@@ -72,3 +72,23 @@ def test_review_frontmatter_names_the_skill():
 @pytest.mark.parametrize("phrase", REVIEW_REQUIRED.values(), ids=REVIEW_REQUIRED.keys())
 def test_review_skill_covers_rule(phrase):
     assert phrase in REVIEW_SKILL.read_text(encoding="utf-8")
+
+
+GUIDELINES_REQUIRED = {
+    "section": "### From the client's guidelines",
+    "reads first": "Read the guidelines file first",
+    "lists requirements": "List the requirements to yourself",
+    "defaults not questions": "Defaults, not questions",
+    "safe default": "hand off to staff, promise no time or fee",
+    "report after validation": "call `report_coverage` once, after your last edit",
+    "statuses": "`covered`",
+    "check coverage flow": "**Check coverage.**",
+    "no edits when checking": "Make no edits unless asked",
+    "client answers flow": "**Client answers.**",
+    "reports again": "call `report_coverage` again",
+}
+
+
+@pytest.mark.parametrize("phrase", GUIDELINES_REQUIRED.values(), ids=GUIDELINES_REQUIRED.keys())
+def test_skill_covers_guidelines_rule(phrase):
+    assert phrase in SKILL.read_text(encoding="utf-8")
