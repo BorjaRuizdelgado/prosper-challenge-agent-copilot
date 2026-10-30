@@ -3,6 +3,7 @@ import { ANALYZE_RUNS_MESSAGE, buildRunMessage } from "../call/askCopilot";
 import { describeTransition } from "../call/callStore";
 import { chatOf, useCopilotStore } from "../copilot/copilotStore";
 import type { Run, RunOutcome, RunStep } from "../model";
+import { useReplayView } from "../replay/replayView";
 import { runPath, useRunsStore } from "../runs/runsStore";
 import { useAgentStore } from "../store";
 
@@ -20,7 +21,46 @@ const notes = (path: RunStep[]) =>
     describeTransition({ from: i ? path[i - 1].node : null, node: step.node, via: step.via ?? null, args: step.args ?? {} }),
   );
 
-function RunDetail({ run }: { run: Run }) {
+/** Replays the open run once against the working copy (saved or not) and shows how it went. */
+function ReplayThisCall({ run, agentId }: { run: Run; agentId: string }) {
+  const agent = useAgentStore((s) => s.agent);
+  const drafting = useCopilotStore((s) => chatOf(s.chats, agentId).review !== null);
+  const working = useReplayView((s) => (s.working?.runId === run.id && s.working.agentId === agentId ? s.working : null));
+  const running = working?.status === "running";
+  const result = working?.result;
+  return (
+    <section className="runs__replay" aria-label="Replay this call">
+      <div className="runs__replay-actions">
+        <button type="button" disabled={drafting || running || !agent} onClick={() => agent && void useReplayView.getState().replayWorking(agentId, agent, run.id)}>
+          {running ? "Replaying…" : "Replay this call"}
+        </button>
+        <span className="replay__note">Simulated text call, against the working copy</span>
+      </div>
+      {drafting && <p className="field__hint">Apply or discard the copilot's draft first.</p>}
+      {working?.error && <p className="call__message" role="alert">{working.error.message}</p>}
+      {result && (
+        <div className="runs__replay-result">
+          <p className="replay__summary">
+            <span className={`pill runs__outcome runs__outcome--${result.outcome}`}>{result.outcome}</span>{" "}
+            {result.goal_met ? "Goal met" : "Goal not met"}
+          </p>
+          {run.goal && <p className="replay__reason">Goal: {run.goal}</p>}
+          <p className="replay__reason">{result.reason}</p>
+          <ol className="call__transcript" aria-label="Replay transcript">
+            {result.transcript.map((line, i) => (
+              <li key={i} className="call__line">
+                <span className="call__who">{line.speaker === "caller" ? "Caller" : "Agent"}</span>
+                {line.text}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function RunDetail({ run, agentId }: { run: Run; agentId: string }) {
   const agent = useAgentStore((s) => s.agent);
   const openCopilot = useAgentStore((s) => s.openCopilot);
   const ask = () => {
@@ -54,6 +94,7 @@ function RunDetail({ run }: { run: Run }) {
         ))}
       </p>
       <button type="button" onClick={ask}>Ask Copilot</button>
+      <ReplayThisCall run={run} agentId={agentId} />
     </div>
   );
 }
@@ -131,7 +172,7 @@ export function RunsPanel() {
               <span className="runs__first">{firstCallerLine(run)}</span>
               {run.flag && <span className="runs__flag">Flagged: {run.flag}</span>}
             </button>
-            {open === run.id && <RunDetail run={run} />}
+            {open === run.id && <RunDetail run={run} agentId={agentId} />}
           </li>
         ))}
       </ul>

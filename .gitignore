@@ -43,3 +43,4 @@ backend/agents/
 *.tsbuildinfo
 test-results/
 playwright-report/
+.replay-cache/

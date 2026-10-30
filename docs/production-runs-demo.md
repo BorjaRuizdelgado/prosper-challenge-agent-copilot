@@ -20,3 +20,63 @@ The message in rows 1 to 3 is the one *Analyze runs* sends. The UI itself (Runs 
 - Model output varies run to run: node names, how many edges are added to which steps, and the exact wording differ between runs. The checks above are about shape (findings before edits, run ids cited, the planted flaw fixed, unrelated paths kept, 0 issues), not exact text.
 - Sonnet's scheduler reply was one sentence that did not say what changed. The proposal card and the findings card carry the content, so it was left as is.
 - The UI flows were not clicked through against the real CLI in this run; they use a stubbed stream in the Playwright spec.
+
+## Replay check with a real model (change 1, tasks 5.0 to 5.2)
+
+Observed on 2026-10-30 with a real `OPENAI_API_KEY` (caller and judge on `gpt-4o-mini`; the agent side uses each agent's own configured model) and the default Haiku Copilot. Everything below is a single sample per run: the simulated caller, the judge and the Copilot all vary between runs. `make demo-check` needs `make demo` first and a key in `backend/.env`.
+
+### What the real run changed
+
+- **Turn limit 12 to 20.** With the split intake (one node per question) a working booking call needs about 8 agent turns on the happy path, and with 12 it hit the limit and was judged `stuck`, so the three booking calls showed as *Broken* on *after*. At 20 they are *kept*.
+- **Caller prompt.** The caller used to replay its original lines in order ("No, I want to cancel the one I have", "Forget it"), which made every *after* call fail. It now answers what the new agent asks, may invent a name or date of birth it was never given, and, as the original caller did, gets lost when the agent asks several things in one message.
+- **`replay.check`** passed the stored record (`{id, agent, updated_at}`) to the replay instead of the agent (`KeyError: 'name'`); fixed and covered by a test.
+
+### Before: does each failure reproduce? (`make demo-check`)
+
+Scheduler, three runs (the cancel run and the two four-question runs):
+
+| Run | Original | Replay (before) | Goal met | Reproduced |
+| --- | --- | --- | --- | --- |
+| r-1004 cancel (flagged) | abandoned | abandoned | no | yes |
+| r-1007 four questions (Tom Reyes) | stuck | completed | yes | no |
+| r-1008 four questions (Priya Shah) | stuck | completed | yes | no (in two later samples it did: abandoned, not met) |
+
+### Before and after: Analyze runs and replay, in the UI
+
+Riverside Clinic Scheduler (Analyze runs in the browser; the card said **Fixed 4 of 5 failing calls · 3 of 3 working calls still work · 1 not reproduced**):
+
+| Run | Original | Before | After | Reason (after) |
+| --- | --- | --- | --- | --- |
+| r-1001 | completed | completed, met | completed, met | still books through the split intake |
+| r-1002 | completed | completed, met | completed, met | same |
+| r-1003 | completed | completed, met | completed, met | same |
+| r-1004 cancel | abandoned | abandoned, not met | completed, met | cancelled through the new name, date of birth and confirm nodes |
+| r-1005 reschedule | abandoned | transferred, not met | completed, met | moved through the new reschedule nodes |
+| r-1006 cancel | abandoned | abandoned, not met | completed, met | same cancel path |
+| r-1007 four questions | stuck | completed, met (not reproduced) | completed, met | n/a |
+| r-1008 four questions | stuck | abandoned, not met | transferred, not met | caller could not give a full date of birth ("born in 1988") and asked for a person |
+| r-1009 asked for a person | abandoned | stuck, not met | transferred, met | reached the front desk handoff |
+
+Every failing run reproduced on *before* except r-1007. Cancel (r-1004 and r-1006), reschedule and the handoff are fixed on *after*; one four-question run (r-1008) is not fixed because the simulated caller will not invent a date of birth when it was given only a year.
+
+One other demo agent each (one run each, proposal from the same *Analyze runs* message through `run_turn`):
+
+| Agent and run | Original | Before | After | Note |
+| --- | --- | --- | --- | --- |
+| `demo-sunrise-refills` r-2008 (chest pain ignored) | abandoned | transferred, met (judge says the agent did not address the emergency, yet marks the goal met) | transferred, not met (agent sent the caller to emergency services) | The judge is inconsistent on emergency calls; *after* is the behaviour the fix intends, but the card would show *Broken*. |
+| `demo-lakeside-billing` r-3008 (asked for a person) | abandoned | transferred, met (not reproduced) | transferred, met | The seeded agent already hands off on "a real person" in text; the voice failure does not reproduce. |
+
+### Browser timings
+
+Playwright against the real stack (API, Vite, real Copilot on Haiku, real OpenAI), Chromium 1440x900, clock started when the agent page opened.
+
+| Path | Steps | Time |
+| --- | --- | --- |
+| Full: Runs tab, **Analyze runs**, wait for findings and proposal, replay card fills in, open r-1004 (draws the path on the proposal), **Apply** | click to proposal 62 to 78 s (Copilot), replay summary at 132 to 146 s (about 65 s of replay for 9 runs, before and after, 4 at a time) | about 2 min 15 s to 2 min 25 s, three runs |
+| Short: open r-1004, **Replay this call** (fails), Add node `cancel_appointment` (ends the call, with a message), drag an edge from `greeting`, describe it, **Replay this call** again | first replay 5 to 8 s (once 35 s), second 5 s | 20 s to 48 s |
+
+Both paths work as written. Findings: the first replay of r-1004 ends *Abandoned* or *Stuck*, goal not met; after the hand-made edge the call reaches the staff handoff ("I'll connect you to the front desk to cancel your appointment") and is judged *Transferred*, but **goal not met**, because the judge wants the cancellation confirmed. The demo line "passes" should read "reaches the handoff". The simulated reply times are the main variance, so run `make demo-check` first to warm up.
+
+### Cost of this check
+
+Roughly 55 replay jobs in all (three UI runs of the scheduler at 18 jobs each, a few single-run checks while tuning the caller, 6 jobs for the other two agents), each about 15 small `gpt-4o-mini` calls, plus three Copilot (Haiku) runs for the scheduler and one each for the other two agents.

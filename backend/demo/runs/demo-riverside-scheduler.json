@@ -1,6 +1,7 @@
 [
   {
     "id": "r-1001",
+    "goal": "Book a morning check-up appointment as Maria Lopez, born March 3 1980.",
     "started_at": "2026-10-12T09:02:00Z",
     "duration_s": 88,
     "outcome": "completed",
@@ -64,6 +65,7 @@
   },
   {
     "id": "r-1002",
+    "goal": "Book a morning flu shot appointment as James Carter, born July 21 1975.",
     "started_at": "2026-10-13T14:30:00Z",
     "duration_s": 94,
     "outcome": "completed",
@@ -127,6 +129,7 @@
   },
   {
     "id": "r-1003",
+    "goal": "Book a morning appointment for back pain as Aisha Khan, born January 9 1992.",
     "started_at": "2026-10-15T11:15:00Z",
     "duration_s": 81,
     "outcome": "completed",
@@ -190,6 +193,7 @@
   },
   {
     "id": "r-1004",
+    "goal": "Cancel the existing appointment on Friday.",
     "started_at": "2026-10-16T09:14:00Z",
     "duration_s": 96,
     "outcome": "abandoned",
@@ -228,6 +232,7 @@
   },
   {
     "id": "r-1005",
+    "goal": "Move an existing appointment to next week.",
     "started_at": "2026-10-17T13:40:00Z",
     "duration_s": 71,
     "outcome": "abandoned",
@@ -258,6 +263,7 @@
   },
   {
     "id": "r-1006",
+    "goal": "Cancel an existing appointment.",
     "started_at": "2026-10-19T10:05:00Z",
     "duration_s": 58,
     "outcome": "abandoned",
@@ -287,6 +293,7 @@
   },
   {
     "id": "r-1007",
+    "goal": "Book an appointment for knee pain as Tom Reyes.",
     "started_at": "2026-10-20T16:22:00Z",
     "duration_s": 143,
     "outcome": "stuck",
@@ -337,6 +344,7 @@
   },
   {
     "id": "r-1008",
+    "goal": "Book an appointment for a skin rash as Priya Shah, born in 1988.",
     "started_at": "2026-10-21T08:47:00Z",
     "duration_s": 126,
     "outcome": "stuck",
@@ -387,6 +395,7 @@
   },
   {
     "id": "r-1009",
+    "goal": "Speak to a person at the front desk.",
     "started_at": "2026-10-22T12:10:00Z",
     "duration_s": 40,
     "outcome": "abandoned",

@@ -1859,6 +1859,7 @@ button.issues__item:hover:not(:disabled) {
 /* ---- copilot proposal and findings ---- */
 .proposal,
 .coverage,
+.replay,
 .findings {
   margin-top: 10px;
   padding: 12px 14px;
@@ -1959,6 +1960,139 @@ button.issues__item:hover:not(:disabled) {
   display: flex;
   gap: 8px;
   margin-top: 12px;
+}
+
+/* ---- replay card ---- */
+.replay__summary {
+  margin: 0;
+  font-weight: 600;
+}
+
+.replay__note {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.replay__error {
+  margin-top: 8px;
+  color: var(--negative);
+}
+
+.replay__error p {
+  margin: 0 0 6px;
+}
+
+.replay__rows {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.replay__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--surface);
+  border-radius: 10px;
+}
+
+.replay__row {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px 8px;
+  padding: 0;
+  min-height: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  font-weight: 400;
+  color: inherit;
+}
+
+.replay__row:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.replay__row[aria-expanded="true"] .replay__id {
+  text-decoration: underline;
+}
+
+.replay__id {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.replay__verdict {
+  font-weight: 600;
+}
+
+.replay__item--fixed .replay__verdict,
+.replay__item--kept .replay__verdict {
+  color: var(--positive);
+}
+
+.replay__item--unfixed .replay__verdict,
+.replay__item--broken .replay__verdict,
+.replay__item--error .replay__verdict {
+  color: var(--negative);
+}
+
+.replay__flow {
+  color: var(--muted);
+}
+
+.replay__reason {
+  flex-basis: 100%;
+  color: var(--muted);
+}
+
+.replay__retry {
+  min-height: 24px;
+  padding: 0 8px;
+}
+
+.replay__transcript {
+  flex-basis: 100%;
+  margin: 4px 0 0;
+}
+
+/* ---- replay this call (run detail) ---- */
+.runs__replay {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.runs__replay-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.runs__replay-actions .replay__note,
+.runs__replay .field__hint,
+.runs__replay .replay__summary,
+.runs__replay .replay__reason {
+  margin: 0;
+}
+
+.runs__replay-result {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 /* ---- copilot draft on the canvas ---- */

@@ -38,6 +38,7 @@ def test_run_fields_are_well_formed(agent_id):
         assert isinstance(r["duration_s"], int) and r["duration_s"] > 0
         datetime.fromisoformat(r["started_at"].replace("Z", "+00:00"))
         assert r.get("flag", "x").strip()
+        assert isinstance(r.get("goal"), str) and r["goal"].strip(), r["id"]
         assert r["transcript"] and r["path"]
 
 

@@ -4,6 +4,7 @@ import { useAgentStore } from "../store";
 import { CoverageCard } from "./CoverageCard";
 import { FindingsCard } from "./FindingsCard";
 import { ProposalCard } from "./ProposalCard";
+import { ReplayCard } from "./ReplayCard";
 
 export const EXAMPLES = [
   "Build an agent from these call guidelines: …",
@@ -45,6 +46,7 @@ function Reply({ agentId, index, message, running, elapsed }: { agentId: string;
       {message.findings && <FindingsCard agentId={agentId} findings={message.findings} />}
       {message.coverage && <CoverageCard agentId={agentId} coverage={message.coverage} />}
       {message.proposal && <ProposalCard agentId={agentId} index={index} proposal={message.proposal} />}
+      {message.proposal && <ReplayCard agentId={agentId} index={index} proposal={message.proposal} replay={message.replay} />}
       {message.stopped && <p className="copilot__note">Stopped.</p>}
       {message.error && (
         <p className="copilot__error" role="alert">
