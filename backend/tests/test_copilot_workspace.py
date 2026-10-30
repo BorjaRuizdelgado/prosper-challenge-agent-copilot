@@ -68,3 +68,12 @@ def test_runs_are_written_as_text_and_a_stale_file_is_removed(copilot_workspace)
 def test_runs_path_rejects_bad_ids():
     with pytest.raises(InvalidAgentId):
         workspace.runs_path("../x")
+
+
+def test_guidelines_file_is_written_or_removed(copilot_workspace):
+    path = workspace.write_guidelines("clinic", "# Rules")
+    assert path == copilot_workspace / "guidelines" / "clinic.md" and path.read_text() == "# Rules"
+    assert workspace.write_guidelines("clinic", None) is None
+    assert not path.exists()
+    with pytest.raises(InvalidAgentId):
+        workspace.guidelines_path("../x")

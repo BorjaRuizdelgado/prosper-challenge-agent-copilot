@@ -11,6 +11,7 @@ from claude_agent_sdk import (
     UserMessage,
 )
 
+from api import store
 from copilot import runner, workspace
 
 pytestmark = pytest.mark.anyio
@@ -80,6 +81,7 @@ class FakeClient:
 @pytest.fixture(autouse=True)
 def isolated(tmp_path, monkeypatch):
     monkeypatch.setenv("COPILOT_WORKSPACE", str(tmp_path))
+    monkeypatch.setenv("AGENTS_DIR", str(tmp_path / "agents"))
     runner._sessions.clear()
     FakeClient.instances.clear()
 
@@ -295,3 +297,21 @@ async def test_a_rejected_findings_call_sends_no_findings_and_the_retry_wins():
     ])
     assert names(events) == ["step", "step", "findings", "done"]
     assert events[2]["data"] == {"findings": corrected}
+
+
+async def test_prompt_points_at_the_guidelines_file_of_an_agent_with_guidelines(tmp_path, monkeypatch):
+    store.save_guidelines("clinic", "# Maple\nBook visits.")
+    await collect([result()])
+    assert FakeClient.instances[0].prompt == (
+        "The agent draft is drafts/clinic.json. The client's guidelines are in guidelines/clinic.md.\n\ndo it"
+    )
+    assert (workspace.workspace_dir() / "guidelines" / "clinic.md").read_text() == "# Maple\nBook visits."
+
+
+async def test_no_guidelines_means_no_file_no_prompt_line_and_no_stale_file(tmp_path, monkeypatch):
+    stale = workspace.guidelines_path("clinic")
+    stale.parent.mkdir(parents=True)
+    stale.write_text("old")
+    await collect([result()])
+    assert not stale.exists()
+    assert "guidelines" not in FakeClient.instances[0].prompt

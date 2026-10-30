@@ -12,7 +12,7 @@ Each group is a vertical slice that ends with something usable and verified. Bac
 
 ## 2. Copilot reads the guidelines and reports coverage
 
-- [ ] 2.1 Workspace `guidelines_path(agent_id)` (git-ignored); `run_turn` writes the file or removes a stale one and adds the prompt line only when it exists. Guard: Read only on the agent's own guidelines. Verify: extend the runner and guard pytests (own file read ok, edit denied, another agent's file denied, `..` and symlink variants).
+- [x] 2.1 Workspace `guidelines_path(agent_id)` (git-ignored); `run_turn` writes the file or removes a stale one and adds the prompt line only when it exists. Guard: Read only on the agent's own guidelines. Verify: extend the runner and guard pytests (own file read ok, edit denied, another agent's file denied, `..` and symlink variants).
 - [ ] 2.2 `report_coverage` tool with the checks in design Decision 4; the runner emits a `coverage` event (last wins) and the step "Reporting coverage (N/M)". Verify: pytest for valid input, unknown node, duplicate id, a `default` without a question, and the scripted fake client event order step → coverage → proposal → done.
 - [ ] 2.3 Skill and prompt changes in design Decision 5. Verify: the skill and prompt pytests check each new rule (read the guidelines, defaults not questions on build, `report_coverage` after validation, the check-coverage and client-answer flows, the clarify rule limited to edits).
 - [ ] 2.4 Document the guidelines file, `report_coverage` and the `coverage` event in `backend/copilot/README.md`. Verify: the README's event list matches the runner's.

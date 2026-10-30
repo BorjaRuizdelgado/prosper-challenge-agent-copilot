@@ -28,6 +28,7 @@ from claude_agent_sdk import (
 
 from agent_builder.validation import validate_as_dicts
 from api.runs import list_runs
+from api.store import get_guidelines
 from copilot import workspace
 
 # Cheapest tier by default; the CLI resolves the alias to the current Haiku. COPILOT_MODEL overrides it.
@@ -134,6 +135,9 @@ async def run_turn(
     prompt = f"The agent draft is {path.relative_to(workspace.workspace_dir())}."
     if runs_file:
         prompt += f" Its production runs are in {runs_file.relative_to(workspace.workspace_dir())}."
+    guidelines_file = workspace.write_guidelines(agent_id, get_guidelines(agent_id))
+    if guidelines_file:
+        prompt += f" The client's guidelines are in {guidelines_file.relative_to(workspace.workspace_dir())}."
     prompt += f"\n\n{message}"
     finished = False
 
