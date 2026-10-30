@@ -116,11 +116,15 @@ The copilot SHALL remember the conversation for the open agent across turns unti
 - **THEN** the conversation is cleared and the next turn starts with no memory of earlier turns
 
 ### Requirement: Clarify only when guidelines are ambiguous
-When an instruction cannot be carried out without a decision only the user can make, the copilot SHALL ask one short question and propose no change in that turn. Otherwise it SHALL act without asking.
+When an edit instruction cannot be carried out without a decision only the user can make, the copilot SHALL ask one short question and propose no change in that turn. Otherwise it SHALL act without asking. When building an agent from client guidelines, the copilot SHALL NOT stop to ask: it SHALL build a safe default for each unstated policy and list the question for the client in its coverage report.
 
 #### Scenario: Ambiguous instruction
 - **WHEN** the user asks to "handle insurance questions" in an agent with no rule for them
 - **THEN** the copilot asks whether to answer them or transfer to a human, and no proposal is shown
+
+#### Scenario: Gap in the guidelines
+- **WHEN** the copilot builds from guidelines that say "we take most major insurance" without a list
+- **THEN** the proposal hands insurance questions to staff, and the coverage report asks the client which plans are accepted
 
 ### Requirement: Generated agents follow healthcare voice conventions
 Agents the copilot builds or extends SHALL use speakable replies (no lists, emojis or markdown), ask one question at a time, avoid medical advice, and include a path to end the call and to hand off urgent or out-of-scope calls, unless the user's guidelines say otherwise.
@@ -130,7 +134,7 @@ Agents the copilot builds or extends SHALL use speakable replies (no lists, emoj
 - **THEN** the proposed agent still has an edge that tells urgent callers to hang up and call emergency services, and at least one end node
 
 ### Requirement: Copilot can only change the agent
-The copilot SHALL only read and change the draft of the open agent, and MAY read the open agent's production runs. It SHALL NOT change the runs, run commands, read or write other files (including other agents' runs), or save, create or delete agents.
+The copilot SHALL only read and change the draft of the open agent, and MAY read the open agent's production runs and client guidelines. It SHALL NOT change the runs or the guidelines, run commands, read or write other files (including other agents' runs and guidelines), or save, create or delete agents.
 
 #### Scenario: Out-of-scope request
 - **WHEN** the user asks the copilot to delete another agent or run a shell command
@@ -139,6 +143,10 @@ The copilot SHALL only read and change the draft of the open agent, and MAY read
 #### Scenario: Another agent's runs
 - **WHEN** the user asks the copilot to look at the runs of a different agent
 - **THEN** the copilot declines in one sentence and reads no other agent's runs
+
+#### Scenario: Guidelines are read-only
+- **WHEN** the user asks the copilot to rewrite the client's guidelines
+- **THEN** the copilot declines in one sentence and the guidelines are unchanged
 
 ### Requirement: Copilot unavailable
 When the copilot backend cannot start (no Claude login or API key, or the Claude CLI is missing), the panel SHALL show the reason and how to fix it, and the rest of the editor SHALL keep working.
