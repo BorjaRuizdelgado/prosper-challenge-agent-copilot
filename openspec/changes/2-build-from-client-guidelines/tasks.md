@@ -31,5 +31,5 @@ Each group is a vertical slice that ends with something usable and verified. Bac
 
 ## 5. Real-model check
 
-- [ ] 5.1 Run *New from guidelines* with the sample on Haiku and Sonnet, then answer one question in chat. Record in a new `docs/guidelines-demo.md`: requirement count, which planted gaps became questions, 0 validation issues, and the answer turn removing that question. Verify: the doc is filled in and at least 4 of the 5 planted gaps became questions on the model chosen for the demo.
+- [x] 5.1 Run *New from guidelines* with the sample on Haiku and Sonnet, then answer one question in chat. Record in a new `docs/guidelines-demo.md`: requirement count, which planted gaps became questions, 0 validation issues, and the answer turn removing that question. Verify: the doc is filled in and at least 4 of the 5 planted gaps became questions on the model chosen for the demo.
 - [ ] 5.2 Click through both demo paths in the proposal's Demo section in the browser (full build with the sample reply, and *Check coverage* on the seeded scheduler) and time them. Verify: both work as written; the scheduler's card shows cancel, reschedule and staff as *open*; record the timings in `docs/guidelines-demo.md`.
