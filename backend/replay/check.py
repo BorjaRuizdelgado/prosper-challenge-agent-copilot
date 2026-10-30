@@ -33,7 +33,7 @@ async def check(fn: ReplayFn, agent_ids: list[str], only: set[str] | None = None
     sem = asyncio.Semaphore(MAX_PARALLEL)
     jobs = []
     for agent_id in agent_ids:
-        agent = store.get_agent(agent_id)
+        agent = store.get_agent(agent_id)["agent"]
         for run in runs.list_runs(agent_id):
             if only is None or run["id"] in only:
                 jobs.append((agent, run))

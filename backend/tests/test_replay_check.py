@@ -55,3 +55,14 @@ def test_main_prints_table_with_fake(seeded, monkeypatch, capsys):
     assert check.main(["--agent", "demo-lakeside-billing", "--run", "r-3001"], fn=fake) == 0
     out = capsys.readouterr().out
     assert "r-3001" in out and "fine" in out and "r-3002" not in out
+
+
+def test_fake_receives_the_agent_dict_not_the_record(seeded):
+    seen = []
+
+    async def fake(agent, run):
+        seen.append(agent)
+        return {"outcome": "completed", "goal_met": True, "reason": ""}
+
+    asyncio.run(check.check(fake, ["demo-lakeside-billing"], {"r-3001"}))
+    assert seen[0]["name"] and "nodes" in seen[0]
