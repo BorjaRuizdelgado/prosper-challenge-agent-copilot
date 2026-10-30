@@ -89,9 +89,12 @@ export function setCopilotStreamer(next: Streamer) {
   };
 }
 
-export type ReplayStreamer = (agentId: string, base: Agent, proposal: Agent, runIds: string[], signal: AbortSignal) => AsyncIterable<ReplayEvent>;
+export type ReplayStreamer = (agentId: string, base: Agent, proposal: Agent | null, runIds: string[], signal: AbortSignal) => AsyncIterable<ReplayEvent>;
 
 let replayStreamer: ReplayStreamer = streamReplay;
+
+/** The current replay event source (the replay view uses it for *Replay this call*). */
+export const getReplayStreamer = () => replayStreamer;
 
 /** Swap the replay event source (tests pass a fake); returns a restore function. */
 export function setReplayStreamer(next: ReplayStreamer) {
@@ -119,6 +122,8 @@ export interface CopilotStore {
   retryReplay: (agentId: string, index: number, runId: string) => Promise<void>;
   /** Pulses `node` on the canvas (or stops, with null) while the pointer is on something about it; a running turn owns the focus. */
   setFocus: (agentId: string, node: string | null) => void;
+  /** Puts the pending proposal of the assistant message at `index` on the canvas (opening a replay row). */
+  showReview: (agentId: string, index: number) => void;
   /** Shows the working copy on the canvas again; the proposal stays pending in the conversation. */
   hideReview: (agentId: string) => void;
   /** Clears the conversation and the server-side session. */
@@ -343,6 +348,11 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
     },
     stop: (agentId) => controllers.get(agentId)?.abort(),
     setFocus: (agentId, node) => patch(agentId, (chat) => (chat.running ? chat : { ...chat, focus: node })),
+    showReview: (agentId, index) =>
+      patch(agentId, (chat) => {
+        const m = chat.messages[index];
+        return m?.role === "assistant" && m.proposal?.status === "pending" ? { ...chat, review: { base: m.proposal.base, agent: m.proposal.agent } } : chat;
+      }),
     hideReview: (agentId) => patch(agentId, (chat) => ({ ...chat, review: null })),
     setProposalStatus: (agentId, index, status) =>
       patch(agentId, (chat) => ({

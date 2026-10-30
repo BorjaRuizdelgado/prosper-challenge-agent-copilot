@@ -35,6 +35,13 @@ describe("streamReplay", () => {
     expect(JSON.parse(init.body)).toEqual({ base: agent, proposal: agent, run_ids: ["r1"] });
   });
 
+  it("omits the proposal when there is none", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, body: body("event: done\ndata: {}\n\n") });
+    vi.stubGlobal("fetch", fetchMock);
+    await collect(streamReplay("a", agent, null, ["r1"]));
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ base: agent, run_ids: ["r1"] });
+  });
+
   it("turns transport problems into an error event", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("down")));
     expect(await collect(streamReplay("a", agent, agent, []))).toEqual([{ event: "error", message: "Could not reach the API. Is it running?", setup: false }]);

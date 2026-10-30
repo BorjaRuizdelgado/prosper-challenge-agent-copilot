@@ -56,7 +56,7 @@ export interface RunPath {
   missing: string[];
 }
 
-export function runPath(run: Run, agent: Agent): RunPath {
+export function runPath(run: Pick<Run, "path">, agent: Agent): RunPath {
   const byName = new Map(agent.nodes.map((n) => [n.name, n]));
   const nodes: string[] = [];
   const edges: string[] = [];
