@@ -14,6 +14,19 @@ Backend for the Agent Copilot (OpenSpec change `add-agent-copilot`). Claude Code
 | `events.py` | Pure helpers: step labels, node name of an edit, which drafts are worth a `draft` event. |
 | `runner.py` | `run_turn(agent_id, message, agent)`: writes the draft and, when the agent has production runs (`api/runs.py`), the runs file, and adds "Its production runs are in runs/<id>.txt." to the prompt only then, and likewise writes the agent's client guidelines (`api/store.py`) to `guidelines/<id>.md` with "The client's guidelines are in guidelines/<id>.md."; yields `step`, `text`, `findings`, `coverage` (the input of a successful `report_coverage` call, after its "Reporting coverage (N/M)" step; the last one in a turn wins), `draft`, `proposal`, `done` or `error` events (`findings` carries the input of a successful `report_findings` call, after its "Reporting N findings" step; the last one in a turn wins); keeps the session id per agent (`reset_session`). |
 
+## Checking a build against a sample
+
+`backend/demo/check_build.py` runs the real copilot on a sample from `backend/demo/guidelines/` (the build turn, then the sample's client reply) on a throwaway agents directory, and prints one PASS/FAIL row per expectation from the sample's `<name>.expected.json` (topics the graph must handle, gaps that must become questions, values it must not invent before the reply, values it must contain after it), plus timings. Exit code 0 only when every row passes.
+
+```
+make check-guidelines                          # harbor-dental-reschedule on Haiku
+make check-guidelines MODEL=sonnet             # same, on Sonnet
+make check-guidelines SAMPLE=<name> MODEL=<alias>
+python -m demo.check_build [sample] [--model MODEL]   # from backend/, what the target runs
+```
+
+It needs the logged-in `claude` CLI and is never run by pytest (`tests/test_check_build.py` covers the comparison with hand-made data and the runner with a scripted fake copilot). Keyword matching is crude on purpose; review a failing row before calling it a regression. Measured runs: `docs/simple-demo.md`.
+
 ## HTTP API
 
 Served by `api/copilot.py` (the `run_turn` seam is injected, so tests use a fake runner).
