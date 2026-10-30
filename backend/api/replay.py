@@ -28,7 +28,7 @@ def get_replay_fn() -> ReplayFn:
 
 class ReplayBody(BaseModel):
     base: dict
-    proposal: dict
+    proposal: dict | None = None  # omitted: replay against `base` only (the *Replay this call* button)
     run_ids: list[str] = Field(min_length=1)
 
 
@@ -83,5 +83,6 @@ async def replay_endpoint(agent_id: str, body: ReplayBody, fn: ReplayFn = Depend
         (available[rid], version, agent)
         for rid in dict.fromkeys(body.run_ids)
         for version, agent in (("before", body.base), ("after", body.proposal))
+        if agent is not None
     ]
     return StreamingResponse(stream_replay(jobs, fn), media_type="text/event-stream", headers=headers)

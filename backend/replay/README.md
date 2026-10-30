@@ -13,7 +13,7 @@ Text simulator that replays a production run against an agent graph (openspec ch
 
 ## API
 
-`POST /api/agents/{id}/replay` (`backend/api/replay.py`) with body `{base, proposal, run_ids}`. Every run id is replayed against `base` (version `before`) and `proposal` (version `after`), up to 4 jobs in parallel. The response is `text/event-stream`:
+`POST /api/agents/{id}/replay` (`backend/api/replay.py`) with body `{base, proposal?, run_ids}`. Every run id is replayed against `base` (version `before`) and, when `proposal` is given, `proposal` (version `after`); without it only `before` runs (the *Replay this call* button), up to 4 jobs in parallel. The response is `text/event-stream`:
 
 | Event | Data |
 | --- | --- |

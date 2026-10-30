@@ -112,3 +112,18 @@ def test_env_file_key_is_visible_to_replay(monkeypatch, tmp_path):
 
     assert os.environ["OPENAI_API_KEY"] == "from-file"
     assert OpenAIChatClient()._client.api_key == "from-file"
+
+
+def test_without_proposal_only_before_runs(api):
+    seen = []
+
+    async def fake(agent, run):
+        seen.append(agent["name"])
+        return {"transcript": [], "path": [], "outcome": "completed", "goal_met": True, "reason": ""}
+
+    use(fake)
+    body = {"base": {**AGENT, "name": "base"}, "run_ids": ["r-1", "r-2"]}
+    events = parse_sse(post(api, body).text)
+    assert seen == ["base", "base"]
+    assert {d["version"] for n, d in events if n == "result"} == {"before"}
+    assert events[-1] == ("done", {})
