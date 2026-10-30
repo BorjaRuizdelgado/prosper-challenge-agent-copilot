@@ -54,7 +54,7 @@ export async function getGuidelines(id: string): Promise<string | null> {
 export const saveGuidelines = (id: string, text: string) =>
   request<GuidelinesText>(`/api/agents/${id}/guidelines`, sendJson("PUT", { text }), "Could not save the guidelines");
 
-/** Sample client guidelines for *Use sample guidelines*; `reply` is the sample client reply. */
+/** Sample client guidelines for the dialog's *Use sample: ...* buttons; `reply` is the sample client reply. */
 export const listSampleGuidelines = () =>
   request<SampleGuidelines[]>("/api/demo/guidelines", {}, "Could not load the sample guidelines");
 

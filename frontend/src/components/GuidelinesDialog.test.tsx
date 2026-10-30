@@ -6,6 +6,7 @@ import { json, mockApi, renderApp } from "../test/helpers";
 import { AgentList } from "./AgentList";
 
 const sample = { name: "maple-family-practice", text: "Hours: 9 to 5.\nTwo providers.", reply: "Reply" };
+const small = { name: "harbor-dental-reschedule", text: "Cancel or move a visit.", reply: "Small reply" };
 const record = { id: "new-1", agent: { name: "Maple Family Practice", initial_node: "greeting", nodes: [{ name: "greeting" }] }, updated_at: "2026-01-01T00:00:00Z" };
 
 
@@ -13,7 +14,7 @@ beforeEach(() => {
   resetCopilotStore();
   mockApi({
     "GET /api/agents": () => json([]),
-    "GET /api/demo/guidelines": () => json([sample]),
+    "GET /api/demo/guidelines": () => json([small, sample]),
     "POST /api/agents": () => json(record, 201),
   });
 });
@@ -49,9 +50,27 @@ test("rejects other file types and creates nothing", async () => {
   expect(screen.getByRole("button", { name: "Create and build" })).toBeDisabled();
 });
 
-test("Use sample guidelines fills the name and text", async () => {
+test("offers one button per sample, in API order", async () => {
   await open();
-  await userEvent.click(screen.getByRole("button", { name: "Use sample guidelines" }));
+  const buttons = await screen.findAllByRole("button", { name: /^Use sample:/ });
+  expect(buttons.map((b) => b.textContent)).toEqual(["Use sample: Harbor Dental Reschedule", "Use sample: Maple Family Practice"]);
+});
+
+test("picking the second sample fills the text and keeps a name already typed", async () => {
+  await open();
+  await userEvent.type(screen.getByLabelText("Name"), "My clinic");
+  await userEvent.click(await screen.findByRole("button", { name: "Use sample: Maple Family Practice" }));
+
+  expect(screen.getByLabelText("Guidelines")).toHaveValue(sample.text);
+  expect(screen.getByLabelText("Name")).toHaveValue("My clinic");
+  await userEvent.click(screen.getByRole("button", { name: "Use sample: Harbor Dental Reschedule" }));
+  expect(screen.getByLabelText("Guidelines")).toHaveValue(small.text);
+  expect(screen.getByLabelText("Name")).toHaveValue("My clinic");
+});
+
+test("a sample fills the name and text", async () => {
+  await open();
+  await userEvent.click(await screen.findByRole("button", { name: "Use sample: Maple Family Practice" }));
 
   await waitFor(() => expect(screen.getByLabelText("Guidelines")).toHaveValue(sample.text));
   expect(screen.getByLabelText("Name")).toHaveValue("Maple Family Practice");
@@ -67,7 +86,7 @@ test("confirming creates with the guidelines, navigates and sends the build mess
   const fetchMock = (globalThis.fetch as unknown as ReturnType<typeof vi.fn>);
   const { router } = renderApp(<AgentList />);
   await userEvent.click(await screen.findByRole("button", { name: "New from guidelines" }));
-  await userEvent.click(screen.getByRole("button", { name: "Use sample guidelines" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Use sample: Maple Family Practice" }));
   await waitFor(() => expect(screen.getByLabelText("Guidelines")).toHaveValue(sample.text));
   await userEvent.click(screen.getByRole("button", { name: "Create and build" }));
 

@@ -1,5 +1,5 @@
-import { type ChangeEvent, type DragEvent, type FormEvent, useState } from "react";
-import { listSampleGuidelines } from "../api";
+import { type ChangeEvent, type DragEvent, type FormEvent, useEffect, useState } from "react";
+import { listSampleGuidelines, type SampleGuidelines } from "../api";
 import { Dialog } from "./Dialog";
 
 interface Props {
@@ -21,6 +21,18 @@ export function GuidelinesDialog({ onSubmit, onClose }: Props) {
   const [source, setSource] = useState("Pasted guidelines");
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [samples, setSamples] = useState<SampleGuidelines[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    listSampleGuidelines().then(
+      (list) => !cancelled && setSamples(list),
+      (e: Error) => !cancelled && setError(e.message),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const trimmedName = name.trim();
   const size = new TextEncoder().encode(text).length;
@@ -36,17 +48,11 @@ export function GuidelinesDialog({ onSubmit, onClose }: Props) {
     setName((n) => n || titleOf(file.name));
   };
 
-  const useSample = async () => {
-    try {
-      const sample = (await listSampleGuidelines())[0];
-      if (!sample) return setError("No sample guidelines are available.");
-      setError(null);
-      setText(sample.text);
-      setSource(titleOf(sample.name));
-      setName((n) => n || titleOf(sample.name));
-    } catch (e) {
-      setError((e as Error).message);
-    }
+  const useSample = (sample: SampleGuidelines) => {
+    setError(null);
+    setText(sample.text);
+    setSource(titleOf(sample.name));
+    setName((n) => n || titleOf(sample.name));
   };
 
   const submit = (e: FormEvent) => {
@@ -98,9 +104,11 @@ export function GuidelinesDialog({ onSubmit, onClose }: Props) {
               }}
             />
           </label>
-          <button type="button" className="ghost" onClick={useSample}>
-            Use sample guidelines
-          </button>
+          {samples.map((sample) => (
+            <button key={sample.name} type="button" className="ghost" onClick={() => useSample(sample)}>
+              Use sample: {titleOf(sample.name)}
+            </button>
+          ))}
         </div>
         {(error || tooBig) && (
           <p className="guidelines-dialog__error" role="alert">
