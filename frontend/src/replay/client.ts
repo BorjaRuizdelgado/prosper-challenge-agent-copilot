@@ -15,11 +15,12 @@ export interface ReplayResult {
 /** One server-sent event of a replay (backend/replay/README.md). */
 export type ReplayEvent =
   | { event: "started"; run_id: string; version: ReplayVersion }
+  | { event: "line"; run_id: string; version: ReplayVersion; speaker: RunLine["speaker"]; text: string }
   | ({ event: "result"; run_id: string; version: ReplayVersion } & ReplayResult)
   | { event: "error"; message: string; setup?: boolean; run_id?: string; version?: ReplayVersion }
   | { event: "done" };
 
-const KNOWN = new Set(["started", "result", "error", "done"]);
+const KNOWN = new Set(["started", "line", "result", "error", "done"]);
 
 const failure = (message: string, setup = false): ReplayEvent => ({ event: "error", message, setup });
 

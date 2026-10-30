@@ -5,10 +5,10 @@ Text simulator that replays a production run against an agent graph (openspec ch
 | Module | Role |
 | --- | --- |
 | `nodes.py` | Per-node system text, task messages, tools and actions from `AgentConfig`; kept in parity with `AgentBuilder._make_node` by `tests/test_replay_nodes.py`. |
-| `simulator.py` | `replay(agent, caller, chat_client, max_turns=20)`: the agent speaks first, edge calls move to the target and are recorded in `path`, `tts_say` is verbatim, `end_conversation` / `end` nodes end the call, the turn limit gives `stuck`, `[HANGUP]` from the caller ends it. |
+| `simulator.py` | `replay(agent, caller, chat_client, max_turns=20, on_line=None)`: `on_line` is called with each transcript line as it is added; the agent speaks first, edge calls move to the target and are recorded in `path`, `tts_say` is verbatim, `end_conversation` / `end` nodes end the call, the turn limit gives `stuck`, `[HANGUP]` from the caller ends it. |
 | `caller.py` | Simulated caller (`gpt-4o-mini`, temperature 0.4) seeded with the original caller lines and the run's `goal` (or a cached one-line summary). |
 | `judge.py` | `gpt-4o-mini` JSON-schema verdict `{outcome, goal_met, reason}`; the turn limit forces `stuck`, an emergency instruction followed by a hang-up forces `transferred` with the goal met. |
-| `runner.py` | `replay_run(agent, run)`: goal, simulator and judge for one run against one agent dict; returns `{transcript, path, outcome, goal_met, reason}`. |
+| `runner.py` | `replay_run(agent, run, chat_client=None, on_line=None)`: goal, simulator and judge for one run against one agent dict, passing `on_line` to the simulator; returns `{transcript, path, outcome, goal_met, reason}`. |
 | `check.py` | `python -m replay.check` (`make demo-check`): replays the demo runs against the seeded agents, before only, 4 at a time, and prints the table; exit 1 without a key. Tested with a fake replay function. |
 | `client.py` | `ChatClient` protocol and the `OpenAIChatClient` (reads `OPENAI_API_KEY`). |
 
@@ -19,11 +19,12 @@ Text simulator that replays a production run against an agent graph (openspec ch
 | Event | Data |
 | --- | --- |
 | `started` | `{run_id, version}` |
+| `line` | `{run_id, version, speaker, text}`; one per transcript line as the call happens, before that job's `result` |
 | `result` | `{run_id, version, transcript, path, outcome, goal_met, reason}` |
 | `error` | `{run_id?, version?, message, setup}`; a failed job only fails itself, `setup: true` means no job was started |
 | `done` | `{}` |
 
-Unknown run ids (not in `GET /api/agents/{id}/runs`) get `400`. A client disconnect cancels the pending jobs. Endpoint tests inject a fake replay function (`get_replay_fn`) so they never call OpenAI.
+Unknown run ids (not in `GET /api/agents/{id}/runs`) get `400`. `result` still carries the full transcript and replaces the lines streamed so far. A client disconnect cancels the pending jobs. Endpoint tests inject a fake replay function `fn(agent, run, on_line=None)` (`get_replay_fn`) so they never call OpenAI.
 
 ## Key
 

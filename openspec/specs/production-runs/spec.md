@@ -40,7 +40,7 @@ A single command SHALL write the demo agents into the agents store under fixed i
 - **THEN** that agent is back to its flawed version and its runs are unchanged
 
 ### Requirement: Runs tab summarizes an agent's runs
-The editor SHALL offer a Runs tab in its top bar for the open agent, which shows its content in the panel beside the canvas, showing the number of runs, the count per outcome, the number of flagged runs, and the list of runs newest first with outcome, time, duration, the caller's first line and the flag if any.
+The editor SHALL offer a Runs tab in its top bar for the open agent, which shows its content in the panel beside the canvas, showing the number of runs, the count per outcome, the number of flagged runs, and the list of runs newest first with outcome, id, time, duration, the caller's first line and the flag if any.
 
 #### Scenario: Open the Runs tab
 - **WHEN** the user opens a demo agent and selects the Runs tab

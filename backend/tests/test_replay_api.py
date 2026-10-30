@@ -37,7 +37,7 @@ def post(api, body=BODY):
 
 
 def test_event_order_and_results(api):
-    async def fake(agent, run):
+    async def fake(agent, run, on_line=None):
         return {"transcript": [], "path": [{"node": "a"}], "outcome": "completed", "goal_met": True, "reason": run["id"]}
 
     use(fake)
@@ -53,10 +53,22 @@ def test_event_order_and_results(api):
     assert result["outcome"] == "completed" and result["goal_met"] is True and result["path"]
 
 
+def test_lines_stream_before_their_result(api):
+    async def fake(agent, run, on_line=None):
+        on_line({"speaker": "agent", "text": "Hello"})
+        on_line({"speaker": "caller", "text": "Hi"})
+        return {"transcript": [], "path": [], "outcome": "completed", "goal_met": True, "reason": ""}
+
+    use(fake)
+    events = parse_sse(post(api, {**BODY, "proposal": None, "run_ids": ["r-1"]}).text)
+    assert [n for n, _ in events] == ["started", "line", "line", "result", "done"]
+    assert events[1][1] == {"run_id": "r-1", "version": "before", "speaker": "agent", "text": "Hello"}
+
+
 def test_versions_use_base_and_proposal(api):
     seen = []
 
-    async def fake(agent, run):
+    async def fake(agent, run, on_line=None):
         seen.append(agent["name"])
         return {"transcript": [], "path": [], "outcome": "completed", "goal_met": True, "reason": ""}
 
@@ -69,7 +81,7 @@ def test_no_key_is_one_setup_error(api, monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY")
     called = []
 
-    async def fake(agent, run):
+    async def fake(agent, run, on_line=None):
         called.append(1)
 
     use(fake)
@@ -80,7 +92,7 @@ def test_no_key_is_one_setup_error(api, monkeypatch):
 
 
 def test_one_failing_job_errors_only_that_job(api):
-    async def fake(agent, run):
+    async def fake(agent, run, on_line=None):
         if run["id"] == "r-2" and agent["name"] == "boom":
             raise RuntimeError("nope")
         return {"transcript": [], "path": [], "outcome": "completed", "goal_met": True, "reason": ""}
@@ -95,7 +107,7 @@ def test_one_failing_job_errors_only_that_job(api):
 
 
 def test_unknown_run_id_is_400(api):
-    async def fake(agent, run):
+    async def fake(agent, run, on_line=None):
         raise AssertionError("must not run")
 
     use(fake)
@@ -117,7 +129,7 @@ def test_env_file_key_is_visible_to_replay(monkeypatch, tmp_path):
 def test_without_proposal_only_before_runs(api):
     seen = []
 
-    async def fake(agent, run):
+    async def fake(agent, run, on_line=None):
         seen.append(agent["name"])
         return {"transcript": [], "path": [], "outcome": "completed", "goal_met": True, "reason": ""}
 

@@ -42,6 +42,9 @@ export interface ReplayState {
   error?: { message: string; setup: boolean };
 }
 
+/** Whether a chat message asks to replay calls ("replay them", "replicate the failing calls"). Replaying costs money, so the panel answers it itself. */
+export const asksForReplay = (text: string) => /\b(replay|replicate|reproduce|re-?run)\w*\b/i.test(text) && /\b(calls?|runs?|them|it|fix|proposal|this|these|those)\b/i.test(text);
+
 export const REPLAY_INTERRUPTED = "The replay was interrupted.";
 
 export type ChatMessage =
@@ -109,6 +112,10 @@ export interface CopilotStore {
   chats: Record<string, Chat>;
   /** Text waiting to be dropped into the panel's input (e.g. from a finished call); the panel takes it and clears it. */
   prefill: string | null;
+  /** The proposal whose replay card the user asked about in the chat; the card scrolls into view and stands out until it is clicked. */
+  replayAsk: { agentId: string; index: number } | null;
+  /** Answers a chat request to replay calls without calling the model: points at the card of the latest pending proposal. False when there is none to point at. */
+  askReplay: (agentId: string, text: string) => boolean;
   setPrefill: (text: string | null) => void;
   /** Sends an instruction with the current working copy; resolves when the turn has ended. */
   send: (agentId: string, message: string, agent: Agent, guidelines?: GuidelinesChip) => Promise<void>;
@@ -232,9 +239,18 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
     try {
       for await (const e of replayStreamer(agentId, base, agent, ids, controller.signal)) {
         if (controller.signal.aborted) return;
-        if (e.event === "result") {
+        if (e.event === "line") {
+          const { run_id, version, speaker, text } = e;
+          patchReplay(agentId, index, (r) => {
+            const x = r.runs[run_id] ?? {};
+            return { ...r, runs: { ...r.runs, [run_id]: { ...x, live: { ...x.live, [version]: [...(x.live?.[version] ?? []), { speaker, text }] } } } };
+          });
+        } else if (e.event === "result") {
           const { run_id, version, event: _e, ...result } = e;
-          patchReplay(agentId, index, (r) => ({ ...r, runs: { ...r.runs, [run_id]: { ...r.runs[run_id], [version]: result } } }));
+          patchReplay(agentId, index, (r) => {
+            const { [version]: _live, ...live } = r.runs[run_id]?.live ?? {};
+            return { ...r, runs: { ...r.runs, [run_id]: { ...r.runs[run_id], [version]: result, live } } };
+          });
         } else if (e.event === "error") {
           if (e.run_id) fail(e.run_id, e.message);
           else patchReplay(agentId, index, (r) => ({ ...r, error: { message: e.message, setup: !!e.setup } }));
@@ -288,12 +304,24 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
   return {
     chats: loadChats(),
     prefill: null,
+    replayAsk: null,
+    askReplay: (agentId, text) => {
+      const messages = chatOf(get().chats, agentId).messages;
+      const index = messages.findLastIndex((m) => m.role === "assistant" && m.proposal?.status === "pending");
+      const m = messages[index];
+      if (m?.role !== "assistant") return false;
+      const answer = m.replay
+        ? "That fix was already replayed; the results are on the proposal above."
+        : "Replaying calls uses your OpenAI key and costs money, so I have not started it. If you want it, use the Replay button on the proposal above.";
+      patch(agentId, (chat) => ({ ...chat, messages: [...chat.messages, { role: "user", text: text.trim() }, { role: "assistant", text: answer, steps: [] }] }));
+      set({ replayAsk: m.replay ? null : { agentId, index } });
+      return true;
+    },
     setPrefill: (prefill) => set({ prefill }),
     send: async (agentId, message, agent, guidelines) => {
       if (chatOf(get().chats, agentId).running || !message.trim()) return;
       const controller = new AbortController();
       controllers.set(agentId, controller);
-      let finished = false;
       patch(agentId, (chat) => ({
         ...chat,
         messages: [...chat.messages, { role: "user", text: message.trim(), ...(guidelines && { guidelines }) }, { role: "assistant", text: "", steps: [] }],
@@ -325,22 +353,18 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
       } finally {
         if (controllers.get(agentId) === controller) controllers.delete(agentId);
         if (controller.signal.aborted) patchReply(agentId, () => ({ stopped: true }));
-        finished = !controller.signal.aborted;
         // Only a proposal keeps the canvas on the draft; a stopped, failed or no-change turn restores the working copy.
         patch(agentId, (chat) => {
           const last = chat.messages[chat.messages.length - 1];
           const keep = last?.role === "assistant" && last.proposal?.status === "pending" && !controller.signal.aborted;
           return { ...chat, running: false, startedAt: null, focus: null, review: keep ? chat.review : null };
         });
-        // A finished turn that found problems and proposed a fix is replayed against that fix right away.
-        const chat = chatOf(get().chats, agentId);
-        const last = chat.messages[chat.messages.length - 1];
-        if (finished && last?.role === "assistant" && last.proposal && last.findings?.length && !last.error) {
-          void startReplay(agentId, chat.messages.length - 1);
-        }
       }
     },
-    replayCalls: (agentId, index) => startReplay(agentId, index),
+    replayCalls: (agentId, index) => {
+      set({ replayAsk: null });
+      return startReplay(agentId, index);
+    },
     retryReplay: async (agentId, index, runId) => {
       const m = chatOf(get().chats, agentId).messages[index];
       if (m?.role !== "assistant" || !m.replay || m.replay.status === "running") return;
@@ -381,5 +405,5 @@ export const resetCopilotStore = () => {
   controllers.clear();
   replayControllers.forEach((c) => c.abort());
   replayControllers.clear();
-  useCopilotStore.setState({ chats: {}, prefill: null });
+  useCopilotStore.setState({ chats: {}, prefill: null, replayAsk: null });
 };

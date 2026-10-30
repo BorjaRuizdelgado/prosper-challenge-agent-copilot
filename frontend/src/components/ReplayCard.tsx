@@ -1,10 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { type Proposal, type ReplayState, useCopilotStore } from "../copilot/copilotStore";
-import type { Run } from "../model";
+import type { Finding, Run } from "../model";
 import type { ReplayResult } from "../replay/client";
-import { type ReplayClass, type ReplayScore, scoreReplay } from "../replay/select";
+import { type ReplayClass, type ReplayScore, scoreReplay, selectRuns } from "../replay/select";
 import { useReplayView } from "../replay/replayView";
 import { useRunsStore } from "../runs/runsStore";
+
+const NOTE = "Simulated text calls: a simulated caller replays each call on your current agent (before) and on this fix (after), to see whether the failing calls get fixed and the working ones keep working.";
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
@@ -37,9 +39,10 @@ function Row({ agentId, index, id, run, cls, entry }: { agentId: string; index: 
   const retry = useCopilotStore((s) => s.retryReplay);
   const failed = !!entry.error;
   const after = entry.after;
+  const lines = after?.transcript ?? entry.live?.after;
   return (
     <li className={`replay__item replay__item--${failed ? "error" : cls}`}>
-      <button type="button" className="replay__row" aria-expanded={open} disabled={!after} onClick={() => toggle(agentId, index, id)}>
+      <button type="button" className="replay__row" aria-expanded={open} disabled={!lines} onClick={() => toggle(agentId, index, id)}>
         <span className="replay__id">{id}</span>
         {run && <span className={`pill runs__outcome runs__outcome--${run.outcome}`}>{run.outcome}</span>}
         <span className="replay__verdict">{failed ? "Failed" : VERDICT[cls]}</span>
@@ -51,9 +54,9 @@ function Row({ agentId, index, id, run, cls, entry }: { agentId: string; index: 
           Retry
         </button>
       )}
-      {open && after && (
+      {open && lines && (
         <ol className="call__transcript replay__transcript" aria-label={`Transcript of ${id} after`}>
-          {after.transcript.map((line, i) => (
+          {lines.map((line, i) => (
             <li key={i} className="call__line">
               <span className="call__who">{line.speaker === "caller" ? "Caller" : "Agent"}</span>
               {line.text}
@@ -66,20 +69,29 @@ function Row({ agentId, index, id, run, cls, entry }: { agentId: string; index: 
 }
 
 /** Replays of the calls against a proposal: a summary, one row per call (open it for the transcript and the path on the canvas), Retry per row. */
-export function ReplayCard({ agentId, index, proposal, replay }: { agentId: string; index: number; proposal: Proposal; replay?: ReplayState }) {
+export function ReplayCard({ agentId, index, proposal, findings, replay }: { agentId: string; index: number; proposal: Proposal; findings?: Finding[]; replay?: ReplayState }) {
   const runsState = useRunsStore((s) => s.byAgent[agentId]);
   const replayCalls = useCopilotStore((s) => s.replayCalls);
+  const asked = useCopilotStore((s) => s.replayAsk?.agentId === agentId && s.replayAsk.index === index);
+  const button = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!asked) return;
+    button.current?.scrollIntoView?.({ block: "nearest" });
+    button.current?.focus();
+  }, [asked]);
   useEffect(() => {
     if (!useRunsStore.getState().byAgent[agentId]) void useRunsStore.getState().load(agentId);
   }, [agentId]);
 
   const allRuns = runsState?.runs ?? [];
   if (!replay) {
-    if (proposal.status !== "pending" || allRuns.length === 0) return null;
+    const count = selectRuns(findings, allRuns).length;
+    if (proposal.status !== "pending" || count === 0) return null;
     return (
-      <section className="replay" aria-label="Replay">
-        <button type="button" onClick={() => void replayCalls(agentId, index)}>Replay calls</button>
-        <p className="replay__note">Simulated text calls</p>
+      <section className={`replay${asked ? " replay--asked" : ""}`} aria-label="Replay">
+        <p className="replay__summary">Check this fix against {plural(count, "real call")}?</p>
+        <p className="replay__note">{NOTE} That is {count * 2} simulated calls, which use your OpenAI key and cost money, so nothing runs until you ask.</p>
+        <button ref={button} type="button" onClick={() => void replayCalls(agentId, index)}>Replay {plural(count, "call")}</button>
       </section>
     );
   }
@@ -89,7 +101,7 @@ export function ReplayCard({ agentId, index, proposal, replay }: { agentId: stri
   return (
     <section className="replay" aria-label="Replay">
       <p className="replay__summary" aria-live="polite">{replay.error ? "Replay did not run" : summarizeReplay(score, replay)}</p>
-      <p className="replay__note">Simulated text calls</p>
+      <p className="replay__note">{NOTE}</p>
       {replay.error && (
         <div role="alert" className="replay__error">
           <p>{replay.error.message}</p>

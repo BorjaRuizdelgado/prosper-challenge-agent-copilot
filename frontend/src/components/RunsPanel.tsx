@@ -7,6 +7,9 @@ import { useReplayView } from "../replay/replayView";
 import { runPath, useRunsStore } from "../runs/runsStore";
 import { useAgentStore } from "../store";
 
+/** A run opened from a finding may be off-screen in the list. */
+const scrollIntoView = (el: HTMLElement | null) => el?.scrollIntoView?.({ block: "nearest" });
+
 const OUTCOMES: RunOutcome[] = ["completed", "transferred", "abandoned", "stuck"];
 /** Outcomes that need a look; their counts turn red when above zero. */
 const BAD: RunOutcome[] = ["abandoned", "stuck"];
@@ -28,6 +31,7 @@ function ReplayThisCall({ run, agentId }: { run: Run; agentId: string }) {
   const working = useReplayView((s) => (s.working?.runId === run.id && s.working.agentId === agentId ? s.working : null));
   const running = working?.status === "running";
   const result = working?.result;
+  const lines = working?.lines;
   return (
     <section className="runs__replay" aria-label="Replay this call">
       <div className="runs__replay-actions">
@@ -38,6 +42,16 @@ function ReplayThisCall({ run, agentId }: { run: Run; agentId: string }) {
       </div>
       {drafting && <p className="field__hint">Apply or discard the copilot's draft first.</p>}
       {working?.error && <p className="call__message" role="alert">{working.error.message}</p>}
+      {!result && lines && (
+        <ol className="call__transcript" aria-label="Replay transcript" aria-live="polite">
+          {lines.map((line, i) => (
+            <li key={i} className="call__line">
+              <span className="call__who">{line.speaker === "caller" ? "Caller" : "Agent"}</span>
+              {line.text}
+            </li>
+          ))}
+        </ol>
+      )}
       {result && (
         <div className="runs__replay-result">
           <p className="replay__summary">
@@ -160,7 +174,7 @@ export function RunsPanel() {
       <AnalyzeRuns agentId={agentId} />
       <ul className="runs__list" aria-label="Runs">
         {runs.map((run) => (
-          <li key={run.id} className="runs__item">
+          <li key={run.id} className="runs__item" ref={open === run.id ? scrollIntoView : undefined}>
             <button
               type="button"
               className="runs__row"
@@ -168,7 +182,11 @@ export function RunsPanel() {
               onClick={() => (open === run.id ? clear() : select(agentId, run.id))}
             >
               <span className={`pill runs__outcome runs__outcome--${run.outcome}`}>{run.outcome}</span>
-              <span className="runs__meta">{when(run.started_at)} · {duration(run.duration_s)}</span>
+              <span className="runs__meta">
+                <span className="runs__id">{run.id}</span>
+                <span>{when(run.started_at)}</span>
+                <span>{duration(run.duration_s)}</span>
+              </span>
               <span className="runs__first">{firstCallerLine(run)}</span>
               {run.flag && <span className="runs__flag">Flagged: {run.flag}</span>}
             </button>

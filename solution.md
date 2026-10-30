@@ -20,7 +20,7 @@ A Prosper Copilot produces what the engineer would produce by hand.
 | Workflow | In | Out |
 | --- | --- | --- |
 | Implementation | Guidelines (pasted or `.md`/`.txt`) | The agent; a **coverage card** (each requirement, its source quote, the nodes that implement it); **questions for the client**, each with the safe default the agent follows meanwhile, and *Copy as email*. Paste the client's answers and the questions close. |
-| Iteration | An agent's production runs | **Findings** (cause, fix, run ids), a proposed edit, and a **replay** by a simulated caller of the cited runs plus a few that worked, on the old and new agent: "Fixed 5 of 6 failing calls · 3 of 3 working calls still work". |
+| Iteration | An agent's production runs | **Findings** (cause, fix, run ids), a proposed edit, and, if the engineer agrees to the cost, a **replay** by a simulated caller of the cited runs plus a few that worked, on the old and new agent: "Fixed 5 of 6 failing calls · 3 of 3 working calls still work". |
 
 Every change shows as a diff on the canvas.
 
@@ -47,7 +47,7 @@ flowchart LR
     Copilot --> Skills
     Copilot --> Tools
     Copilot -- "step · text · draft · findings · coverage · proposal" --> UI
-    UI -- "SSE POST /api/agents/{id}/replay" --> Replay
+    UI -- "SSE POST /api/agents/{id}/replay<br/>line · result" --> Replay
     UI -- "WebRTC call with agent_id" --> Runner
     Runner -- "load by agent_id" --> Files
     Runner -- "RTVI: transcript, node_changed" --> UI
@@ -63,6 +63,8 @@ An agent is one JSON document (a Pipecat Flows graph). The editor, the API, the 
 - **Claude Code embedded via the Agent SDK.** "Read the file, edit, run the checker, fix" is what it does with source code, and it brings editing, sessions and the tool loop. *Instead of:* a raw API loop that returns the whole JSON each turn.
 - **Small edits to a draft file, validation in the loop.** The model can only read and `Edit` the draft and must validate after its last edit, so diffs stay reviewable. 
 - **Review before apply.** *Instead of:* auto-apply.
+- **Replays stream line by line.** A replay takes several model turns, so the server sends each transcript line as it is spoken (a `line` event, then the `result` with the verdict). The engineer watches the simulated call unfold instead of a spinner, and can open a row mid-call. *Instead of:* waiting for the whole result.
+- **Replay is opt-in.** Each replayed call is about 15 small model calls, twice (before and after). The card under a proposal says how many calls it would replay and that it costs money; nothing runs until the engineer clicks. *Instead of:* replaying automatically when the Copilot proposes a fix.
 - **Text replay, not voice.** Seconds and cents per call, and it tests the graph, which is what a fix changes. Each run is played before and after, so a failure that reproduces on *before* shows the simulator is credible. *Instead of:* phone calls through the voice runner.
 
 ## How it was built

@@ -113,3 +113,10 @@ def test_unknown_function_is_reported_back_and_does_not_move():
     result = run(agent(), chat, ScriptedCaller("ok"), max_turns=2)
 
     assert [p["node"] for p in result.path] == ["greet"]
+
+
+def test_on_line_sees_every_transcript_line_in_order():
+    seen = []
+    result = run(agent(), FakeChat("Hello?"), ScriptedCaller("Never mind, bye. [HANGUP]"), on_line=seen.append)
+
+    assert seen == result.transcript and len(seen) == 2

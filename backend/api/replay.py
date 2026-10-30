@@ -18,8 +18,8 @@ router = APIRouter(prefix="/api/agents")
 
 MAX_PARALLEL = 4
 
-# Injected so endpoint tests use a fake and never reach OpenAI.
-ReplayFn = Callable[[dict, dict], Awaitable[dict]]
+# Injected so endpoint tests use a fake and never reach OpenAI. `on_line` is called with each transcript line as it happens.
+ReplayFn = Callable[..., Awaitable[dict]]
 
 
 def get_replay_fn() -> ReplayFn:
@@ -42,7 +42,10 @@ async def stream_replay(jobs: list, fn: ReplayFn):
         async with sem:
             await queue.put({"event": "started", "data": key})
             try:
-                result = await fn(agent, run)
+                def on_line(line: dict) -> None:
+                    queue.put_nowait({"event": "line", "data": {**key, **line}})
+
+                result = await fn(agent, run, on_line=on_line)
                 await queue.put({"event": "result", "data": {**key, **result}})
             except Exception as e:  # one failing job must not stop the others
                 await queue.put({"event": "error", "data": {**key, "message": f"Replay failed: {e}", "setup": False}})

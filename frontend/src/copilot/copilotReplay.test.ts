@@ -46,11 +46,17 @@ function held(events: ReplayEvent[]) {
   return { release, fn: (async function* () { await gate; yield* events; }) as ReplayStreamer };
 }
 
-describe("automatic replay", () => {
-  it("starts on done when the turn has findings and a proposal, with the cited and 3 working runs", async () => {
+/** The turn, then the user asking for the replay (it never starts on its own). */
+const sendAndReplay = async (message: string) => {
+  await useCopilotStore.getState().send("a", message, base);
+  void useCopilotStore.getState().replayCalls("a", chat().messages.length - 1);
+};
+
+describe("replay on request", () => {
+  it("replays the cited and 3 working runs when asked", async () => {
     const spy = replaying(async function* () { yield res("bad", "before", "abandoned", false); yield res("bad", "after"); yield res("good", "before"); yield res("good", "after"); yield { event: "done" }; });
     turn(proposalTurn);
-    await useCopilotStore.getState().send("a", "analyze", base);
+    await sendAndReplay("analyze");
     await vi.waitFor(() => expect(msg().replay?.status).toBe("done"));
     expect(spy.mock.calls[0].slice(0, 4)).toEqual(["a", base, proposed, ["bad", "good"]]);
     expect(msg().replay?.runs.bad).toMatchObject({ before: { outcome: "abandoned" }, after: { goal_met: true } });
@@ -58,6 +64,7 @@ describe("automatic replay", () => {
   });
 
   it.each([
+    ["findings and a proposal (it waits to be asked)", proposalTurn],
     ["no findings", [{ event: "proposal", agent: proposed, issues: [] }, { event: "done" }]],
     ["no proposal", [{ event: "findings", findings }, { event: "done" }]],
     ["an error", [{ event: "findings", findings }, { event: "proposal", agent: proposed, issues: [] }, { event: "error", message: "x" }, { event: "done" }]],
@@ -73,7 +80,7 @@ describe("automatic replay", () => {
   it("a setup error lands on the replay, not the turn", async () => {
     replaying(async function* () { yield { event: "error", message: "no key", setup: true }; yield { event: "done" }; });
     turn(proposalTurn);
-    await useCopilotStore.getState().send("a", "go", base);
+    await sendAndReplay("go");
     await vi.waitFor(() => expect(msg().replay?.status).toBe("done"));
     expect(msg().replay?.error).toEqual({ message: "no key", setup: true });
   });
@@ -83,7 +90,7 @@ describe("replayCalls and retry", () => {
   it("the button replays the runs that need attention when there are no findings", async () => {
     const spy = replaying(async function* () { yield { event: "done" }; });
     turn([{ event: "proposal", agent: proposed, issues: [] }, { event: "done" }]);
-    await useCopilotStore.getState().send("a", "go", base);
+    await sendAndReplay("go");
     await useCopilotStore.getState().replayCalls("a", 1);
     expect(spy.mock.calls[0][3]).toEqual(["bad"]);
   });
@@ -91,7 +98,7 @@ describe("replayCalls and retry", () => {
   it("a failure on one run is kept on that run and retry replays only it", async () => {
     replaying(async function* () { yield { event: "error", run_id: "good", version: "after", message: "boom" }; yield res("bad", "before", "abandoned", false); yield res("bad", "after"); yield { event: "done" }; });
     turn(proposalTurn);
-    await useCopilotStore.getState().send("a", "go", base);
+    await sendAndReplay("go");
     await vi.waitFor(() => expect(msg().replay?.status).toBe("done"));
     expect(msg().replay?.runs.good.error).toBe("boom");
     const spy = replaying(async function* () { yield res("good", "before"); yield res("good", "after"); yield { event: "done" }; });
@@ -108,7 +115,7 @@ describe("replay and the proposal", () => {
     const h = held([res("bad", "before", "abandoned", false), res("bad", "after"), { event: "done" }]);
     replaying(h.fn);
     turn(proposalTurn);
-    await useCopilotStore.getState().send("a", "go", base);
+    await sendAndReplay("go");
     await vi.waitFor(() => expect(msg().replay?.status).toBe("running"));
     useCopilotStore.getState().setProposalStatus("a", 1, "applied");
     expect(msg().replay?.status).toBe("running");
@@ -123,7 +130,7 @@ describe("persistence", () => {
     const h = held([]);
     replaying(async function* () { yield res("bad", "before", "abandoned", false); yield res("bad", "after"); await h.fn("a", base, proposed, [], new AbortController().signal)[Symbol.asyncIterator]().next(); });
     turn(proposalTurn);
-    await useCopilotStore.getState().send("a", "go", base);
+    await sendAndReplay("go");
     await vi.waitFor(() => expect(msg().replay?.runs.bad?.after).toBeDefined());
     const saved = loadChats().a.messages.at(-1) as { replay: ReplayState };
     expect(saved.replay.status).toBe("done");
@@ -131,5 +138,33 @@ describe("persistence", () => {
     expect(saved.replay.runs.good.error).toBeTruthy();
     expect(saved.replay.runs.bad.error).toBeUndefined();
     h.release();
+  });
+
+  it("keeps the lines of a version while it replays and drops them when its result arrives", async () => {
+    const line = (version: "before" | "after", text: string): ReplayEvent => ({ event: "line", run_id: "bad", version, speaker: "agent", text });
+    const h = held([line("after", "Hello"), line("after", "Again"), res("bad", "after"), { event: "done" }]);
+    replaying(h.fn);
+    turn(proposalTurn);
+    await sendAndReplay("analyze");
+    h.release();
+    await vi.waitFor(() => expect(msg().replay?.status).toBe("done"));
+    expect(msg().replay?.runs.bad.after).toBeDefined();
+    expect(msg().replay?.runs.bad.live?.after).toBeUndefined();
+  });
+
+  it("collects the lines in order while the result is pending", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    replaying(async function* () {
+      yield { event: "line", run_id: "bad", version: "after", speaker: "agent", text: "Hello" };
+      yield { event: "line", run_id: "bad", version: "after", speaker: "caller", text: "Hi" };
+      await gate;
+      yield { event: "done" };
+    });
+    turn(proposalTurn);
+    await sendAndReplay("analyze");
+    await vi.waitFor(() => expect(msg().replay?.runs.bad?.live?.after).toHaveLength(2));
+    expect(msg().replay?.runs.bad.live?.after).toEqual([{ speaker: "agent", text: "Hello" }, { speaker: "caller", text: "Hi" }]);
+    release();
   });
 });

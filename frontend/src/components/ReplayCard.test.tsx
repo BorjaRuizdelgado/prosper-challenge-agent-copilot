@@ -66,15 +66,57 @@ describe("summarizeReplay", () => {
   });
 });
 
+describe("asking the chat to replay", () => {
+  const ask = async (text: string) => {
+    const box = screen.getByRole("textbox", { name: "Message to the copilot" });
+    await userEvent.type(box, `${text}{Enter}`);
+  };
+
+  it("answers without calling the copilot and points at the card, which takes focus", async () => {
+    seed();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => runs }));
+    const send = vi.spyOn(useCopilotStore.getState(), "send");
+    renderApp(<CopilotPanel />);
+    await ask("please replicate the failing calls");
+    expect(send).not.toHaveBeenCalled();
+    expect(screen.getByRole("list", { name: "Conversation" })).toHaveTextContent(/costs money, so I have not started it/);
+    expect(card()).toHaveClass("replay--asked");
+    expect(within(card()).getByRole("button", { name: /^Replay \d+ calls?$/ })).toHaveFocus();
+  });
+
+  it("says so when the fix was already replayed", async () => {
+    seed({ status: "done", ids: ["r-bad"], runs: { "r-bad": { before: res("abandoned", false), after: res("completed", true) } } });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => runs }));
+    renderApp(<CopilotPanel />);
+    await ask("replay them");
+    expect(screen.getByRole("list", { name: "Conversation" })).toHaveTextContent("already replayed");
+    expect(card()).not.toHaveClass("replay--asked");
+  });
+
+  it("is left to the copilot when there is no pending proposal", () => {
+    expect(useCopilotStore.getState().askReplay("demo", "replay the calls")).toBe(false);
+  });
+
+  it("only treats replay requests as such", async () => {
+    const { asksForReplay } = await import("../copilot/copilotStore");
+    expect(asksForReplay("Replicate the calls please")).toBe(true);
+    expect(asksForReplay("can you replay it?")).toBe(true);
+    expect(asksForReplay("add a cancel node")).toBe(false);
+    expect(asksForReplay("replay")).toBe(false);
+  });
+});
+
 describe("ReplayCard", () => {
-  it("offers Replay calls when nothing was replayed, with the simulated label, and starts it", async () => {
+  it("asks before replaying, says what it costs, and starts only on the click", async () => {
     seed();
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => runs }));
     const calls: Array<Agent | null> = [];
     const restore = setReplayStreamer(async function* (_id, _b, proposal) { calls.push(proposal); yield { event: "done" }; });
     renderApp(<CopilotPanel />);
-    expect(within(card()).getByText("Simulated text calls")).toBeInTheDocument();
-    await userEvent.click(within(card()).getByRole("button", { name: "Replay calls" }));
+    expect(card()).toHaveTextContent(/Simulated text calls/);
+    expect(card()).toHaveTextContent(/cost money/);
+    expect(calls).toEqual([]);
+    await userEvent.click(within(card()).getByRole("button", { name: /^Replay \d+ calls?$/ }));
     restore();
     vi.unstubAllGlobals();
     expect(calls).toEqual([proposed]);

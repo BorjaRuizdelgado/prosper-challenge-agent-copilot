@@ -1,5 +1,5 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
-import { chatOf, type ChatMessage, useCopilotStore } from "../copilot/copilotStore";
+import { asksForReplay, chatOf, type ChatMessage, useCopilotStore } from "../copilot/copilotStore";
 import { useAgentStore } from "../store";
 import { CoverageCard } from "./CoverageCard";
 import { FindingsCard } from "./FindingsCard";
@@ -46,7 +46,7 @@ function Reply({ agentId, index, message, running, elapsed }: { agentId: string;
       {message.findings && <FindingsCard agentId={agentId} findings={message.findings} />}
       {message.coverage && <CoverageCard agentId={agentId} coverage={message.coverage} />}
       {message.proposal && <ProposalCard agentId={agentId} index={index} proposal={message.proposal} />}
-      {message.proposal && <ReplayCard agentId={agentId} index={index} proposal={message.proposal} replay={message.replay} />}
+      {message.proposal && <ReplayCard agentId={agentId} index={index} proposal={message.proposal} findings={message.findings} replay={message.replay} />}
       {message.stopped && <p className="copilot__note">Stopped.</p>}
       {message.error && (
         <p className="copilot__error" role="alert">
@@ -62,7 +62,7 @@ export function CopilotPanel() {
   const agentId = useAgentStore((s) => s.agentId);
   const agent = useAgentStore((s) => s.agent);
   const chat = useCopilotStore((s) => chatOf(s.chats, agentId));
-  const { send, stop, reset } = useCopilotStore.getState();
+  const { send, stop, reset, askReplay } = useCopilotStore.getState();
   const toggleCopilot = useAgentStore((s) => s.toggleCopilot);
   const [draft, setDraft] = useState("");
   const prefill = useCopilotStore((s) => s.prefill);
@@ -91,6 +91,7 @@ export function CopilotPanel() {
     const text = draft.trim();
     if (!text || chat.running) return;
     setDraft("");
+    if (asksForReplay(text) && askReplay(agentId, text)) return;
     void send(agentId, text, agent);
   };
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {

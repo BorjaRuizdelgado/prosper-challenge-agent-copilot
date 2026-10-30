@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { create } from "zustand";
 import { useCallStore } from "../call/callStore";
 import { chatOf, getReplayStreamer, useCopilotStore } from "../copilot/copilotStore";
-import type { Agent } from "../model";
+import type { Agent, RunLine } from "../model";
 import { type RunPath, runPath, useRunPath, useRunsStore } from "../runs/runsStore";
 import { useAgentStore } from "../store";
 import type { ReplayResult } from "./client";
@@ -12,6 +12,8 @@ export interface WorkingReplay {
   agentId: string;
   runId: string;
   status: "running" | "done" | "error";
+  /** The call as it is heard, until the result replaces it. */
+  lines?: RunLine[];
   result?: ReplayResult;
   error?: { message: string; setup: boolean };
 }
@@ -50,7 +52,8 @@ export const useReplayView = create<ReplayViewStore>((set, get) => ({
     try {
       for await (const e of getReplayStreamer()(agentId, agent, null, [runId], mine.signal)) {
         if (mine.signal.aborted) return;
-        if (e.event === "result") {
+        if (e.event === "line") update({ lines: [...(get().working?.lines ?? []), { speaker: e.speaker, text: e.text }] });
+        else if (e.event === "result") {
           const { run_id: _r, version: _v, event: _e, ...result } = e;
           got = true;
           update({ status: "done", result });

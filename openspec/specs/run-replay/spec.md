@@ -43,19 +43,23 @@ Each replayed run SHALL be played against the agent version a proposal was made 
 - **WHEN** the *before* replay of a failed run meets the caller's goal
 - **THEN** the run is marked as not reproduced and is not counted as fixed or failed
 
-### Requirement: Replay runs after a runs review
-When a copilot turn ends with findings and a proposal, the system SHALL replay, without a user action, every run the findings cite and up to three runs that worked. For any other proposal on an agent that has runs, the proposal SHALL offer "Replay calls", which replays the runs that need attention and up to three that worked. A run needs attention when it is flagged or ended `abandoned` or `stuck`, and worked when it ended `completed` or `transferred` without a flag.
+### Requirement: Replay runs on request
+A replay costs money (about 15 small model calls per replayed call, twice), so the system SHALL NOT start one on its own. A pending proposal on an agent that has runs SHALL offer a replay card that says how many calls would be replayed, that each is played on the current agent and on the fix, and that it uses the user's OpenAI key and costs money, with a button that starts it. When the turn has findings, the calls are every run the findings cite and up to three runs that worked; otherwise the runs that need attention and up to three that worked. A run needs attention when it is flagged or ended `abandoned` or `stuck`, and worked when it ended `completed` or `transferred` without a flag.
 
-#### Scenario: Automatic replay
+#### Scenario: Asked first
 - **WHEN** the copilot finishes *Analyze runs* on the scheduler with findings and a proposal
-- **THEN** a replay card appears under the proposal and fills in run by run, without the user clicking anything
+- **THEN** a replay card under the proposal asks whether to check the fix against those calls and says it costs money, and nothing is replayed until the user clicks its button, after which it fills in run by run
 
-#### Scenario: On request
+#### Scenario: Asked in the chat
+- **WHEN** the user types a request to replay or reproduce the calls while a proposal is pending
+- **THEN** the panel answers itself, without calling the copilot, that replaying costs money and has not started, and the proposal's replay card scrolls into view, stands out and takes focus on its button; if that proposal was already replayed the answer says so and points at the results
+
+#### Scenario: Ordinary edit
 - **WHEN** the user asks for an ordinary edit on a demo agent and gets a proposal
-- **THEN** the proposal offers "Replay calls", and nothing is replayed until it is clicked
+- **THEN** the same card is offered, and nothing is replayed until it is clicked
 
 ### Requirement: Replay results with the proposal
-The replay card SHALL show a summary (fixed out of failing, kept out of working, not reproduced) and one row per run with its original outcome, the *before* and *after* outcomes, and the reason. Opening a row SHALL show the *after* transcript and draw its path on the proposal on the canvas. Results SHALL stay with the proposal after a page reload. Replay SHALL NOT block Apply or Discard.
+The replay card SHALL show a summary (fixed out of failing, kept out of working, not reproduced) and one row per run with its original outcome, the *before* and *after* outcomes, and the reason. Opening a row SHALL show the *after* transcript, live while that replay is still running, and draw its path on the proposal on the canvas. Results SHALL stay with the proposal after a page reload. Replay SHALL NOT block Apply or Discard.
 
 #### Scenario: Summary
 - **WHEN** replay finishes on the scheduler review
@@ -70,7 +74,7 @@ The replay card SHALL show a summary (fixed out of failing, kept out of working,
 - **THEN** the proposal is applied as usual and the replays still finish and are shown
 
 ### Requirement: Replay one call against the working copy
-An open run in the Runs tab SHALL offer "Replay this call", which replays that run once against the editor's working copy, saved or not, and shows the outcome, whether the goal was met, the reason and the transcript, and draws the replay's path on the canvas. It SHALL be unavailable while a copilot draft is shown on the canvas.
+An open run in the Runs tab SHALL offer "Replay this call", which replays that run once against the editor's working copy, saved or not, and shows the transcript line by line while the call runs, then the outcome, whether the goal was met and the reason, and draws the replay's path on the canvas. It SHALL be unavailable while a copilot draft is shown on the canvas.
 
 #### Scenario: Manual fix checked
 - **WHEN** the user replays the scheduler's cancel run, adds a staff-handoff edge from the greeting by hand, and replays it again

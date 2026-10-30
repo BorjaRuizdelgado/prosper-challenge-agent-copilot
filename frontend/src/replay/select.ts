@@ -1,4 +1,4 @@
-import type { Finding, Run } from "../model";
+import type { Finding, Run, RunLine } from "../model";
 import type { ReplayResult } from "./client";
 
 /** How many working calls are replayed beside the cited ones, to show the fix did not break them. */
@@ -35,6 +35,8 @@ export type ReplayClass = "fixed" | "unfixed" | "kept" | "broken" | "not_reprodu
 export interface RunReplay {
   before?: ReplayResult;
   after?: ReplayResult;
+  /** Lines heard so far while a version is still replaying; dropped when its result arrives. */
+  live?: { before?: RunLine[]; after?: RunLine[] };
 }
 
 export interface ReplayScore {

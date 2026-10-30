@@ -1963,6 +1963,11 @@ button.issues__item:hover:not(:disabled) {
 }
 
 /* ---- replay card ---- */
+.replay--asked {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .replay__summary {
   margin: 0;
   font-weight: 600;
@@ -2319,10 +2324,23 @@ button.issues__item:hover:not(:disabled) {
 }
 
 .runs__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
   color: var(--muted);
   font-size: 12px;
   align-self: center;
   font-variant-numeric: tabular-nums;
+}
+
+.runs__id {
+  flex-basis: 100%;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.runs__meta > span:not(.runs__id) {
+  white-space: nowrap;
 }
 
 .runs__outcome {

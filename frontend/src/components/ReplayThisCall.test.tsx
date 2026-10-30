@@ -69,6 +69,25 @@ describe("Replay this call", () => {
     expect(calls).toEqual([[agent, null, ["r-cancel"]]]);
   });
 
+  it("shows the lines as they are heard, before the result", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    restores.push(setReplayStreamer(async function* () {
+      yield { event: "line", run_id: "r-cancel", version: "before", speaker: "agent", text: "Hi, how can I help?" };
+      await gate;
+      yield result(true);
+      yield { event: "done" };
+    }));
+    renderApp(<RunsPanel />);
+    await userEvent.click(replayButton());
+    const section = screen.getByRole("region", { name: "Replay this call" });
+    expect(await within(section).findByRole("list", { name: "Replay transcript" })).toHaveTextContent("Hi, how can I help?");
+    expect(within(section).queryByText("Goal met")).toBeNull();
+    release();
+    expect(await within(section).findByText("Goal met")).toBeInTheDocument();
+    expect(within(section).getAllByRole("list", { name: "Replay transcript" })).toHaveLength(1);
+  });
+
   it("draws the replay's path on the canvas, replacing the original run's, and clears it with the run", async () => {
     streaming([result(true)]);
     renderApp(<><RunsPanel /><PathProbe /></>);
@@ -100,5 +119,12 @@ describe("Replay this call", () => {
     renderApp(<RunsPanel />);
     expect(replayButton()).toBeDisabled();
     expect(screen.getByText("Apply or discard the copilot's draft first.")).toBeInTheDocument();
+  });
+});
+
+describe("Run ids", () => {
+  it("shows each run's id in the list, so the ids the copilot cites can be found", () => {
+    renderApp(<RunsPanel />);
+    expect(within(screen.getByRole("list", { name: "Runs" })).getByText("r-cancel")).toBeInTheDocument();
   });
 });

@@ -9,6 +9,7 @@ an ``end`` node) ends the call. Voice effects are not simulated.
 
 import json
 from dataclasses import dataclass, field
+from typing import Callable, Optional
 
 from agent_builder.schema import AgentConfig
 
@@ -25,14 +26,22 @@ class SimResult:
     ended: str = "stuck"  # "end" | "hangup" | "stuck"
 
 
-async def replay(agent: AgentConfig, caller, chat_client: ChatClient, max_turns: int = 20) -> SimResult:
-    """Run one call. ``caller`` has ``async reply(transcript) -> str``."""
+async def replay(
+    agent: AgentConfig, caller, chat_client: ChatClient, max_turns: int = 20, on_line: Optional[Callable[[dict], None]] = None
+) -> SimResult:
+    """Run one call. ``caller`` has ``async reply(transcript) -> str``; ``on_line`` sees each transcript line as it is added."""
     nodes = build_nodes(agent)
     result = SimResult()
     history: list = []  # OpenAI messages, without the system message
 
+    def add(speaker: str, text: str) -> None:
+        line = {"speaker": speaker, "text": text}
+        result.transcript.append(line)
+        if on_line:
+            on_line(line)
+
     def say(text: str) -> None:
-        result.transcript.append({"speaker": "agent", "text": text})
+        add("agent", text)
         history.append({"role": "assistant", "content": text})
 
     def enter(name: str, via: str = None, args: dict = None) -> NodeSpec:
@@ -56,7 +65,7 @@ async def replay(agent: AgentConfig, caller, chat_client: ChatClient, max_turns:
         )
         call = reply.tool_calls[0] if reply.tool_calls else None
         if reply.content:
-            result.transcript.append({"speaker": "agent", "text": reply.content})
+            add("agent", reply.content)
         assistant = {"role": "assistant", "content": reply.content}
         if call:
             assistant["tool_calls"] = [
@@ -89,10 +98,10 @@ async def replay(agent: AgentConfig, caller, chat_client: ChatClient, max_turns:
         if HANGUP in text:
             spoken = text.replace(HANGUP, "").strip()
             if spoken:
-                result.transcript.append({"speaker": "caller", "text": spoken})
+                add("caller", spoken)
             result.ended = "hangup"
             return result
-        result.transcript.append({"speaker": "caller", "text": text})
+        add("caller", text)
         history.append({"role": "user", "content": text})
 
     result.ended = "stuck"

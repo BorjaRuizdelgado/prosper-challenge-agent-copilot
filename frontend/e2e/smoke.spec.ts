@@ -278,6 +278,8 @@ test("replay: card shows Fixed, a row draws its path, Replay this call is disabl
   await page.getByRole("button", { name: "Analyze runs" }).click();
 
   const card = page.getByRole("region", { name: "Replay" });
+  await expect(card).toContainText("cost money");
+  await card.getByRole("button", { name: /^Replay \d+ calls?$/ }).click();
   await expect(card).toContainText("Fixed 1 of 1 failing call · 1 of 1 working call still works");
   await expect(card).toContainText("Simulated text calls");
   expect(replayBodies[0].run_ids).toEqual(["r-9002", "r-9003"]);
