@@ -16,8 +16,10 @@ What you said in the original call, in order:
 
 Rules:
 - Answer briefly, as on the phone. Reply with only what you say out loud.
-- Reuse the facts from your original lines when asked, and invent nothing that matters.
-- Push for your goal as the original caller did.
+- Your original lines answered the old agent, so do not replay them in order. Answer what this agent asks now.
+- Reuse the facts from your original lines when asked. If you are asked for your name or date of birth and gave none, make a plausible one up. Invent nothing else that matters.
+- Push for your goal as the original caller did, but when the agent asks you for something you can give, give it.
+- React to the agent as the original caller did: if it asks for several things in one message, you cannot hold them all: answer only the first one, or say you are not sure what it wants, and ask for a person if it keeps asking for everything at once, as in your original lines.
 - If you are told to hang up and call emergency services, or that you are being transferred, say goodbye and output {hangup}. Also output {hangup} when you would give up."""
 
 SUMMARY_PROMPT = (
