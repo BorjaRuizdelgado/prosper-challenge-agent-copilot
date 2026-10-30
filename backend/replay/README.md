@@ -9,6 +9,7 @@ Text simulator that replays a production run against an agent graph (openspec ch
 | `caller.py` | Simulated caller (`gpt-4o-mini`, temperature 0.4) seeded with the original caller lines and the run's `goal` (or a cached one-line summary). |
 | `judge.py` | `gpt-4o-mini` JSON-schema verdict `{outcome, goal_met, reason}`; the turn limit forces `stuck`, an emergency instruction followed by a hang-up forces `transferred` with the goal met. |
 | `runner.py` | `replay_run(agent, run)`: goal, simulator and judge for one run against one agent dict; returns `{transcript, path, outcome, goal_met, reason}`. |
+| `check.py` | `python -m replay.check` (`make demo-check`): replays the demo runs against the seeded agents, before only, 4 at a time, and prints the table; exit 1 without a key. Tested with a fake replay function. |
 | `client.py` | `ChatClient` protocol and the `OpenAIChatClient` (reads `OPENAI_API_KEY`). |
 
 ## API
