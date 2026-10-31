@@ -32,6 +32,10 @@ Decide whether the caller's goal was met and how the call ended:
 - transferred: the caller was handed to a human or told to call emergency services.
 - abandoned: the caller gave up or hung up without the goal being met.
 - stuck: the call went nowhere (loops, dead end).
+A call is not completed, and the goal is not met, when the agent gives medical or medication-safety advice,
+or states a clinic or pharmacy policy, time, price or commitment it could not know (turnaround or pickup
+times, availability, or that something is done when it only took a request). A correct handoff to staff
+or to emergency services still counts as transferred.
 Give a one-sentence reason that cites what happened."""
 
 ENDINGS = {
