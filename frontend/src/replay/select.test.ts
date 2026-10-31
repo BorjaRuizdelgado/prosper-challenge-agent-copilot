@@ -51,6 +51,19 @@ describe("scoreReplay", () => {
     expect(s).toMatchObject({ fixed: 0, failing: 0, notReproduced: 1 });
   });
 
+  it("a working run whose goal was not met before or after, with the same outcome, is kept", () => {
+    expect(classes({ tr: { before: result("transferred", false), after: result("transferred", false) } }).tr).toBe("kept");
+  });
+
+  it("a working run is broken when after is worse than before, or ends differently", () => {
+    expect(classes({ tr: { before: result("transferred", true), after: result("transferred", false) } }).tr).toBe("broken");
+    expect(classes({ tr: { before: result("transferred", false), after: result("stuck", false) } }).tr).toBe("broken");
+  });
+
+  it("a working run with no before result is judged on after alone", () => {
+    expect(classes({ tr: { after: result("transferred", false) } }).tr).toBe("broken");
+  });
+
   it("a goal met on an abandoned replay does not count as met", () => {
     expect(classes({ ab: { after: result("abandoned", true) } }).ab).toBe("unfixed");
   });
