@@ -64,9 +64,7 @@ def list_agents() -> list[dict]:
                 "id": path.stem,
                 "name": data.get("name", path.stem),
                 "node_count": len(data.get("nodes", [])),
-                "updated_at": datetime.fromtimestamp(
-                    path.stat().st_mtime, tz=UTC
-                ).isoformat(),
+                "updated_at": datetime.fromtimestamp(path.stat().st_mtime, tz=UTC).isoformat(),
             }
         )
     summaries.sort(key=lambda s: s["updated_at"], reverse=True)
@@ -111,9 +109,7 @@ def starter_agent(name: str) -> dict:
         "nodes": [
             {
                 "name": "greeting",
-                "task_messages": [
-                    {"role": "developer", "content": "Greet the caller and ask how you can help."}
-                ],
+                "task_messages": [{"role": "developer", "content": "Greet the caller and ask how you can help."}],
                 "edges": [],
             }
         ],

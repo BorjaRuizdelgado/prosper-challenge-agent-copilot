@@ -51,7 +51,18 @@ describe("FindingsCard", () => {
 
   it("has no card when the reply has no findings", () => {
     useCopilotStore.setState({
-      chats: { demo: { messages: [{ role: "user", text: "hi" }, { role: "assistant", text: "Hello.", steps: [] }], running: false, startedAt: null, focus: null, review: null } },
+      chats: {
+        demo: {
+          messages: [
+            { role: "user", text: "hi" },
+            { role: "assistant", text: "Hello.", steps: [] },
+          ],
+          running: false,
+          startedAt: null,
+          focus: null,
+          review: null,
+        },
+      },
     });
     renderApp(<CopilotPanel />);
     expect(screen.queryByRole("region", { name: "Findings" })).not.toBeInTheDocument();

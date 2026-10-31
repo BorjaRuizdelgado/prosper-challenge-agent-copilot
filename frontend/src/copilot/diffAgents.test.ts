@@ -44,9 +44,7 @@ test("a changed task text is reported with before and after", () => {
   const after = clone();
   after.nodes[0].task_messages![0].content = "Greet warmly.";
   const d = diffAgents(base, after);
-  expect(d.changedNodes).toEqual([
-    { name: "a", fields: [{ field: "task", before: "Greet the caller.", after: "Greet warmly." }] },
-  ]);
+  expect(d.changedNodes).toEqual([{ name: "a", fields: [{ field: "task", before: "Greet the caller.", after: "Greet warmly." }] }]);
   expect(d.changedEdges).toEqual([]);
 });
 
@@ -54,9 +52,7 @@ test("retargeting an edge is a change of that edge only", () => {
   const after = clone();
   after.nodes[0].edges![0].target = "a";
   const d = diffAgents(base, after);
-  expect(d.changedEdges).toEqual([
-    { id: "a::go", node: "a", function: "go", fields: [{ field: "target", before: "b", after: "a" }] },
-  ]);
+  expect(d.changedEdges).toEqual([{ id: "a::go", node: "a", function: "go", fields: [{ field: "target", before: "b", after: "a" }] }]);
   expect(d.changedNodes).toEqual([]);
 });
 

@@ -173,14 +173,12 @@ async def test_an_error_event_stops_the_check(agents_dir):
 
     rows, _ = await check_build.check("harbor-dental-reschedule", run)
 
-    assert [(p, r.id, r.ok) for p, r, in rows] == [("build", "turn", False)]
+    assert [(p, r.id, r.ok) for p, r in rows] == [("build", "turn", False)]
 
 
 def test_main_exit_codes_and_output(agents_dir, monkeypatch, capsys):
     monkeypatch.delenv("COPILOT_MODEL", raising=False)
-    good = scripted(
-        [coverage_event(GOOD_COVERAGE), proposal_event(GOOD_DRAFT)], [coverage_event(CLOSED), proposal_event(REPLY_DRAFT)]
-    )
+    good = scripted([coverage_event(GOOD_COVERAGE), proposal_event(GOOD_DRAFT)], [coverage_event(CLOSED), proposal_event(REPLY_DRAFT)])
     dump = agents_dir / "dump.json"
     assert check_build.main(["--model", "sonnet", "--dump", str(dump)], run=good) == 0
     assert json.loads(dump.read_text())["reply"]["changed_agent"] is True

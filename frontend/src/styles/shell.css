@@ -613,7 +613,6 @@ button:disabled {
   color: var(--muted);
 }
 
-
 /* ---- editor ---- */
 .editor {
   height: 100%;
@@ -2467,7 +2466,6 @@ button.issues__item:hover:not(:disabled) {
     gap: 32px;
     padding: 40px 24px;
   }
-
 }
 
 @media (max-width: 640px) {

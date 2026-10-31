@@ -6,7 +6,13 @@ const agent: Agent = {
   name: "x",
   initial_node: "a",
   nodes: [
-    { name: "a", edges: [{ function: "go", description: "", target: "b" }, { function: "bad", description: "", target: "zzz" }] },
+    {
+      name: "a",
+      edges: [
+        { function: "go", description: "", target: "b" },
+        { function: "bad", description: "", target: "zzz" },
+      ],
+    },
     { name: "b", end: true },
   ],
 };
@@ -27,7 +33,14 @@ describe("toReviewFlow", () => {
     name: "x",
     initial_node: "a",
     nodes: [
-      { name: "a", task_messages: [{ role: "system", content: "Hi" }], edges: [{ function: "go", description: "", target: "b" }, { function: "old", description: "", target: "b" }] },
+      {
+        name: "a",
+        task_messages: [{ role: "system", content: "Hi" }],
+        edges: [
+          { function: "go", description: "", target: "b" },
+          { function: "old", description: "", target: "b" },
+        ],
+      },
       { name: "b", edges: [{ function: "next", description: "", target: "gone" }] },
       { name: "gone" },
     ],
@@ -35,7 +48,14 @@ describe("toReviewFlow", () => {
   const after: Agent = {
     ...before,
     nodes: [
-      { name: "a", task_messages: [{ role: "system", content: "Hello" }], edges: [{ function: "go", description: "", target: "b" }, { function: "more", description: "", target: "c" }] },
+      {
+        name: "a",
+        task_messages: [{ role: "system", content: "Hello" }],
+        edges: [
+          { function: "go", description: "", target: "b" },
+          { function: "more", description: "", target: "c" },
+        ],
+      },
       { name: "b" },
       { name: "c" },
     ],

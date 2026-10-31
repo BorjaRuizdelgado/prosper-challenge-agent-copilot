@@ -12,9 +12,15 @@ function ProposalActions({ agentId, index }: { agentId: string; index: number })
   return (
     <>
       <span>Proposal</span>
-      <button type="button" className="primary" onClick={onApply}>Apply</button>
-      <button type="button" onClick={onDiscard}>Discard</button>
-      <button type="button" onClick={() => hide(agentId)}>Hide</button>
+      <button type="button" className="primary" onClick={onApply}>
+        Apply
+      </button>
+      <button type="button" onClick={onDiscard}>
+        Discard
+      </button>
+      <button type="button" onClick={() => hide(agentId)}>
+        Hide
+      </button>
       {dialog}
     </>
   );

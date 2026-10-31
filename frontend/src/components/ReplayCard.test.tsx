@@ -17,8 +17,14 @@ const proposed: Agent = { ...base, name: "b" };
 const run = (id: string, outcome: Run["outcome"]): Run => ({ id, outcome, started_at: "2026-01-01T00:00:00Z", duration_s: 1, transcript: [], path: [] });
 const runs = [run("r-bad", "abandoned"), run("r-good", "completed")];
 const res = (outcome: ReplayResult["outcome"], goal_met: boolean, reason = "because"): ReplayResult => ({
-  transcript: [{ speaker: "agent", text: "Hello there" }, { speaker: "caller", text: "Cancel please" }],
-  path: [{ node: "n" }, { node: "m", via: "go" }], outcome, goal_met, reason,
+  transcript: [
+    { speaker: "agent", text: "Hello there" },
+    { speaker: "caller", text: "Cancel please" },
+  ],
+  path: [{ node: "n" }, { node: "m", via: "go" }],
+  outcome,
+  goal_met,
+  reason,
 });
 
 function seed(replay?: ReplayState, status: "pending" | "applied" = "pending") {
@@ -29,7 +35,10 @@ function seed(replay?: ReplayState, status: "pending" | "applied" = "pending") {
           { role: "user", text: "go" },
           { role: "assistant", text: "Done.", steps: [], proposal: { agent: proposed, issues: [], base, status }, ...(replay && { replay }) },
         ],
-        running: false, startedAt: null, focus: null, review: null,
+        running: false,
+        startedAt: null,
+        focus: null,
+        review: null,
       },
     },
   });
@@ -49,19 +58,31 @@ const card = () => screen.getByRole("region", { name: "Replay" });
 describe("summarizeReplay", () => {
   it("reads like the spec example", () => {
     const replay: ReplayState = {
-      status: "done", ids: ["r-bad", "r-good"],
-      runs: { "r-bad": { before: res("abandoned", false), after: res("completed", true) }, "r-good": { before: res("completed", true), after: res("completed", true) } },
+      status: "done",
+      ids: ["r-bad", "r-good"],
+      runs: {
+        "r-bad": { before: res("abandoned", false), after: res("completed", true) },
+        "r-good": { before: res("completed", true), after: res("completed", true) },
+      },
     };
     expect(summarizeReplay(scoreReplay(runs, replay.runs), replay)).toBe("Fixed 1 of 1 failing call · 1 of 1 working call still works");
   });
 
   it("counts broken and not reproduced, and shows progress while running", () => {
     const replay: ReplayState = {
-      status: "done", ids: ["r-bad", "r-good"],
-      runs: { "r-bad": { before: res("completed", true), after: res("completed", true) }, "r-good": { before: res("completed", true), after: res("stuck", false) } },
+      status: "done",
+      ids: ["r-bad", "r-good"],
+      runs: {
+        "r-bad": { before: res("completed", true), after: res("completed", true) },
+        "r-good": { before: res("completed", true), after: res("stuck", false) },
+      },
     };
     expect(summarizeReplay(scoreReplay(runs, replay.runs), replay)).toBe("0 of 1 working call still work · 1 broken · 1 not reproduced");
-    const running: ReplayState = { status: "running", ids: ["r-bad", "r-good"], runs: { "r-bad": { before: res("stuck", false), after: res("completed", true) } } };
+    const running: ReplayState = {
+      status: "running",
+      ids: ["r-bad", "r-good"],
+      runs: { "r-bad": { before: res("stuck", false), after: res("completed", true) } },
+    };
     expect(summarizeReplay(scoreReplay(runs, running.runs), running)).toBe("Replaying 2 calls… 1 of 2 done");
   });
 });
@@ -111,7 +132,10 @@ describe("ReplayCard", () => {
     seed();
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => runs }));
     const calls: Array<Agent | null> = [];
-    const restore = setReplayStreamer(async function* (_id, _b, proposal) { calls.push(proposal); yield { event: "done" }; });
+    const restore = setReplayStreamer(async function* (_id, _b, proposal) {
+      calls.push(proposal);
+      yield { event: "done" };
+    });
     renderApp(<CopilotPanel />);
     expect(card()).toHaveTextContent(/Simulated text calls/);
     expect(card()).toHaveTextContent(/cost money/);
@@ -130,8 +154,12 @@ describe("ReplayCard", () => {
 
   it("shows the summary and one row per run with outcomes, verdict and reason", () => {
     seed({
-      status: "done", ids: ["r-bad", "r-good"],
-      runs: { "r-bad": { before: res("abandoned", false, "no cancel path"), after: res("transferred", true, "handed to staff") }, "r-good": { before: res("completed", true), after: res("completed", true) } },
+      status: "done",
+      ids: ["r-bad", "r-good"],
+      runs: {
+        "r-bad": { before: res("abandoned", false, "no cancel path"), after: res("transferred", true, "handed to staff") },
+        "r-good": { before: res("completed", true), after: res("completed", true) },
+      },
     });
     renderApp(<CopilotPanel />);
     expect(within(card()).getByText("Fixed 1 of 1 failing call · 1 of 1 working call still works")).toBeInTheDocument();

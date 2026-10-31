@@ -37,8 +37,7 @@ const sendJson = (method: string, body?: unknown): RequestInit => ({
 
 export const listAgents = () => request<AgentSummary[]>("/api/agents", {}, "Could not load agents");
 
-export const getAgent = (id: string) =>
-  request<AgentRecord>(`/api/agents/${id}`, {}, "Could not load the agent");
+export const getAgent = (id: string) => request<AgentRecord>(`/api/agents/${id}`, {}, "Could not load the agent");
 
 export const createAgent = (name: string, guidelines?: string) =>
   request<AgentRecord>("/api/agents", sendJson("POST", guidelines === undefined ? { name } : { name, guidelines }), "Could not create the agent");
@@ -55,25 +54,19 @@ export const saveGuidelines = (id: string, text: string) =>
   request<GuidelinesText>(`/api/agents/${id}/guidelines`, sendJson("PUT", { text }), "Could not save the guidelines");
 
 /** Sample client guidelines for the dialog's *Use sample: ...* buttons; `reply` is the sample client reply. */
-export const listSampleGuidelines = () =>
-  request<SampleGuidelines[]>("/api/demo/guidelines", {}, "Could not load the sample guidelines");
+export const listSampleGuidelines = () => request<SampleGuidelines[]>("/api/demo/guidelines", {}, "Could not load the sample guidelines");
 
-export const duplicateAgent = (id: string) =>
-  request<AgentRecord>(`/api/agents/${id}/duplicate`, sendJson("POST"), "Could not duplicate the agent");
+export const duplicateAgent = (id: string) => request<AgentRecord>(`/api/agents/${id}/duplicate`, sendJson("POST"), "Could not duplicate the agent");
 
-export const deleteAgent = (id: string) =>
-  request<void>(`/api/agents/${id}`, { method: "DELETE" }, "Could not delete the agent");
+export const deleteAgent = (id: string) => request<void>(`/api/agents/${id}`, { method: "DELETE" }, "Could not delete the agent");
 
-export const saveAgent = (id: string, agent: Agent) =>
-  request<AgentRecord>(`/api/agents/${id}`, sendJson("PUT", agent), "Could not save the agent");
+export const saveAgent = (id: string, agent: Agent) => request<AgentRecord>(`/api/agents/${id}`, sendJson("PUT", agent), "Could not save the agent");
 
 /** Production runs of an agent, newest first; empty when it has none. */
-export const listRuns = (agentId: string) =>
-  request<Run[]>(`/api/agents/${agentId}/runs`, {}, "Could not load the runs");
+export const listRuns = (agentId: string) => request<Run[]>(`/api/agents/${agentId}/runs`, {}, "Could not load the runs");
 
 /** Runs the backend's validation rules over a working copy that need not be saved. */
-export const validateAgent = (agent: Agent) =>
-  request<Issue[]>("/api/agents/validate", sendJson("POST", agent), "Could not validate the agent");
+export const validateAgent = (agent: Agent) => request<Issue[]>("/api/agents/validate", sendJson("POST", agent), "Could not validate the agent");
 
 /** Rename by re-saving the stored document with a new name. */
 export async function renameAgent(id: string, name: string): Promise<AgentRecord> {

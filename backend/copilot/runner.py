@@ -44,10 +44,7 @@ warnings.filterwarnings("ignore", category=CanUseToolShadowedWarning)
 
 Event = dict  # {"event": "step" | "text" | "findings" | "coverage" | "draft" | "proposal" | "done" | "error", "data": {...}}
 
-SETUP_MESSAGE = (
-    "The copilot needs Claude Code: install the `claude` CLI and log in with it, "
-    "or set ANTHROPIC_API_KEY in the API's environment."
-)
+SETUP_MESSAGE = "The copilot needs Claude Code: install the `claude` CLI and log in with it, or set ANTHROPIC_API_KEY in the API's environment."
 SETUP_ERRORS = {"authentication_failed", "billing_error"}
 FILE_TOOLS = "Read|Edit|Write"
 EDIT_TOOLS = {"Edit", "Write"}

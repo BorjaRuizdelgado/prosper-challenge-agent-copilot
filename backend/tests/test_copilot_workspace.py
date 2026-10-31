@@ -51,8 +51,12 @@ def test_read_missing_draft_raises():
 
 
 RUN = {
-    "id": "r-1", "started_at": "2026-10-21T09:14:00Z", "duration_s": 30, "outcome": "completed",
-    "transcript": [{"speaker": "caller", "text": "Hi"}], "path": [{"node": "a"}],
+    "id": "r-1",
+    "started_at": "2026-10-21T09:14:00Z",
+    "duration_s": 30,
+    "outcome": "completed",
+    "transcript": [{"speaker": "caller", "text": "Hi"}],
+    "path": [{"node": "a"}],
 }
 
 

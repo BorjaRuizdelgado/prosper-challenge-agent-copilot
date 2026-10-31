@@ -16,9 +16,7 @@ def test_create_with_guidelines_and_get(client):
 def test_create_with_oversize_guidelines_is_422(client, agents_dir):
     big = "x" * (app_module.MAX_GUIDELINES_CHARS + 1)
     assert client.post("/api/agents", json={"name": "Big", "guidelines": big}).status_code == 422
-    assert client.get("/api/agents").json() == [] or all(
-        a["name"] != "Big" for a in client.get("/api/agents").json()
-    )
+    assert client.get("/api/agents").json() == [] or all(a["name"] != "Big" for a in client.get("/api/agents").json())
 
 
 def test_put_guidelines_replaces_text(client):

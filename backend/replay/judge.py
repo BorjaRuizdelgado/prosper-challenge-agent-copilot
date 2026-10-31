@@ -63,10 +63,7 @@ def emergency_hangup(sim: SimResult) -> bool:
 
 
 async def judge(goal: str, original: list, sim: SimResult, chat_client: ChatClient) -> dict:
-    user = (
-        f"Caller's goal: {goal}\n\nOriginal call:\n{_text(original)}\n\n"
-        f"Replayed call:\n{_text(sim.transcript)}\n\nHow it ended: {ENDINGS[sim.ended]}"
-    )
+    user = f"Caller's goal: {goal}\n\nOriginal call:\n{_text(original)}\n\nReplayed call:\n{_text(sim.transcript)}\n\nHow it ended: {ENDINGS[sim.ended]}"
     out = await chat_client.chat(
         model=JUDGE_MODEL,
         messages=[{"role": "system", "content": SYSTEM}, {"role": "user", "content": user}],

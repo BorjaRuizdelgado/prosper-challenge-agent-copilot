@@ -15,13 +15,7 @@ export function Dialog({ title, onClose, children }: Props) {
 
   return (
     <div className="dialog-backdrop" onMouseDown={onClose}>
-      <div
-        className="dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
+      <div className="dialog" role="dialog" aria-modal="true" aria-label={title} onMouseDown={(e) => e.stopPropagation()}>
         <h2 className="dialog__title">{title}</h2>
         {children}
       </div>

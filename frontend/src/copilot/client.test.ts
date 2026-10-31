@@ -23,9 +23,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("parseSse", () => {
   it("parses whole events", async () => {
-    const events = await collect(
-      parseSse(body('event: step\ndata: {"label":"Reading agent"}\n\nevent: done\ndata: {}\n\n')),
-    );
+    const events = await collect(parseSse(body('event: step\ndata: {"label":"Reading agent"}\n\nevent: done\ndata: {}\n\n')));
     expect(events).toEqual([{ event: "step", label: "Reading agent" }, { event: "done" }]);
   });
 
@@ -45,9 +43,7 @@ describe("parseSse", () => {
   });
 
   it("joins events split across chunks, even mid-line and mid-separator", async () => {
-    const events = await collect(
-      parseSse(body('event: te', 'xt\ndata: {"delta":"Hel', 'lo"}\n', '\nevent: text\ndata: {"delta":" you"}\n\n')),
-    );
+    const events = await collect(parseSse(body("event: te", 'xt\ndata: {"delta":"Hel', 'lo"}\n', '\nevent: text\ndata: {"delta":" you"}\n\n')));
     expect(events).toEqual([
       { event: "text", delta: "Hello" },
       { event: "text", delta: " you" },
@@ -81,9 +77,9 @@ describe("parseSse", () => {
 
 describe("streamCopilot", () => {
   it("posts the message and working copy and yields typed events", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(body('event: proposal\ndata: {"agent":{"name":"b"},"issues":[]}\n\nevent: done\ndata: {}\n\n'), { status: 200 }),
-    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(body('event: proposal\ndata: {"agent":{"name":"b"},"issues":[]}\n\nevent: done\ndata: {}\n\n'), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
     const events = await collect(streamCopilot("my agent", "hi", agent));
     expect(events).toEqual([{ event: "proposal", agent: { name: "b" }, issues: [] }, { event: "done" }]);
@@ -95,25 +91,22 @@ describe("streamCopilot", () => {
 
   it("reports a running turn (409) and other failures as error events", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}", { status: 409 })));
-    expect(await collect(streamCopilot("a", "hi", agent))).toEqual([
-      { event: "error", message: "The copilot is already working on this agent." },
-    ]);
+    expect(await collect(streamCopilot("a", "hi", agent))).toEqual([{ event: "error", message: "The copilot is already working on this agent." }]);
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}", { status: 500 })));
-    expect(await collect(streamCopilot("a", "hi", agent))).toEqual([
-      { event: "error", message: "The copilot request failed (500)." },
-    ]);
+    expect(await collect(streamCopilot("a", "hi", agent))).toEqual([{ event: "error", message: "The copilot request failed (500)." }]);
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("down")));
-    expect(await collect(streamCopilot("a", "hi", agent))).toEqual([
-      { event: "error", message: "Could not reach the API. Is it running?" },
-    ]);
+    expect(await collect(streamCopilot("a", "hi", agent))).toEqual([{ event: "error", message: "Could not reach the API. Is it running?" }]);
   });
 
   it("ends quietly when aborted", async () => {
     const controller = new AbortController();
-    vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => {
-      controller.abort();
-      throw new DOMException("aborted", "AbortError");
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(async () => {
+        controller.abort();
+        throw new DOMException("aborted", "AbortError");
+      }),
+    );
     expect(await collect(streamCopilot("a", "hi", agent, controller.signal))).toEqual([]);
   });
 });

@@ -96,6 +96,7 @@ def edit_draft(change):
         draft = workspace.read_draft("clinic")
         change(draft)
         workspace.draft_path("clinic").write_text(json.dumps(draft, indent=2))
+
     return apply
 
 
@@ -107,18 +108,20 @@ async def test_turn_with_a_change_streams_steps_text_draft_and_proposal():
     def retask(d):
         d["nodes"][1]["task_messages"] = ["Say goodbye."]
 
-    events = await collect([
-        tool_use("1", "Read", file_path="drafts/clinic.json"),
-        tool_result("1"),
-        text_delta("Changed "),
-        tool_use("2", "Edit", old_string="Bye.", new_string="Say goodbye."),
-        edit_draft(retask),
-        tool_result("2"),
-        tool_use("3", "mcp__copilot__validate_agent"),
-        tool_result("3", [{"type": "text", "text": "0 issues"}]),
-        text_delta("the goodbye."),
-        result(),
-    ])
+    events = await collect(
+        [
+            tool_use("1", "Read", file_path="drafts/clinic.json"),
+            tool_result("1"),
+            text_delta("Changed "),
+            tool_use("2", "Edit", old_string="Bye.", new_string="Say goodbye."),
+            edit_draft(retask),
+            tool_result("2"),
+            tool_use("3", "mcp__copilot__validate_agent"),
+            tool_result("3", [{"type": "text", "text": "0 issues"}]),
+            text_delta("the goodbye."),
+            result(),
+        ]
+    )
     assert names(events) == ["step", "text", "step", "draft", "step", "text", "proposal", "done"]
     assert events[0]["data"] == {"label": "Reading agent"}
     assert events[1]["data"] == {"delta": "Changed "}
@@ -145,14 +148,16 @@ async def test_unchanged_or_unparseable_drafts_are_not_sent():
     def break_json():
         workspace.draft_path("clinic").write_text('{"name": ')
 
-    events = await collect([
-        tool_use("1", "Edit", old_string="x", new_string="y"),
-        tool_result("1"),  # draft still equals the input
-        tool_use("2", "Edit", old_string="x", new_string="y"),
-        break_json,
-        tool_result("2"),
-        result(),
-    ])
+    events = await collect(
+        [
+            tool_use("1", "Edit", old_string="x", new_string="y"),
+            tool_result("1"),  # draft still equals the input
+            tool_use("2", "Edit", old_string="x", new_string="y"),
+            break_json,
+            tool_result("2"),
+            result(),
+        ]
+    )
     assert "draft" not in names(events)
     assert names(events)[-1] == "error"  # the final draft does not parse: no proposal
 
@@ -280,15 +285,17 @@ async def test_prompt_points_at_the_runs_file_of_an_agent_with_runs(tmp_path, mo
     runs_dir = tmp_path / "runs-data"
     runs_dir.mkdir()
     run = {
-        "id": "r-1", "started_at": "2026-10-21T09:14:00Z", "duration_s": 30, "outcome": "stuck",
-        "transcript": [{"speaker": "caller", "text": "Hello?"}], "path": [{"node": "a"}],
+        "id": "r-1",
+        "started_at": "2026-10-21T09:14:00Z",
+        "duration_s": 30,
+        "outcome": "stuck",
+        "transcript": [{"speaker": "caller", "text": "Hello?"}],
+        "path": [{"node": "a"}],
     }
     (runs_dir / "clinic.json").write_text(json.dumps([run]))
     monkeypatch.setenv("RUNS_DIR", str(runs_dir))
     await collect([result()])
-    assert FakeClient.instances[0].prompt == (
-        "The agent draft is drafts/clinic.json. Its production runs are in runs/clinic.txt.\n\ndo it"
-    )
+    assert FakeClient.instances[0].prompt == ("The agent draft is drafts/clinic.json. Its production runs are in runs/clinic.txt.\n\ndo it")
     assert "run r-1 · stuck · 30s" in (workspace.workspace_dir() / "runs" / "clinic.txt").read_text()
 
 
@@ -309,14 +316,16 @@ async def test_findings_are_sent_after_their_step_and_before_the_proposal():
     def retask(d):
         d["nodes"][1]["task_messages"] = ["Say goodbye."]
 
-    events = await collect([
-        tool_use("1", "mcp__copilot__report_findings", findings=FINDINGS),
-        tool_result("1", [{"type": "text", "text": "Recorded 1 finding"}]),
-        tool_use("2", "Edit", old_string="Bye.", new_string="Say goodbye."),
-        edit_draft(retask),
-        tool_result("2"),
-        result(),
-    ])
+    events = await collect(
+        [
+            tool_use("1", "mcp__copilot__report_findings", findings=FINDINGS),
+            tool_result("1", [{"type": "text", "text": "Recorded 1 finding"}]),
+            tool_use("2", "Edit", old_string="Bye.", new_string="Say goodbye."),
+            edit_draft(retask),
+            tool_result("2"),
+            result(),
+        ]
+    )
     assert names(events) == ["step", "findings", "step", "draft", "proposal", "done"]
     assert events[0]["data"] == {"label": "Reporting 1 finding"}
     assert events[1]["data"] == {"findings": FINDINGS}
@@ -324,13 +333,15 @@ async def test_findings_are_sent_after_their_step_and_before_the_proposal():
 
 async def test_a_rejected_findings_call_sends_no_findings_and_the_retry_wins():
     corrected = [{**FINDINGS[0], "runs": ["r-2"]}]
-    events = await collect([
-        tool_use("1", "mcp__copilot__report_findings", findings=FINDINGS),
-        tool_result("1", "Unknown run ids: r-1.", True),
-        tool_use("2", "mcp__copilot__report_findings", findings=corrected),
-        tool_result("2", "Recorded 1 finding"),
-        result(),
-    ])
+    events = await collect(
+        [
+            tool_use("1", "mcp__copilot__report_findings", findings=FINDINGS),
+            tool_result("1", "Unknown run ids: r-1.", True),
+            tool_use("2", "mcp__copilot__report_findings", findings=corrected),
+            tool_result("2", "Recorded 1 finding"),
+            result(),
+        ]
+    )
     assert names(events) == ["step", "step", "findings", "done"]
     assert events[2]["data"] == {"findings": corrected}
 
@@ -338,9 +349,7 @@ async def test_a_rejected_findings_call_sends_no_findings_and_the_retry_wins():
 async def test_prompt_points_at_the_guidelines_file_of_an_agent_with_guidelines(tmp_path, monkeypatch):
     store.save_guidelines("clinic", "# Maple\nBook visits.")
     await collect([result()])
-    assert FakeClient.instances[0].prompt == (
-        "The agent draft is drafts/clinic.json. The client's guidelines are in guidelines/clinic.md.\n\ndo it"
-    )
+    assert FakeClient.instances[0].prompt == ("The agent draft is drafts/clinic.json. The client's guidelines are in guidelines/clinic.md.\n\ndo it")
     assert (workspace.workspace_dir() / "guidelines" / "clinic.md").read_text() == "# Maple\nBook visits."
 
 
@@ -366,14 +375,16 @@ async def test_coverage_event_order_is_step_coverage_proposal_done():
     def retask(d):
         d["nodes"][1]["task_messages"] = ["Say goodbye."]
 
-    events = await collect([
-        tool_use("1", "Edit", old_string="Bye.", new_string="Say goodbye."),
-        edit_draft(retask),
-        tool_result("1"),
-        tool_use("2", "mcp__copilot__report_coverage", **COVERAGE),
-        tool_result("2", [{"type": "text", "text": "Recorded coverage: 2 of 2 requirements, 1 question"}]),
-        result(),
-    ])
+    events = await collect(
+        [
+            tool_use("1", "Edit", old_string="Bye.", new_string="Say goodbye."),
+            edit_draft(retask),
+            tool_result("1"),
+            tool_use("2", "mcp__copilot__report_coverage", **COVERAGE),
+            tool_result("2", [{"type": "text", "text": "Recorded coverage: 2 of 2 requirements, 1 question"}]),
+            result(),
+        ]
+    )
     assert names(events) == ["step", "draft", "step", "coverage", "proposal", "done"]
     assert events[2]["data"] == {"label": "Reporting coverage (2/2)"}
     assert events[3]["data"] == COVERAGE
@@ -381,13 +392,15 @@ async def test_coverage_event_order_is_step_coverage_proposal_done():
 
 async def test_a_rejected_coverage_call_sends_no_coverage_and_the_retry_wins():
     corrected = {**COVERAGE, "questions": []}
-    events = await collect([
-        tool_use("1", "mcp__copilot__report_coverage", **COVERAGE),
-        tool_result("1", "Requirement r2 is a default but no question asks about it.", True),
-        tool_use("2", "mcp__copilot__report_coverage", **corrected),
-        tool_result("2", "Recorded coverage"),
-        result(),
-    ])
+    events = await collect(
+        [
+            tool_use("1", "mcp__copilot__report_coverage", **COVERAGE),
+            tool_result("1", "Requirement r2 is a default but no question asks about it.", True),
+            tool_use("2", "mcp__copilot__report_coverage", **corrected),
+            tool_result("2", "Recorded coverage"),
+            result(),
+        ]
+    )
     assert names(events) == ["step", "step", "coverage", "done"]
     assert events[2]["data"] == corrected
 

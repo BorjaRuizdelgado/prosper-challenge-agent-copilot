@@ -48,9 +48,11 @@ from copilot import runner
 
 agent = json.load(open("example_flow.json"))
 
+
 async def main():
     async for e in runner.run_turn("demo", "Add a goodbye sentence to the end node.", agent):
         print(e)
+
 
 asyncio.run(main())
 ```

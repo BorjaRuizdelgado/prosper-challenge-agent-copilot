@@ -26,7 +26,19 @@ function useElapsed(startedAt: number | null): number {
   return startedAt === null ? 0 : Math.max(0, Math.floor((now - startedAt) / 1000));
 }
 
-function Reply({ agentId, index, message, running, elapsed }: { agentId: string; index: number; message: Extract<ChatMessage, { role: "assistant" }>; running: boolean; elapsed: number }) {
+function Reply({
+  agentId,
+  index,
+  message,
+  running,
+  elapsed,
+}: {
+  agentId: string;
+  index: number;
+  message: Extract<ChatMessage, { role: "assistant" }>;
+  running: boolean;
+  elapsed: number;
+}) {
   return (
     <li className="copilot__msg copilot__msg--assistant">
       {message.steps.length > 0 && (
@@ -158,25 +170,25 @@ export function CopilotPanel() {
         }}
       >
         <div className="copilot__composer">
-        <textarea
-          ref={input}
-          aria-label="Message to the copilot"
-          rows={3}
-          value={draft}
-          disabled={chat.running}
-          placeholder="Ask the copilot to build or change this agent…"
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={onKeyDown}
-        />
-        {chat.running ? (
-          <button type="button" onClick={() => stop(agentId)}>
-            Stop
-          </button>
-        ) : (
-          <button type="submit" className="primary" disabled={!draft.trim()}>
-            Send
-          </button>
-        )}
+          <textarea
+            ref={input}
+            aria-label="Message to the copilot"
+            rows={3}
+            value={draft}
+            disabled={chat.running}
+            placeholder="Ask the copilot to build or change this agent…"
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={onKeyDown}
+          />
+          {chat.running ? (
+            <button type="button" onClick={() => stop(agentId)}>
+              Stop
+            </button>
+          ) : (
+            <button type="submit" className="primary" disabled={!draft.trim()}>
+              Send
+            </button>
+          )}
         </div>
       </form>
     </div>

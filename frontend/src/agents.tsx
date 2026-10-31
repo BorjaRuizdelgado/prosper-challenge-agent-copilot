@@ -6,10 +6,7 @@ import { useToast } from "./components/Toasts";
 import { BUILD_FROM_GUIDELINES, useCopilotStore } from "./copilot/copilotStore";
 import { useAgentStore } from "./store";
 
-type State =
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "ready"; agents: AgentSummary[] };
+type State = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; agents: AgentSummary[] };
 
 interface AgentsApi {
   state: State;
@@ -68,9 +65,7 @@ export function AgentsProvider({ children }: { children: ReactNode }) {
             ? {
                 status: "ready",
                 agents: list.agents.map((a) =>
-                  a.id === agentId
-                    ? { ...a, name: agent.name, node_count: agent.nodes.length, updated_at: new Date().toISOString() }
-                    : a,
+                  a.id === agentId ? { ...a, name: agent.name, node_count: agent.nodes.length, updated_at: new Date().toISOString() } : a,
                 ),
               }
             : list,
@@ -79,8 +74,7 @@ export function AgentsProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const update = (fn: (agents: AgentSummary[]) => AgentSummary[]) =>
-    setState((s) => (s.status === "ready" ? { status: "ready", agents: fn(s.agents) } : s));
+  const update = (fn: (agents: AgentSummary[]) => AgentSummary[]) => setState((s) => (s.status === "ready" ? { status: "ready", agents: fn(s.agents) } : s));
 
   // Optimistically apply `change`, restore the previous list and toast if the call fails.
   const optimistic = async (change: (a: AgentSummary[]) => AgentSummary[], call: () => Promise<unknown>) => {

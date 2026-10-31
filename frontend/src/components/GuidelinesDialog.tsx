@@ -12,7 +12,10 @@ const UNSUPPORTED = "Only text and Markdown files (.md, .txt) are supported.";
 
 const isText = (file: File) => /\.(md|markdown|txt)$/i.test(file.name);
 const titleOf = (fileName: string) =>
-  fileName.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  fileName
+    .replace(/\.[^.]+$/, "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 
 /** Creates an agent from client guidelines: a name, the text (typed, dropped as a .md/.txt file, or a sample). */
 export function GuidelinesDialog({ onSubmit, onClose }: Props) {

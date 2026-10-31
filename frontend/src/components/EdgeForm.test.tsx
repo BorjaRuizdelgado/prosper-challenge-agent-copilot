@@ -21,8 +21,7 @@ const agent = (): Agent => ({
   ],
 });
 
-const edge = (fn = "choose") =>
-  useAgentStore.getState().agent!.nodes[0].edges!.find((e) => e.function === fn)!;
+const edge = (fn = "choose") => useAgentStore.getState().agent!.nodes[0].edges!.find((e) => e.function === fn)!;
 
 beforeEach(() => {
   useAgentStore.setState({

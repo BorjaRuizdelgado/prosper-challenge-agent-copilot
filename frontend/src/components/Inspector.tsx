@@ -20,7 +20,9 @@ function AgentOverview() {
         <IssuesPanel />
       </section>
       <section className="overview__section" aria-labelledby="overview-settings">
-        <h2 id="overview-settings" className="panel__title">Agent settings</h2>
+        <h2 id="overview-settings" className="panel__title">
+          Agent settings
+        </h2>
         <SettingsForm />
       </section>
     </div>
@@ -53,10 +55,7 @@ export function Inspector() {
   const positions = useAgentStore((s) => s.positions);
   const review = useCopilotStore((s) => chatOf(s.chats, agentId).review);
   // The draft includes the items it removes, so those can be inspected too.
-  const agent = useMemo(
-    () => (review ? toReviewFlow(review.base, review.agent, positions).agent : workingCopy),
-    [review, positions, workingCopy],
-  );
+  const agent = useMemo(() => (review ? toReviewFlow(review.base, review.agent, positions).agent : workingCopy), [review, positions, workingCopy]);
   if (!agent) return null;
   if (!selection) return <AgentOverview />;
 

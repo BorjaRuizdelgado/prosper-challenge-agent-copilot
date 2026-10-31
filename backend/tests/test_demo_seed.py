@@ -9,9 +9,7 @@ def test_first_seed_writes_every_demo_agent(agents_dir):
 
     assert sorted(ids) == sorted(p.stem for p in seed.DEMO_AGENTS_DIR.glob("*.json"))
     for agent_id in ids:
-        assert store.get_agent(agent_id)["agent"] == json.loads(
-            (seed.DEMO_AGENTS_DIR / f"{agent_id}.json").read_text()
-        )
+        assert store.get_agent(agent_id)["agent"] == json.loads((seed.DEMO_AGENTS_DIR / f"{agent_id}.json").read_text())
 
 
 def test_reseed_restores_a_changed_agent(agents_dir):

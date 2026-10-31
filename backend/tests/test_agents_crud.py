@@ -69,9 +69,7 @@ def test_duplicate_copies_with_a_new_id_and_name(client, agents_dir):
     body = res.json()
     assert body["id"] != store.SEED_ID
     assert body["agent"]["name"] == "Prosper Scheduler copy"
-    assert len(body["agent"]["nodes"]) == len(
-        client.get(f"/api/agents/{store.SEED_ID}").json()["agent"]["nodes"]
-    )
+    assert len(body["agent"]["nodes"]) == len(client.get(f"/api/agents/{store.SEED_ID}").json()["agent"]["nodes"])
     assert len(list(agents_dir.glob("*.json"))) == 2
 
 

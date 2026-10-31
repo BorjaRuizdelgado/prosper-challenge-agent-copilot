@@ -38,9 +38,7 @@ def load_agent(agent_id: str) -> AgentBuilder:
         raise SessionError(f"Agent '{agent_id}' must be a JSON object.")
     errors = [i for i in validate(data) if i.severity == "error"]
     if errors:
-        raise SessionError(
-            f"Agent '{agent_id}' has blocking issues: " + " ".join(i.message for i in errors)
-        )
+        raise SessionError(f"Agent '{agent_id}' has blocking issues: " + " ".join(i.message for i in errors))
     try:
         return AgentBuilder.from_dict(data)
     except Exception as e:  # anything validation missed must still fail as a session error
@@ -50,9 +48,7 @@ def load_agent(agent_id: str) -> AgentBuilder:
 def check_keys() -> None:
     missing = [k for k in REQUIRED_KEYS if not os.environ.get(k)]
     if missing:
-        raise SessionError(
-            f"Missing API keys in backend/.env: {', '.join(missing)}. Add them and restart the runner."
-        )
+        raise SessionError(f"Missing API keys in backend/.env: {', '.join(missing)}. Add them and restart the runner.")
 
 
 def node_changed_message(from_node: str | None, node: str, via: str | None, args: dict) -> dict:

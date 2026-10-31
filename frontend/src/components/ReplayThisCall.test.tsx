@@ -11,18 +11,41 @@ import { renderApp } from "../test/helpers";
 import { RunsPanel } from "./RunsPanel";
 
 const agent: Agent = {
-  name: "A", initial_node: "greeting",
-  nodes: [{ name: "greeting", edges: [{ function: "book", description: "", target: "collect" }, { function: "staff", description: "", target: "handoff" }] }, { name: "collect" }, { name: "handoff", end: true }],
+  name: "A",
+  initial_node: "greeting",
+  nodes: [
+    {
+      name: "greeting",
+      edges: [
+        { function: "book", description: "", target: "collect" },
+        { function: "staff", description: "", target: "handoff" },
+      ],
+    },
+    { name: "collect" },
+    { name: "handoff", end: true },
+  ],
 };
 const run: Run = {
-  id: "r-cancel", started_at: "2026-10-21T09:14:00Z", duration_s: 40, outcome: "abandoned", goal: "Cancel the Friday appointment",
-  transcript: [{ speaker: "caller", text: "I need to cancel." }], path: [{ node: "greeting" }],
+  id: "r-cancel",
+  started_at: "2026-10-21T09:14:00Z",
+  duration_s: 40,
+  outcome: "abandoned",
+  goal: "Cancel the Friday appointment",
+  transcript: [{ speaker: "caller", text: "I need to cancel." }],
+  path: [{ node: "greeting" }],
 };
 const result = (goal_met: boolean): ReplayEvent => ({
-  event: "result", run_id: "r-cancel", version: "before",
-  transcript: [{ speaker: "agent", text: "Hi, how can I help?" }, { speaker: "caller", text: "Cancel please." }],
+  event: "result",
+  run_id: "r-cancel",
+  version: "before",
+  transcript: [
+    { speaker: "agent", text: "Hi, how can I help?" },
+    { speaker: "caller", text: "Cancel please." },
+  ],
   path: [{ node: "greeting" }, { node: "handoff", via: "staff" }],
-  outcome: goal_met ? "transferred" : "stuck", goal_met, reason: goal_met ? "Handed to staff." : "No cancel path.",
+  outcome: goal_met ? "transferred" : "stuck",
+  goal_met,
+  reason: goal_met ? "Handed to staff." : "No cancel path.",
 });
 
 function PathProbe() {
@@ -57,7 +80,12 @@ const replayButton = () => within(screen.getByRole("region", { name: "Replay thi
 describe("Replay this call", () => {
   it("replays the working copy without a proposal and shows outcome, goal, reason and transcript", async () => {
     const calls = streaming([result(true)]);
-    renderApp(<><RunsPanel /><PathProbe /></>);
+    renderApp(
+      <>
+        <RunsPanel />
+        <PathProbe />
+      </>,
+    );
     expect(screen.getByRole("region", { name: "Replay this call" })).toHaveTextContent("Simulated text call");
     await userEvent.click(replayButton());
     const section = screen.getByRole("region", { name: "Replay this call" });
@@ -72,12 +100,14 @@ describe("Replay this call", () => {
   it("shows the lines as they are heard, before the result", async () => {
     let release!: () => void;
     const gate = new Promise<void>((r) => (release = r));
-    restores.push(setReplayStreamer(async function* () {
-      yield { event: "line", run_id: "r-cancel", version: "before", speaker: "agent", text: "Hi, how can I help?" };
-      await gate;
-      yield result(true);
-      yield { event: "done" };
-    }));
+    restores.push(
+      setReplayStreamer(async function* () {
+        yield { event: "line", run_id: "r-cancel", version: "before", speaker: "agent", text: "Hi, how can I help?" };
+        await gate;
+        yield result(true);
+        yield { event: "done" };
+      }),
+    );
     renderApp(<RunsPanel />);
     await userEvent.click(replayButton());
     const section = screen.getByRole("region", { name: "Replay this call" });
@@ -90,7 +120,12 @@ describe("Replay this call", () => {
 
   it("draws the replay's path on the canvas, replacing the original run's, and clears it with the run", async () => {
     streaming([result(true)]);
-    renderApp(<><RunsPanel /><PathProbe /></>);
+    renderApp(
+      <>
+        <RunsPanel />
+        <PathProbe />
+      </>,
+    );
     expect(screen.getByTestId("path")).toHaveTextContent("greeting|"); // the original run
     await userEvent.click(replayButton());
     await screen.findByText("Goal met");

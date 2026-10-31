@@ -16,7 +16,11 @@ const base: Agent = {
   initial_node: "greeting",
   layout: { greeting: { x: 0, y: 0 }, confirm: { x: 400, y: 0 }, old: { x: 800, y: 0 } },
   nodes: [
-    { name: "greeting", task_messages: [{ role: "developer", content: "Greet the caller." }], edges: [{ function: "choose_intent", description: "d", target: "confirm" }] },
+    {
+      name: "greeting",
+      task_messages: [{ role: "developer", content: "Greet the caller." }],
+      edges: [{ function: "choose_intent", description: "d", target: "confirm" }],
+    },
     { name: "confirm", task_messages: [{ role: "developer", content: "Confirm." }], end: true },
     { name: "old", task_messages: [] },
   ],
@@ -24,7 +28,11 @@ const base: Agent = {
 const draft: Agent = {
   ...base,
   nodes: [
-    { name: "greeting", task_messages: [{ role: "developer", content: "Greet warmly." }], edges: [{ function: "choose_intent", description: "d", target: "confirm" }] },
+    {
+      name: "greeting",
+      task_messages: [{ role: "developer", content: "Greet warmly." }],
+      edges: [{ function: "choose_intent", description: "d", target: "confirm" }],
+    },
     { name: "confirm", task_messages: [{ role: "developer", content: "Confirm." }], end: true },
     { name: "fresh", task_messages: [{ role: "developer", content: "Brand new step." }] },
   ],

@@ -16,8 +16,7 @@ afterEach(() => vi.unstubAllGlobals());
 /** In the editor the agents live in the switcher menu next to the agent's name. */
 const openSwitcher = () => userEvent.click(screen.getByRole("button", { name: "Switch agent" }));
 
-const calls = (fn: ReturnType<typeof vi.fn>) =>
-  fn.mock.calls.map(([url, init]) => `${init?.method ?? "GET"} ${url}`);
+const calls = (fn: ReturnType<typeof vi.fn>) => fn.mock.calls.map(([url, init]) => `${init?.method ?? "GET"} ${url}`);
 
 test("creating an agent adds it to the list and opens it at its own URL", async () => {
   const fetchMock = mockApi({

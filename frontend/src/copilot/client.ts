@@ -58,12 +58,7 @@ const failure = (message: string): CopilotEvent => ({ event: "error", message })
  * a turn already running) come back as an `error` event so callers have a single path.
  * Aborting `signal` ends the stream quietly; the server sees the disconnect and stops the turn.
  */
-export async function* streamCopilot(
-  agentId: string,
-  message: string,
-  agent: Agent,
-  signal?: AbortSignal,
-): AsyncGenerator<CopilotEvent> {
+export async function* streamCopilot(agentId: string, message: string, agent: Agent, signal?: AbortSignal): AsyncGenerator<CopilotEvent> {
   let res: Response;
   try {
     res = await fetch(`/api/copilot/${encodeURIComponent(agentId)}`, {

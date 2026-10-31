@@ -12,10 +12,7 @@ export type CardData = { node: AgentNode; initial: boolean; change?: Change; [ke
 export type CardNode = FlowNode<CardData, "card">;
 
 /** React Flow nodes/edges derived from the agent document. */
-export function toFlow(
-  agent: Agent, positions: Record<string, Position>,
-  selection: Selection = null,
-): { nodes: CardNode[]; edges: FlowEdge[] } {
+export function toFlow(agent: Agent, positions: Record<string, Position>, selection: Selection = null): { nodes: CardNode[]; edges: FlowEdge[] } {
   const known = new Set(agent.nodes.map((n) => n.name));
   const nodes: CardNode[] = agent.nodes.map((node) => ({
     id: node.name,
@@ -46,15 +43,17 @@ export function toFlow(
  * Returns the agent being drawn (draft plus removed items) so the Inspector can look items up in it.
  */
 export function toReviewFlow(
-  base: Agent, draft: Agent, basePositions: Record<string, Position>, selection: Selection = null,
+  base: Agent,
+  draft: Agent,
+  basePositions: Record<string, Position>,
+  selection: Selection = null,
 ): { nodes: CardNode[]; edges: FlowEdge[]; agent: Agent; positions: Record<string, Position> } {
   const diff = diffAgents(base, draft);
   const removedNodes = new Set(diff.removedNodes);
   const removedEdges = new Set(diff.removedEdges);
   const drafted = new Set(draft.nodes.map((n) => n.name));
 
-  const keptRemoved = (n: AgentNode) =>
-    (n.edges ?? []).filter((e) => removedEdges.has(edgeId(n.name, e.function)));
+  const keptRemoved = (n: AgentNode) => (n.edges ?? []).filter((e) => removedEdges.has(edgeId(n.name, e.function)));
   const agent: Agent = {
     ...draft,
     nodes: [
@@ -89,13 +88,7 @@ export function toReviewFlow(
       return { ...n, data: { ...n.data, change } };
     }),
     edges: flow.edges.map((e) => {
-      const change: Change | undefined = removedEdges.has(e.id)
-        ? "removed"
-        : addedEdges.has(e.id)
-          ? "added"
-          : changedEdges.has(e.id)
-            ? "changed"
-            : undefined;
+      const change: Change | undefined = removedEdges.has(e.id) ? "removed" : addedEdges.has(e.id) ? "added" : changedEdges.has(e.id) ? "changed" : undefined;
       return { ...e, data: { change } };
     }),
   };

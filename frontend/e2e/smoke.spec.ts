@@ -220,13 +220,21 @@ test("replay: card shows Fixed, a row draws its path, Replay this call is disabl
   const line = (speaker: string, text: string) => ({ speaker, text });
   const runs = [
     {
-      id: "r-9002", started_at: "2026-10-21T10:00:00Z", duration_s: 70, outcome: "abandoned", flag: "Caller wanted to cancel and could not.",
+      id: "r-9002",
+      started_at: "2026-10-21T10:00:00Z",
+      duration_s: 70,
+      outcome: "abandoned",
+      flag: "Caller wanted to cancel and could not.",
       goal: "Cancel the Friday appointment",
       transcript: [line("agent", "Would you like to book an appointment?"), line("caller", "I need to cancel instead.")],
       path: [{ node: "greeting" }],
     },
     {
-      id: "r-9003", started_at: "2026-10-20T09:00:00Z", duration_s: 90, outcome: "completed", goal: "Book a checkup",
+      id: "r-9003",
+      started_at: "2026-10-20T09:00:00Z",
+      duration_s: 90,
+      outcome: "completed",
+      goal: "Book a checkup",
       transcript: [line("agent", "Would you like to book an appointment?"), line("caller", "Yes please.")],
       path: [{ node: "greeting" }, { node: "collect_details", via: "choose_intent", args: {} }],
     },
@@ -237,14 +245,20 @@ test("replay: card shows Fixed, a row draws its path, Replay this call is disabl
     const body = route.request().postDataJSON() as { agent: { nodes: Array<Record<string, unknown>> } };
     const agent = structuredClone(body.agent);
     const first = agent.nodes[0] as { edges?: Array<Record<string, unknown>> };
-    agent.nodes.push({ name: "cancel_appointment", task_messages: [{ role: "developer", content: "Take the cancellation." }], post_actions: [{ type: "end_conversation" }] });
+    agent.nodes.push({
+      name: "cancel_appointment",
+      task_messages: [{ role: "developer", content: "Take the cancellation." }],
+      post_actions: [{ type: "end_conversation" }],
+    });
     first.edges = [...(first.edges ?? []), { function: "cancel", description: "The caller wants to cancel.", target: "cancel_appointment" }];
     const sse = (event: string, data: unknown) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
     await route.fulfill({
       status: 200,
       contentType: "text/event-stream",
       body: [
-        sse("findings", { findings: [{ title: "No way to cancel", runs: ["r-9002"], cause: "The greeting only offers booking.", fix: "Add a cancel path.", node: "greeting" }] }),
+        sse("findings", {
+          findings: [{ title: "No way to cancel", runs: ["r-9002"], cause: "The greeting only offers booking.", fix: "Add a cancel path.", node: "greeting" }],
+        }),
         sse("draft", { agent }),
         sse("text", { delta: "Added a cancel path." }),
         sse("proposal", { agent, issues: [] }),
@@ -259,11 +273,26 @@ test("replay: card shows Fixed, a row draws its path, Replay this call is disabl
     replayBodies.push(body);
     const sse = (event: string, data: unknown) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
     const result = (run_id: string, version: string, outcome: string, goal_met: boolean, reason: string, path: unknown[]) =>
-      sse("result", { run_id, version, outcome, goal_met, reason, path, transcript: [line("agent", "Hello, how can I help?"), line("caller", run_id === "r-9002" ? "I need to cancel." : "Book me in."), line("agent", version === "after" ? "I will take that for you." : "Sorry, I can only book.")] });
+      sse("result", {
+        run_id,
+        version,
+        outcome,
+        goal_met,
+        reason,
+        path,
+        transcript: [
+          line("agent", "Hello, how can I help?"),
+          line("caller", run_id === "r-9002" ? "I need to cancel." : "Book me in."),
+          line("agent", version === "after" ? "I will take that for you." : "Sorry, I can only book."),
+        ],
+      });
     const events = body.proposal
       ? [
           result("r-9002", "before", "abandoned", false, "The agent could only offer booking.", [{ node: "greeting" }]),
-          result("r-9002", "after", "completed", true, "The caller cancelled through the new node.", [{ node: "greeting" }, { node: "cancel_appointment", via: "cancel", args: {} }]),
+          result("r-9002", "after", "completed", true, "The caller cancelled through the new node.", [
+            { node: "greeting" },
+            { node: "cancel_appointment", via: "cancel", args: {} },
+          ]),
           result("r-9003", "before", "completed", true, "Booked.", [{ node: "greeting" }, { node: "collect_details", via: "choose_intent", args: {} }]),
           result("r-9003", "after", "completed", true, "Booked.", [{ node: "greeting" }, { node: "collect_details", via: "choose_intent", args: {} }]),
         ]
@@ -345,7 +374,14 @@ test("guidelines: create from the sample, see the coverage card and its question
         sse("coverage", {
           requirements: [
             { id: "r1", text: "Greet the caller", quote: "Answer warmly.", status: "covered", nodes: ["greeting"] },
-            { id: "r2", text: "Cancel an appointment", quote: "Callers may cancel.", status: "default", nodes: ["cancel_appointment"], note: "No notice window stated" },
+            {
+              id: "r2",
+              text: "Cancel an appointment",
+              quote: "Callers may cancel.",
+              status: "default",
+              nodes: ["cancel_appointment"],
+              note: "No notice window stated",
+            },
             { id: "r3", text: "After-hours nurse line", quote: "Call the nurse line.", status: "open", nodes: [] },
           ],
           questions: [

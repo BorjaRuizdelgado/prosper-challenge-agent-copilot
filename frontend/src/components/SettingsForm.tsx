@@ -12,11 +12,7 @@ function ChoiceField({ id, label, options, value, onChange }: { id: string; labe
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
-      <select
-        id={id}
-        value={known ? value : CUSTOM}
-        onChange={(e) => onChange(e.target.value === CUSTOM ? (known ? "" : value) : e.target.value)}
-      >
+      <select id={id} value={known ? value : CUSTOM} onChange={(e) => onChange(e.target.value === CUSTOM ? (known ? "" : value) : e.target.value)}>
         {options.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
@@ -119,7 +115,11 @@ function GuidelinesSection() {
           </div>
         </>
       )}
-      {error && <span role="alert" className="guidelines-section__error">{error}</span>}
+      {error && (
+        <span role="alert" className="guidelines-section__error">
+          {error}
+        </span>
+      )}
     </section>
   );
 }
@@ -146,7 +146,13 @@ export function SettingsForm() {
           onChange={(e) => updateSettings({ persona: e.target.value })}
         />
       </div>
-      <ChoiceField id="agent-voice" label="Voice" options={VOICES} value={agent.voice_id ?? VOICES[0].value} onChange={(voice_id) => updateSettings({ voice_id })} />
+      <ChoiceField
+        id="agent-voice"
+        label="Voice"
+        options={VOICES}
+        value={agent.voice_id ?? VOICES[0].value}
+        onChange={(voice_id) => updateSettings({ voice_id })}
+      />
       <ChoiceField id="agent-model" label="Model" options={MODELS} value={agent.model ?? MODELS[0].value} onChange={(model) => updateSettings({ model })} />
       {/* keyed so switching agent starts from a clean loading state */}
       <GuidelinesSection key={agentId} />

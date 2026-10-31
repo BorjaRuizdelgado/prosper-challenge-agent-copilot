@@ -45,9 +45,7 @@ transport_params = {
 }
 
 
-async def run_bot(
-    transport: BaseTransport, runner_args: RunnerArguments, builder: AgentBuilder
-) -> None:
+async def run_bot(transport: BaseTransport, runner_args: RunnerArguments, builder: AgentBuilder) -> None:
     config = builder.config
     logger.info(f"Starting '{config.name}' with {len(config.nodes)} nodes")
 

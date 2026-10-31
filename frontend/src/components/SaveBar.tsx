@@ -29,12 +29,15 @@ export function SaveBar() {
     return () => window.removeEventListener("beforeunload", onUnload);
   }, [dirty]);
 
-  const status =
-    saveStatus === "saving" ? "Saving…" : saveStatus === "failed" ? "Save failed" : dirty ? "Unsaved changes" : "Saved";
+  const status = saveStatus === "saving" ? "Saving…" : saveStatus === "failed" ? "Save failed" : dirty ? "Unsaved changes" : "Saved";
 
   return (
     <div className="save-bar">
-      <span className={`save-bar__status save-bar__status--${saveStatus === "failed" ? "failed" : dirty ? "dirty" : "saved"}`} aria-live="polite" data-testid="save-status">
+      <span
+        className={`save-bar__status save-bar__status--${saveStatus === "failed" ? "failed" : dirty ? "dirty" : "saved"}`}
+        aria-live="polite"
+        data-testid="save-status"
+      >
         {status}
       </span>
       {saveStatus === "failed" && (

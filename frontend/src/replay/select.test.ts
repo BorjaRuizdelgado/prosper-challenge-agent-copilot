@@ -4,7 +4,13 @@ import type { ReplayResult } from "./client";
 import { scoreReplay, selectRuns } from "./select";
 
 const run = (id: string, outcome: RunOutcome, started_at = "2026-01-01T00:00:00Z", flag?: string): Run => ({
-  id, outcome, started_at, duration_s: 1, transcript: [], path: [], ...(flag && { flag }),
+  id,
+  outcome,
+  started_at,
+  duration_s: 1,
+  transcript: [],
+  path: [],
+  ...(flag && { flag }),
 });
 const result = (outcome: RunOutcome, goal_met: boolean): ReplayResult => ({ transcript: [], path: [], outcome, goal_met, reason: "" });
 const finding = (...runs: string[]): Finding => ({ title: "t", runs, cause: "c", fix: "f" });
@@ -12,8 +18,13 @@ const ids = (rs: Run[]) => rs.map((r) => r.id);
 
 describe("selectRuns", () => {
   const runs = [
-    run("ok1", "completed", "2026-01-01"), run("ok2", "transferred", "2026-01-05"), run("ok3", "completed", "2026-01-03"),
-    run("ok4", "completed", "2026-01-04"), run("flagged", "completed", "2026-01-06", "wrong"), run("ab", "abandoned"), run("st", "stuck"),
+    run("ok1", "completed", "2026-01-01"),
+    run("ok2", "transferred", "2026-01-05"),
+    run("ok3", "completed", "2026-01-03"),
+    run("ok4", "completed", "2026-01-04"),
+    run("flagged", "completed", "2026-01-06", "wrong"),
+    run("ab", "abandoned"),
+    run("st", "stuck"),
   ];
 
   it("with findings: cited runs once each, then the 3 newest that worked", () => {

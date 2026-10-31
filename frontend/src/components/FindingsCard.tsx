@@ -23,8 +23,12 @@ export function FindingsCard({ agentId, findings }: { agentId: string; findings:
             onMouseLeave={f.node ? () => setFocus(agentId, null) : undefined}
           >
             <strong>{f.title}</strong>
-            <p><span className="findings__label">Cause</span> {f.cause}</p>
-            <p><span className="findings__label">Fix</span> {f.fix}</p>
+            <p>
+              <span className="findings__label">Cause</span> {f.cause}
+            </p>
+            <p>
+              <span className="findings__label">Fix</span> {f.fix}
+            </p>
             <p className="findings__runs">
               {f.runs.map((id) => (
                 <button key={id} type="button" className="findings__run" onClick={() => openRun(id)}>

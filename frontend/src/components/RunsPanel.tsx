@@ -20,9 +20,7 @@ const firstCallerLine = (run: Run) => run.transcript.find((l) => l.speaker === "
 
 /** The path as the call tab's notes would phrase it: `Started at x`, `Moved to y via z`. */
 const notes = (path: RunStep[]) =>
-  path.map((step, i) =>
-    describeTransition({ from: i ? path[i - 1].node : null, node: step.node, via: step.via ?? null, args: step.args ?? {} }),
-  );
+  path.map((step, i) => describeTransition({ from: i ? path[i - 1].node : null, node: step.node, via: step.via ?? null, args: step.args ?? {} }));
 
 /** Replays the open run once against the working copy (saved or not) and shows how it went. */
 function ReplayThisCall({ run, agentId }: { run: Run; agentId: string }) {
@@ -35,13 +33,21 @@ function ReplayThisCall({ run, agentId }: { run: Run; agentId: string }) {
   return (
     <section className="runs__replay" aria-label="Replay this call">
       <div className="runs__replay-actions">
-        <button type="button" disabled={drafting || running || !agent} onClick={() => agent && void useReplayView.getState().replayWorking(agentId, agent, run.id)}>
+        <button
+          type="button"
+          disabled={drafting || running || !agent}
+          onClick={() => agent && void useReplayView.getState().replayWorking(agentId, agent, run.id)}
+        >
           {running ? "Replaying…" : "Replay this call"}
         </button>
         <span className="replay__note">Simulated text call, against the working copy</span>
       </div>
       {drafting && <p className="field__hint">Apply or discard the copilot's draft first.</p>}
-      {working?.error && <p className="call__message" role="alert">{working.error.message}</p>}
+      {working?.error && (
+        <p className="call__message" role="alert">
+          {working.error.message}
+        </p>
+      )}
       {!result && lines && (
         <ol className="call__transcript" aria-label="Replay transcript" aria-live="polite">
           {lines.map((line, i) => (
@@ -55,8 +61,7 @@ function ReplayThisCall({ run, agentId }: { run: Run; agentId: string }) {
       {result && (
         <div className="runs__replay-result">
           <p className="replay__summary">
-            <span className={`pill runs__outcome runs__outcome--${result.outcome}`}>{result.outcome}</span>{" "}
-            {result.goal_met ? "Goal met" : "Goal not met"}
+            <span className={`pill runs__outcome runs__outcome--${result.outcome}`}>{result.outcome}</span> {result.goal_met ? "Goal met" : "Goal not met"}
           </p>
           {run.goal && <p className="replay__reason">Goal: {run.goal}</p>}
           <p className="replay__reason">{result.reason}</p>
@@ -103,11 +108,19 @@ function RunDetail({ run, agentId }: { run: Run; agentId: string }) {
         {run.path.map((s, i) => (
           <span key={i}>
             {i > 0 && " -> "}
-            {missing.includes(s.node) ? <span className="runs__missing" title="This node no longer exists">{s.node} (missing)</span> : s.node}
+            {missing.includes(s.node) ? (
+              <span className="runs__missing" title="This node no longer exists">
+                {s.node} (missing)
+              </span>
+            ) : (
+              s.node
+            )}
           </span>
         ))}
       </p>
-      <button type="button" onClick={ask}>Ask Copilot</button>
+      <button type="button" onClick={ask}>
+        Ask Copilot
+      </button>
       <ReplayThisCall run={run} agentId={agentId} />
     </div>
   );
@@ -148,8 +161,12 @@ export function RunsPanel() {
   if (state.status === "error") {
     return (
       <div className="runs">
-        <p className="call__message" role="alert">{state.error}</p>
-        <button type="button" onClick={() => void load(agentId)}>Retry</button>
+        <p className="call__message" role="alert">
+          {state.error}
+        </p>
+        <button type="button" onClick={() => void load(agentId)}>
+          Retry
+        </button>
       </div>
     );
   }
@@ -175,12 +192,7 @@ export function RunsPanel() {
       <ul className="runs__list" aria-label="Runs">
         {runs.map((run) => (
           <li key={run.id} className="runs__item" ref={open === run.id ? scrollIntoView : undefined}>
-            <button
-              type="button"
-              className="runs__row"
-              aria-expanded={open === run.id}
-              onClick={() => (open === run.id ? clear() : select(agentId, run.id))}
-            >
+            <button type="button" className="runs__row" aria-expanded={open === run.id} onClick={() => (open === run.id ? clear() : select(agentId, run.id))}>
               <span className={`pill runs__outcome runs__outcome--${run.outcome}`}>{run.outcome}</span>
               <span className="runs__meta">
                 <span className="runs__id">{run.id}</span>

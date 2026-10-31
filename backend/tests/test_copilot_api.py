@@ -43,6 +43,7 @@ def scripted(script, calls=None):
             calls.append((agent_id, message, agent))
         for event in script:
             yield event
+
     return fake
 
 

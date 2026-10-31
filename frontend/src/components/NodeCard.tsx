@@ -41,15 +41,39 @@ export function NodeCard({ data, selected }: NodeProps<CardNode>) {
   const edges = node.edges ?? [];
   const kind = node.end ? "end" : edges.some((e) => Object.keys(e.properties ?? {}).length) ? "collect" : "greeting";
   return (
-    <div className={`node-card${selected ? " node-card--selected" : ""}${active ? " node-card--active" : ""}${copilotFocus ? " node-card--copilot" : ""}${runState ? ` node-card--run-${runState}` : ""}${data.change ? ` node-card--${data.change}` : ""}`}
-      data-active={active || undefined} data-copilot-focus={copilotFocus || undefined} data-run={runState} data-change={data.change} style={{ width: NODE_WIDTH }}>
+    <div
+      className={`node-card${selected ? " node-card--selected" : ""}${active ? " node-card--active" : ""}${copilotFocus ? " node-card--copilot" : ""}${runState ? ` node-card--run-${runState}` : ""}${data.change ? ` node-card--${data.change}` : ""}`}
+      data-active={active || undefined}
+      data-copilot-focus={copilotFocus || undefined}
+      data-run={runState}
+      data-change={data.change}
+      style={{ width: NODE_WIDTH }}
+    >
       {/* Loose connection mode lets every handle start or receive a connection. The centre of the left
           side is where edges end, so that handle only receives and lets the edge's own drag anchor
           (retargeting) through; every side has a separate "new edge" handle for starting edges. */}
       <Handle type="target" position={Position.Top} className="node-card__in" isConnectableStart={false} />
-      <Handle type="source" id={`${NEW_EDGE_HANDLE}_left`} position={Position.Left} className="node-card__new node-card__new--left" title="Drag to another node to add an edge" />
-      <Handle type="source" id={`${NEW_EDGE_HANDLE}_top`} position={Position.Top} className="node-card__new node-card__new--top" title="Drag to another node to add an edge" />
-      <Handle type="source" id={`${NEW_EDGE_HANDLE}_right`} position={Position.Right} className="node-card__new node-card__new--right" title="Drag to another node to add an edge" />
+      <Handle
+        type="source"
+        id={`${NEW_EDGE_HANDLE}_left`}
+        position={Position.Left}
+        className="node-card__new node-card__new--left"
+        title="Drag to another node to add an edge"
+      />
+      <Handle
+        type="source"
+        id={`${NEW_EDGE_HANDLE}_top`}
+        position={Position.Top}
+        className="node-card__new node-card__new--top"
+        title="Drag to another node to add an edge"
+      />
+      <Handle
+        type="source"
+        id={`${NEW_EDGE_HANDLE}_right`}
+        position={Position.Right}
+        className="node-card__new node-card__new--right"
+        title="Drag to another node to add an edge"
+      />
       <header className="node-card__head">
         <span className={`node-card__tile node-card__tile--${kind}`} aria-hidden>
           {KIND_GLYPH[kind]}
@@ -58,12 +82,7 @@ export function NodeCard({ data, selected }: NodeProps<CardNode>) {
         {initial && <span className="pill pill--accent">Start</span>}
         {node.end && <span className="pill">End</span>}
         {severity && (
-          <span
-            className={`marker marker--${severity}`}
-            role="img"
-            aria-label={`${severity} on this node`}
-            title={issueMessages(issues, node.name).join("\n")}
-          >
+          <span className={`marker marker--${severity}`} role="img" aria-label={`${severity} on this node`} title={issueMessages(issues, node.name).join("\n")}>
             !
           </span>
         )}
@@ -83,14 +102,7 @@ export function NodeCard({ data, selected }: NodeProps<CardNode>) {
                 !
               </span>
             )}
-            <Handle
-              type="source"
-              id={e.function}
-              position={Position.Right}
-              className="node-card__out"
-              style={{ top: undefined }}
-              data-index={i}
-            />
+            <Handle type="source" id={e.function} position={Position.Right} className="node-card__out" style={{ top: undefined }} data-index={i} />
           </li>
         ))}
       </ul>

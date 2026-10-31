@@ -80,7 +80,9 @@ export function CoverageCard({ agentId, coverage }: { agentId: string; coverage:
         if (!rows.length) return null;
         return (
           <div key={status} className="coverage__group">
-            <h4 className={`coverage__status coverage__status--${status}`}>{title} ({rows.length})</h4>
+            <h4 className={`coverage__status coverage__status--${status}`}>
+              {title} ({rows.length})
+            </h4>
             <ul>
               {rows.map((r) => (
                 <li

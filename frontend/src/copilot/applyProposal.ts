@@ -13,16 +13,10 @@ export function isStale(base: Agent, current: Agent): boolean {
  * The proposal with the editor's current positions and label offsets as its layout, minus the entries of
  * nodes and edges it removed. Nodes without an entry (the new ones) are laid out by `replaceAgent`.
  */
-export function withCurrentLayout(
-  proposal: Agent,
-  positions: Record<string, Position>,
-  labelOffsets: Record<string, Position>,
-): Agent {
+export function withCurrentLayout(proposal: Agent, positions: Record<string, Position>, labelOffsets: Record<string, Position>): Agent {
   const nodes = new Set(proposal.nodes.map((n) => n.name));
   const edges = new Set(proposal.nodes.flatMap((n) => (n.edges ?? []).map((e) => edgeId(n.name, e.function))));
-  const layout = Object.fromEntries(
-    Object.entries({ ...positions, ...labelOffsets }).filter(([key]) => (isEdgeKey(key) ? edges.has(key) : nodes.has(key))),
-  );
+  const layout = Object.fromEntries(Object.entries({ ...positions, ...labelOffsets }).filter(([key]) => (isEdgeKey(key) ? edges.has(key) : nodes.has(key))));
   return { ...proposal, layout };
 }
 

@@ -95,8 +95,7 @@ export function CallPanel() {
       )}
       {state === "idle" && transcript.length === 0 && (
         <p className="field__hint">
-          Talk to the agent through your microphone. The canvas follows the call: the node the agent is in glows and the edge it
-          took lights up.
+          Talk to the agent through your microphone. The canvas follows the call: the node the agent is in glows and the edge it took lights up.
         </p>
       )}
       {!busy && blockedReason && <p className="field__hint">{blockedReason}</p>}
