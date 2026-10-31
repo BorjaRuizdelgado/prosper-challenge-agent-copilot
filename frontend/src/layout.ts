@@ -11,7 +11,11 @@ export const nodeHeight = (edgeCount: number) => NODE_HEIGHT + Math.max(0, edgeC
 /** Top-to-bottom dagre layout of every node. Returns top-left positions by node name. */
 export function autoLayout(agent: Agent): Record<string, Position> {
   const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: "TB", nodesep: 48, ranksep: 72, marginx: 24, marginy: 24 });
+  // Edges arriving at one node each get their own horizontal run in the gap above it, so busy targets need a taller gap.
+  const incoming: Record<string, number> = {};
+  for (const n of agent.nodes) for (const e of n.edges ?? []) incoming[e.target] = (incoming[e.target] ?? 0) + 1;
+  const busiest = Math.max(1, ...Object.values(incoming));
+  g.setGraph({ rankdir: "TB", nodesep: 48, ranksep: 72 + Math.min(busiest - 1, 6) * 26, marginx: 24, marginy: 24 });
   g.setDefaultEdgeLabel(() => ({}));
   for (const n of agent.nodes) {
     g.setNode(n.name, { width: NODE_WIDTH, height: nodeHeight(n.edges?.length ?? 0) });

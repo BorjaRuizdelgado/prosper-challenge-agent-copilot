@@ -36,10 +36,17 @@ test("the curve's midpoint lands exactly on the dragged label", () => {
 
 test("a downward edge runs through the gutter and the gap above its target, with the label on the line", () => {
   const { path, mid } = routedThroughOffset([593, 297], [330, 485], { x: 0, y: 0 });
-  expect(mid).toEqual({ x: (621 + 330) / 2, y: 449 });
+  expect(mid).toEqual({ x: (617 + 330) / 2, y: 455 });
   expect(path.startsWith("M593,297")).toBe(true);
   expect(path.endsWith("L330,485")).toBe(true);
 
   const dragged = routedThroughOffset([593, 297], [330, 485], { x: 10, y: -20 });
-  expect(dragged.mid).toEqual({ x: (641 + 330) / 2, y: 429 });
+  expect(dragged.mid).toEqual({ x: (637 + 330) / 2, y: 435 });
+});
+
+test("edges sharing a source or target get their own lanes", () => {
+  const first = routedThroughOffset([593, 297], [330, 485], { x: 0, y: 0 }, { row: 0, rows: 3, rank: 0 });
+  const last = routedThroughOffset([593, 370], [330, 485], { x: 0, y: 0 }, { row: 2, rows: 3, rank: 1 });
+  expect(first.mid.x).toBeGreaterThan(last.mid.x);
+  expect(last.mid.y).toBeLessThan(first.mid.y);
 });

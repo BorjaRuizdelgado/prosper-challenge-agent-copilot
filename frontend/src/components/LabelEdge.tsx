@@ -45,10 +45,16 @@ export function bezierThroughOffset(
   return { path: `M${sx},${sy} C${a},${b} ${c},${d} ${tx},${ty}`, mid };
 }
 
-const GUTTER = 28;
-const LABEL_ABOVE_TARGET = 36;
+const GUTTER = 24;
+const LANE = 10;
+const RUN_SPACING = 26;
+const RUN_ABOVE_TARGET = 30;
 const CORNER = 14;
 const MIN_DROP = 60;
+
+/** Where an edge sits among its neighbours: `row` of `rows` leaving its source, `rank` of `ranks` arriving at its target. */
+export type Lane = { row: number; rows: number; rank: number };
+const NO_LANE: Lane = { row: 0, rows: 1, rank: 0 };
 
 /** Straight segments through `points` with each corner rounded by `radius` (shrunk on short segments). */
 function roundedPolyline(points: [number, number][], radius: number) {
@@ -76,9 +82,15 @@ function roundedPolyline(points: [number, number][], radius: number) {
  * gutter, down, across the gap above the target, then straight down into it. Staying outside both cards keeps the
  * line (and its label, which sits on the horizontal run) clear of them. Dragging the label moves the run.
  */
-export function routedThroughOffset([sx, sy]: [number, number], [tx, ty]: [number, number], offset: { x: number; y: number }) {
-  const gx = sx + GUTTER + offset.x * 2;
-  const my = ty - LABEL_ABOVE_TARGET + offset.y;
+export function routedThroughOffset(
+  [sx, sy]: [number, number],
+  [tx, ty]: [number, number],
+  offset: { x: number; y: number },
+  { row, rows, rank }: Lane = NO_LANE,
+) {
+  // Upper rows take the outer lanes, so a lower row's stub never crosses an upper row's drop.
+  const gx = sx + GUTTER + (rows - 1 - row) * LANE + offset.x * 2;
+  const my = Math.max(ty - RUN_ABOVE_TARGET - rank * RUN_SPACING, sy + CORNER) + offset.y;
   const path = roundedPolyline(
     [
       [sx, sy],
@@ -92,6 +104,20 @@ export function routedThroughOffset([sx, sy]: [number, number], [tx, ty]: [numbe
   return { path, mid: { x: (gx + tx) / 2, y: my } };
 }
 
+/** A primitive (so the store selector doesn't re-render on every change) describing the edge's lane. */
+function laneKey(edges: { id: string; source: string; target: string }[], id: string) {
+  const me = edges.find((e) => e.id === id);
+  if (!me) return "0/1/0";
+  const out = edges.filter((e) => e.source === me.source);
+  const into = edges.filter((e) => e.target === me.target);
+  return `${out.indexOf(out.find((e) => e.id === id)!)}/${out.length}/${into.findIndex((e) => e.id === id)}`;
+}
+
+function parseLane(key: string): Lane {
+  const [row, rows, rank] = key.split("/").map(Number);
+  return { row, rows, rank };
+}
+
 /** A bezier edge whose label (the function name) can be dragged; the line bends to keep passing through it. */
 export function LabelEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, label, selected, markerEnd, data }: EdgeProps) {
   const offset = useAgentStore((s) => s.labelOffsets[id]) ?? { x: 0, y: 0 };
@@ -100,9 +126,10 @@ export function LabelEdge({ id, sourceX, sourceY, targetX, targetY, sourcePositi
   const zoom = useStore((s) => s.transform[2]);
   const drag = useRef<{ x: number; y: number; from: { x: number; y: number }; moved: boolean } | null>(null);
 
+  const lane = useStore((s) => laneKey(s.edges, id));
   const routed = sourcePosition === Position.Right && targetPosition === Position.Top && targetY - sourceY > MIN_DROP;
   const { path, mid } = routed
-    ? routedThroughOffset([sourceX, sourceY], [targetX, targetY], offset)
+    ? routedThroughOffset([sourceX, sourceY], [targetX, targetY], offset, parseLane(lane))
     : bezierThroughOffset([sourceX, sourceY], [targetX, targetY], sourcePosition, targetPosition, offset);
   const [nodeName, fn] = id.split("::");
   const severity = useAgentStore((s) => worstSeverity(s.issues, nodeName, fn));
