@@ -3,7 +3,7 @@
 
 PROJECT := backend
 
-.PHONY: help install run api frontend dev up down demo demo-check check-guidelines lint test clean
+.PHONY: help install run api frontend dev up down demo demo-check check-guidelines lint format test clean
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -50,9 +50,16 @@ demo-check: ## Replay every demo run against the seeded agents (before only) and
 check-guidelines: ## Check a real copilot build of a sample (SAMPLE=name, MODEL=haiku|sonnet, DUMP=file); needs the claude CLI
 	uv run --directory $(PROJECT) python -m demo.check_build $(SAMPLE) $(if $(MODEL),--model $(MODEL)) $(if $(DUMP),--dump $(DUMP))
 
-lint: ## Lint the backend (ruff) and typecheck the frontend (tsc)
+lint: ## Check everything without changing files: ruff, ESLint, tsc, formatting
 	uv run --directory $(PROJECT) ruff check .
+	uv run --directory $(PROJECT) ruff format --check .
 	cd frontend && npm run lint
+	cd frontend && npm run format:check
+
+format: ## Auto-fix formatting and lint in backend and frontend
+	uv run --directory $(PROJECT) ruff format .
+	uv run --directory $(PROJECT) ruff check --fix .
+	cd frontend && npm run format
 
 test: ## Run backend (pytest), frontend (Vitest) and the Playwright smoke spec
 	uv run --directory $(PROJECT) pytest
