@@ -8,7 +8,8 @@ from agent_builder.schema import AgentConfig
 from copilot import workspace
 from replay.nodes import build_nodes
 
-AGENTS = Path(__file__).resolve().parent.parent / "agents"
+# The committed demo agents, not the git-ignored agents store `make demo` copies them into.
+AGENTS = Path(__file__).resolve().parent.parent / "demo" / "agents"
 PATHS = [AGENTS / f"{n}.json" for n in ("demo-riverside-scheduler", "demo-sunrise-refills", "demo-lakeside-billing")]
 PATHS += sorted((workspace.skill_dir() / "blueprints").glob("*.json"))
 
