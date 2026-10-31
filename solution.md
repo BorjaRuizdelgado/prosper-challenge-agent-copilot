@@ -99,7 +99,7 @@ Riverside is the iteration demo because its failures reproduce best in replay.
 
 ## Testing
 
-- **Backend:** pytest. **Frontend:** Vitest. **End to end:** one Playwright smoke spec. **Static:** `make lint` (ruff and `tsc`), and GitHub Actions CI runs the suites and lint.
+- **Backend:** pytest. **Frontend:** Vitest. **End to end:** one Playwright smoke spec. **Static:** `make lint` (ruff, ESLint, `tsc` and format checks; `make format` fixes what it can), and GitHub Actions CI runs the suites and lint.
 - **Claude and OpenAI are faked in all automated tests,** for cost and determinism: a scripted SDK client for the copilot, a fake chat client for replay, and network stubs in Playwright.
 - **The real paths are checked by hand-run targets:** `make check-guidelines` does a real copilot build of the Harbor sample and compares it with `harbor-dental-reschedule.expected.json`; `make demo-check` does real replays of every demo run.
 

@@ -40,7 +40,8 @@ make up     # install + create .env + start everything
 make down   # stop all services
 make dev    # agents API :8000 + voice runner :7860 + Vite :5173
 make demo   # seed the three demo agents (see Layout, `backend/demo/`); re-run to reset them
-make lint   # ruff (backend) + tsc (frontend)
+make lint   # check ruff, ESLint, tsc and formatting (changes nothing)
+make format # auto-fix formatting and lint (ruff format, Prettier, ESLint --fix)
 make test   # pytest + Vitest + Playwright smoke spec (the call is faked; a real call needs a mic and the OpenAI and ElevenLabs keys)
 ```
 
