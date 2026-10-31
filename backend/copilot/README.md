@@ -19,8 +19,8 @@ Backend for the Agent Copilot (OpenSpec change `add-agent-copilot`). Claude Code
 `backend/demo/check_build.py` runs the real copilot on a sample from `backend/demo/guidelines/` (the build turn, then the sample's client reply) on a throwaway agents directory, and prints one PASS/FAIL row per expectation from the sample's `<name>.expected.json` (topics the graph must handle, gaps that must become questions, values it must not invent before the reply, values it must contain after it), plus timings. Exit code 0 only when every row passes.
 
 ```
-make check-guidelines                          # harbor-dental-reschedule on Haiku
-make check-guidelines MODEL=sonnet             # same, on Sonnet
+make check-guidelines                          # harbor-dental-reschedule on the default model
+make check-guidelines MODEL=haiku              # same, on Haiku
 make check-guidelines SAMPLE=<name> MODEL=<alias>
 python -m demo.check_build [sample] [--model MODEL] [--dump FILE]   # from backend/, what the target runs; --dump saves both turns' coverage and drafts as JSON
 ```
@@ -38,7 +38,7 @@ Served by `api/copilot.py` (the `run_turn` seam is injected, so tests use a fake
 
 When the client disconnects the stream is closed, which closes `run_turn` (it interrupts Claude Code) and frees the agent for the next turn.
 
-Auth is whatever the `claude` CLI uses: its login, or `ANTHROPIC_API_KEY` if set (leave it unset to use the subscription). The model defaults to Haiku (cheapest); set `COPILOT_MODEL` (e.g. `sonnet`) to override.
+Auth is whatever the `claude` CLI uses: its login, or `ANTHROPIC_API_KEY` if set (leave it unset to use the subscription). The model defaults to Sonnet; set `COPILOT_MODEL` (e.g. `haiku`, the cheapest) to override.
 
 Backend tests never call Claude (`tests/test_copilot_*.py`). To watch a real turn:
 

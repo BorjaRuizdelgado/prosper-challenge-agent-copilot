@@ -233,11 +233,11 @@ async def test_permission_callback_and_hook_apply_the_guard():
     assert denied["hookSpecificOutput"]["permissionDecision"] == "deny"
 
 
-def test_model_defaults_to_haiku_and_can_be_overridden(monkeypatch):
+def test_model_defaults_to_sonnet_and_can_be_overridden(monkeypatch):
     monkeypatch.delenv("COPILOT_MODEL", raising=False)
-    assert runner._options("demo").model == "haiku"
-    monkeypatch.setenv("COPILOT_MODEL", "sonnet")
     assert runner._options("demo").model == "sonnet"
+    monkeypatch.setenv("COPILOT_MODEL", "haiku")
+    assert runner._options("demo").model == "haiku"
 
 
 async def test_prompt_points_at_the_runs_file_of_an_agent_with_runs(tmp_path, monkeypatch):

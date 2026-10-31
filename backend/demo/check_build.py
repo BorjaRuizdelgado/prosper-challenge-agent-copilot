@@ -198,7 +198,7 @@ def main(argv: list[str] | None = None, run: Runner | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m demo.check_build", description=__doc__.split("\n\n")[0])
     parser.add_argument("sample", nargs="?", default=DEFAULT_SAMPLE, help=f"sample name (default {DEFAULT_SAMPLE})")
     parser.add_argument("--dump", metavar="FILE", help="also write the coverage reports and drafts of both turns to FILE as JSON")
-    parser.add_argument("--model", help="copilot model alias, sets COPILOT_MODEL (default haiku)")
+    parser.add_argument("--model", help="copilot model alias, sets COPILOT_MODEL (default sonnet)")
     args = parser.parse_args(argv)
     if args.model:
         os.environ["COPILOT_MODEL"] = args.model
