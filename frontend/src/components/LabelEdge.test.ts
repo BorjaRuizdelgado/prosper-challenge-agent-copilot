@@ -1,6 +1,6 @@
 import { getBezierPath, Position } from "@xyflow/react";
 import { expect, test } from "vitest";
-import { bezierThroughOffset } from "./LabelEdge";
+import { bezierThroughOffset, routedThroughOffset } from "./LabelEdge";
 
 const S: [number, number] = [100, 50];
 const T: [number, number] = [500, 200];
@@ -32,4 +32,14 @@ test("the curve's midpoint lands exactly on the dragged label", () => {
     .map(Number);
   expect((S[0] + 3 * c1x + 3 * c2x + T[0]) / 8).toBeCloseTo(mid.x);
   expect((S[1] + 3 * c1y + 3 * c2y + T[1]) / 8).toBeCloseTo(mid.y);
+});
+
+test("a downward edge runs through the gutter and the gap above its target, with the label on the line", () => {
+  const { path, mid } = routedThroughOffset([593, 297], [330, 485], { x: 0, y: 0 });
+  expect(mid).toEqual({ x: (621 + 330) / 2, y: 449 });
+  expect(path.startsWith("M593,297")).toBe(true);
+  expect(path.endsWith("L330,485")).toBe(true);
+
+  const dragged = routedThroughOffset([593, 297], [330, 485], { x: 10, y: -20 });
+  expect(dragged.mid).toEqual({ x: (641 + 330) / 2, y: 429 });
 });

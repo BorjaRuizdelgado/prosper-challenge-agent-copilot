@@ -45,6 +45,53 @@ export function bezierThroughOffset(
   return { path: `M${sx},${sy} C${a},${b} ${c},${d} ${tx},${ty}`, mid };
 }
 
+const GUTTER = 28;
+const LABEL_ABOVE_TARGET = 36;
+const CORNER = 14;
+const MIN_DROP = 60;
+
+/** Straight segments through `points` with each corner rounded by `radius` (shrunk on short segments). */
+function roundedPolyline(points: [number, number][], radius: number) {
+  let d = `M${points[0][0]},${points[0][1]}`;
+  for (let i = 1; i < points.length - 1; i++) {
+    const [px, py] = points[i - 1];
+    const [cx, cy] = points[i];
+    const [nx, ny] = points[i + 1];
+    const inLen = Math.hypot(cx - px, cy - py);
+    const outLen = Math.hypot(nx - cx, ny - cy);
+    const r = Math.min(radius, inLen / 2, outLen / 2);
+    if (r === 0) {
+      d += ` L${cx},${cy}`;
+      continue;
+    }
+    d += ` L${cx - ((cx - px) / inLen) * r},${cy - ((cy - py) / inLen) * r}`;
+    d += ` Q${cx},${cy} ${cx + ((nx - cx) / outLen) * r},${cy + ((ny - cy) / outLen) * r}`;
+  }
+  const [lx, ly] = points[points.length - 1];
+  return `${d} L${lx},${ly}`;
+}
+
+/**
+ * Orthogonal route for an edge leaving a node's right side towards the top of a node further down: out into the
+ * gutter, down, across the gap above the target, then straight down into it. Staying outside both cards keeps the
+ * line (and its label, which sits on the horizontal run) clear of them. Dragging the label moves the run.
+ */
+export function routedThroughOffset([sx, sy]: [number, number], [tx, ty]: [number, number], offset: { x: number; y: number }) {
+  const gx = sx + GUTTER + offset.x * 2;
+  const my = ty - LABEL_ABOVE_TARGET + offset.y;
+  const path = roundedPolyline(
+    [
+      [sx, sy],
+      [gx, sy],
+      [gx, my],
+      [tx, my],
+      [tx, ty],
+    ],
+    CORNER,
+  );
+  return { path, mid: { x: (gx + tx) / 2, y: my } };
+}
+
 /** A bezier edge whose label (the function name) can be dragged; the line bends to keep passing through it. */
 export function LabelEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, label, selected, markerEnd, data }: EdgeProps) {
   const offset = useAgentStore((s) => s.labelOffsets[id]) ?? { x: 0, y: 0 };
@@ -53,7 +100,10 @@ export function LabelEdge({ id, sourceX, sourceY, targetX, targetY, sourcePositi
   const zoom = useStore((s) => s.transform[2]);
   const drag = useRef<{ x: number; y: number; from: { x: number; y: number }; moved: boolean } | null>(null);
 
-  const { path, mid } = bezierThroughOffset([sourceX, sourceY], [targetX, targetY], sourcePosition, targetPosition, offset);
+  const routed = sourcePosition === Position.Right && targetPosition === Position.Top && targetY - sourceY > MIN_DROP;
+  const { path, mid } = routed
+    ? routedThroughOffset([sourceX, sourceY], [targetX, targetY], offset)
+    : bezierThroughOffset([sourceX, sourceY], [targetX, targetY], sourcePosition, targetPosition, offset);
   const [nodeName, fn] = id.split("::");
   const severity = useAgentStore((s) => worstSeverity(s.issues, nodeName, fn));
   const change = (data as { change?: string } | undefined)?.change;
