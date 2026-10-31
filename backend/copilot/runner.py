@@ -121,6 +121,17 @@ def _setup_error() -> Event:
     return _event("error", message=SETUP_MESSAGE, setup=True)
 
 
+def _partial_proposal(agent_id: str, agent: dict) -> Event | None:
+    """The draft on disk as an incomplete proposal, so a failed turn does not throw its edits away."""
+    try:
+        draft = workspace.read_draft(agent_id)
+    except (FileNotFoundError, ValueError):
+        return None
+    if not isinstance(draft, dict) or draft == agent:
+        return None
+    return _event("proposal", agent=draft, issues=validate_as_dicts(draft), incomplete=True)
+
+
 async def run_turn(
     agent_id: str,
     message: str,
@@ -178,6 +189,8 @@ async def run_turn(
                                     yield _event("draft", agent=draft)
                     elif isinstance(msg, ResultMessage):
                         if msg.is_error:
+                            if partial := _partial_proposal(agent_id, agent):
+                                yield partial
                             yield _event("error", message=msg.result or "The copilot failed.")
                             return
                         _sessions[agent_id] = msg.session_id
@@ -192,6 +205,8 @@ async def run_turn(
         yield _setup_error()
         return
     except ProcessError as e:
+        if partial := _partial_proposal(agent_id, agent):
+            yield partial
         yield _event("error", message=str(e))
         return
 

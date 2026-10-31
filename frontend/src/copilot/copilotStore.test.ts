@@ -192,7 +192,7 @@ describe("copilotStore", () => {
       expect(chat().review).toEqual({ base, agent: proposed });
     });
 
-    it("is cleared when the turn ends without a proposal, fails or is stopped", async () => {
+    it("is cleared when the turn ends without a proposal or fails with none", async () => {
       install(stream([{ event: "draft", agent: draft }, { event: "done" }]));
       await useCopilotStore.getState().send("a", "go", base);
       expect(chat().review).toBeNull();
@@ -200,7 +200,18 @@ describe("copilotStore", () => {
       install(stream([{ event: "draft", agent: draft }, { event: "error", message: "boom" }]));
       await useCopilotStore.getState().send("a", "again", base);
       expect(chat().review).toBeNull();
+    });
 
+    it("keeps an incomplete proposal pending after an error turn", async () => {
+      install(stream([{ event: "proposal", agent: draft, issues: [], incomplete: true }, { event: "error", message: "boom" }]));
+      await useCopilotStore.getState().send("a", "go", base);
+      expect(reply().error).toEqual({ message: "boom", setup: false });
+      expect(reply().proposal).toEqual({ agent: draft, issues: [], base, status: "pending", incomplete: true });
+      expect(chat().review).toEqual({ base, agent: draft });
+      expect(loadChats().a.review).toEqual({ base, agent: draft });
+    });
+
+    it("turns the latest draft into an incomplete proposal when the turn is stopped", async () => {
       const c = controlled();
       install(c.streamer);
       const sent = useCopilotStore.getState().send("a", "stop me", base);
@@ -208,6 +219,19 @@ describe("copilotStore", () => {
       await vi.waitFor(() => expect(chat().review).not.toBeNull());
       useCopilotStore.getState().stop("a");
       await sent;
+      expect(reply()).toMatchObject({ stopped: true, proposal: { agent: draft, base, status: "pending", incomplete: true } });
+      expect(chat().review).toEqual({ base, agent: draft });
+    });
+
+    it("restores the working copy when a stopped turn sent no draft", async () => {
+      const c = controlled();
+      install(c.streamer);
+      const sent = useCopilotStore.getState().send("a", "stop me", base);
+      c.push({ event: "text", delta: "x" });
+      await vi.waitFor(() => expect(reply().text).toBe("x"));
+      useCopilotStore.getState().stop("a");
+      await sent;
+      expect(reply().proposal).toBeUndefined();
       expect(chat().review).toBeNull();
     });
 

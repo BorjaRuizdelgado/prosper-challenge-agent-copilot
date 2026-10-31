@@ -82,6 +82,7 @@ export function ProposalCard({ agentId, index, proposal }: { agentId: string; in
   return (
     <section className={`proposal proposal--${proposal.status}`} aria-label="Proposal">
       <p className="proposal__summary">{summarize(diff)}</p>
+      {proposal.incomplete && pending && <p className="proposal__warn" role="note">The copilot stopped before finishing: review these changes carefully.</p>}
       {proposal.issues.length > 0 && (
         <ul className="proposal__issues" aria-label="Remaining issues">
           {proposal.issues.map((i, k) => (

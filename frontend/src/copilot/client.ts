@@ -7,7 +7,7 @@ export type CopilotEvent =
   | { event: "findings"; findings: Finding[] }
   | { event: "coverage"; requirements: Requirement[]; questions: ClientQuestion[] }
   | { event: "draft"; agent: Agent }
-  | { event: "proposal"; agent: Agent; issues: Issue[] }
+  | { event: "proposal"; agent: Agent; issues: Issue[]; incomplete?: boolean }
   | { event: "done" }
   | { event: "error"; message: string; setup?: boolean };
 

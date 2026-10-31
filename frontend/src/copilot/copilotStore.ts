@@ -16,6 +16,8 @@ export interface Proposal {
   issues: Issue[];
   base: Agent;
   status: "pending" | "applied" | "discarded";
+  /** The turn ended in an error or was stopped, so the draft may be unfinished. */
+  incomplete?: boolean;
 }
 
 /** The guidelines a build request refers to; the chat shows this instead of their text. */
@@ -119,7 +121,7 @@ export interface CopilotStore {
   setPrefill: (text: string | null) => void;
   /** Sends an instruction with the current working copy; resolves when the turn has ended. */
   send: (agentId: string, message: string, agent: Agent, guidelines?: GuidelinesChip) => Promise<void>;
-  /** Aborts the running turn; its output so far stays, and it yields no proposal. */
+  /** Aborts the running turn; its output so far stays, and the latest draft (if any) becomes an incomplete proposal. */
   stop: (agentId: string) => void;
   /** Sets the status of the proposal on the assistant message at `index` (Apply and Discard). */
   setProposalStatus: (agentId: string, index: number, status: Proposal["status"]) => void;
@@ -342,7 +344,7 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
           else if (e.event === "draft") patch(agentId, (chat) => ({ ...chat, review: { base: agent, agent: e.agent } }));
           else if (e.event === "text") patchReply(agentId, (m) => ({ text: m.text + e.delta }));
           else if (e.event === "proposal") {
-            patchReply(agentId, () => ({ proposal: { agent: e.agent, issues: e.issues, base: agent, status: "pending" } }));
+            patchReply(agentId, () => ({ proposal: { agent: e.agent, issues: e.issues, base: agent, status: "pending", ...(e.incomplete && { incomplete: true }) } }));
             patch(agentId, (chat) => ({ ...chat, review: { base: agent, agent: e.agent } }));
           }
           else if (e.event === "error") patchReply(agentId, () => ({ error: { message: e.message, setup: !!e.setup } }));
@@ -353,11 +355,18 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
       } finally {
         if (controllers.get(agentId) === controller) controllers.delete(agentId);
         if (controller.signal.aborted) patchReply(agentId, () => ({ stopped: true }));
-        // Only a proposal keeps the canvas on the draft; a stopped, failed or no-change turn restores the working copy.
+        // Only a proposal keeps the canvas on the draft; a failed or no-change turn restores the working copy.
+        // A stopped turn that already sent a draft turns it into an incomplete proposal.
         patch(agentId, (chat) => {
           const last = chat.messages[chat.messages.length - 1];
-          const keep = last?.role === "assistant" && last.proposal?.status === "pending" && !controller.signal.aborted;
-          return { ...chat, running: false, startedAt: null, focus: null, review: keep ? chat.review : null };
+          let messages = chat.messages;
+          if (controller.signal.aborted && chat.review && last?.role === "assistant" && !last.proposal) {
+            const proposal: Proposal = { agent: chat.review.agent, issues: [], base: chat.review.base, status: "pending", incomplete: true };
+            messages = [...messages.slice(0, -1), { ...last, proposal }];
+          }
+          const kept = messages[messages.length - 1];
+          const keep = kept?.role === "assistant" && kept.proposal?.status === "pending" && (!controller.signal.aborted || !!kept.proposal.incomplete);
+          return { ...chat, messages, running: false, startedAt: null, focus: null, review: keep ? chat.review : null };
         });
       }
     },

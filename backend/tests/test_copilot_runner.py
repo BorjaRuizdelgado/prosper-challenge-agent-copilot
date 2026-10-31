@@ -4,6 +4,7 @@ import pytest
 from claude_agent_sdk import (
     AssistantMessage,
     CLINotFoundError,
+    ProcessError,
     ResultMessage,
     StreamEvent,
     ToolResultBlock,
@@ -199,6 +200,41 @@ async def test_sdk_error_result_is_an_error():
     events = await collect([result(is_error=True, text="boom")])
     assert events == [{"event": "error", "data": {"message": "boom"}}]
     assert "clinic" not in runner._sessions
+
+
+async def test_error_result_after_edits_keeps_the_draft_as_an_incomplete_proposal():
+    def retask(d):
+        d["nodes"][1]["task_messages"] = ["Say goodbye."]
+        d["nodes"][0]["edges"][0]["target"] = "missing"
+
+    events = await collect([tool_use("1", "Edit"), edit_draft(retask), tool_result("1"), result(is_error=True, text="boom")])
+    assert names(events) == ["step", "draft", "proposal", "error"]
+    proposal = events[2]["data"]
+    assert proposal["incomplete"] is True
+    assert proposal["agent"]["nodes"][1]["task_messages"] == ["Say goodbye."]
+    assert any(i["severity"] == "error" for i in proposal["issues"])
+    assert events[3]["data"] == {"message": "boom"}
+
+
+async def test_process_error_after_edits_keeps_the_draft_too():
+    def retask(d):
+        d["nodes"][1]["task_messages"] = ["Say goodbye."]
+
+    def crash():
+        raise ProcessError("exited")
+
+    events = await collect([tool_use("1", "Edit"), edit_draft(retask), tool_result("1"), crash])
+    assert names(events) == ["step", "draft", "proposal", "error"]
+    assert events[2]["data"]["incomplete"] is True
+
+
+async def test_error_with_an_unchanged_or_unreadable_draft_sends_no_proposal():
+    assert names(await collect([result(is_error=True, text="boom")])) == ["error"]
+
+    def corrupt():
+        workspace.draft_path("clinic").write_text("{not json")
+
+    assert names(await collect([corrupt, result(is_error=True, text="boom")])) == ["error"]
 
 
 async def test_closing_the_stream_interrupts_the_client():

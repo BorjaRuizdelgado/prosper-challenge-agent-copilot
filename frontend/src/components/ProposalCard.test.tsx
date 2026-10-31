@@ -72,6 +72,12 @@ describe("ProposalCard", () => {
     expect(screen.getByRole("note")).toHaveTextContent("will not be callable");
   });
 
+  it("tells the user an incomplete proposal came from a copilot that stopped early", () => {
+    seed({ incomplete: true });
+    renderApp(<CopilotPanel />);
+    expect(screen.getByRole("note")).toHaveTextContent("The copilot stopped before finishing: review these changes carefully.");
+  });
+
   it("Apply replaces the agent as unsaved, keeps positions of kept nodes and marks the card applied", async () => {
     seed();
     renderApp(<CopilotPanel />);
