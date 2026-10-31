@@ -8,6 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint . && tsc -b",
     "postinstall": "npm ci --prefix tools/ts-eslint --no-audit --no-fund",
+    "format": "prettier --write . && eslint . --fix",
+    "format:check": "prettier --check .",
     "preview": "vite preview",
     "test": "vitest run",
     "e2e": "playwright test"
@@ -35,9 +37,11 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "eslint": "^10.14.0",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.13.0",
     "jsdom": "^29.1.1",
+    "prettier": "^3.9.10",
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
     "vitest": "^4.1.12"

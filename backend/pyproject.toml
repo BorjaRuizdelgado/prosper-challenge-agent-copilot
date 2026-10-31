@@ -44,6 +44,9 @@ pythonpath = ["."]
 line-length = 200
 extend-exclude = [".venv"]
 
+[tool.ruff.format]
+quote-style = "double"
+
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
 # B008: FastAPI `Depends(...)` defaults; B905: zip() over equal-length lists.
