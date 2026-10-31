@@ -50,8 +50,6 @@ function GuidelinesSection() {
   useEffect(() => {
     if (!agentId) return;
     let live = true;
-    setText(undefined);
-    setDraft(null);
     getGuidelines(agentId).then(
       (t) => live && setText(t),
       (e: Error) => {
@@ -129,6 +127,7 @@ function GuidelinesSection() {
 /** Agent-level settings: name, global persona, voice and model. */
 export function SettingsForm() {
   const agent = useAgentStore((s) => s.agent);
+  const agentId = useAgentStore((s) => s.agentId);
   const updateSettings = useAgentStore((s) => s.updateSettings);
   if (!agent) return null;
   return (
@@ -149,7 +148,8 @@ export function SettingsForm() {
       </div>
       <ChoiceField id="agent-voice" label="Voice" options={VOICES} value={agent.voice_id ?? VOICES[0].value} onChange={(voice_id) => updateSettings({ voice_id })} />
       <ChoiceField id="agent-model" label="Model" options={MODELS} value={agent.model ?? MODELS[0].value} onChange={(model) => updateSettings({ model })} />
-      <GuidelinesSection />
+      {/* keyed so switching agent starts from a clean loading state */}
+      <GuidelinesSection key={agentId} />
     </form>
   );
 }

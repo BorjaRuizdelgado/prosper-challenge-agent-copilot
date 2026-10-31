@@ -398,7 +398,11 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
     reset: async (agentId) => {
       controllers.get(agentId)?.abort();
       controllers.delete(agentId);
-      for (const [k, c] of replayControllers) if (k.startsWith(`${agentId}#`)) (c.abort(), replayControllers.delete(k));
+      for (const [k, c] of replayControllers) {
+        if (!k.startsWith(`${agentId}#`)) continue;
+        c.abort();
+        replayControllers.delete(k);
+      }
       patch(agentId, () => emptyChat);
       await resetCopilot(agentId).catch(() => {});
     },

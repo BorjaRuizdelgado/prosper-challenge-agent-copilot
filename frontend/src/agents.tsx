@@ -43,15 +43,19 @@ export function AgentsProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
   const toast = useToast();
 
-  const reload = useCallback(() => {
-    setState({ status: "loading" });
+  const load = useCallback(() => {
     api.listAgents().then(
       (agents) => setState({ status: "ready", agents }),
       (e: Error) => setState({ status: "error", message: e.message }),
     );
   }, []);
+  const reload = useCallback(() => {
+    setState({ status: "loading" });
+    load();
+  }, [load]);
 
-  useEffect(reload, [reload]);
+  // The state starts as "loading", so the first fetch needs no reset.
+  useEffect(load, [load]);
 
   // A save from the editor can change the name and node count the list shows.
   useEffect(

@@ -20,7 +20,6 @@ function useElapsed(startedAt: number | null): number {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (startedAt === null) return;
-    setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, [startedAt]);
@@ -70,14 +69,18 @@ export function CopilotPanel() {
   // "Ask Copilot" from the Call tab: take the text, put the cursor at its end so the user can finish it.
   useEffect(() => {
     if (prefill === null) return;
-    setDraft(prefill);
-    useCopilotStore.getState().setPrefill(null);
-    requestAnimationFrame(() => {
-      const el = input.current;
-      if (!el) return;
-      el.focus();
-      el.setSelectionRange(prefill.length, prefill.length);
+    const frame = requestAnimationFrame(() => {
+      setDraft(prefill);
+      useCopilotStore.getState().setPrefill(null);
+      // The textarea shows the new draft only after this render, so place the cursor once it has.
+      requestAnimationFrame(() => {
+        const el = input.current;
+        if (!el) return;
+        el.focus();
+        el.setSelectionRange(prefill.length, prefill.length);
+      });
     });
+    return () => cancelAnimationFrame(frame);
   }, [prefill]);
   const elapsed = useElapsed(chat.startedAt);
   const end = useRef<HTMLLIElement>(null);

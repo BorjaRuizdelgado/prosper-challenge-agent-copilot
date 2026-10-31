@@ -72,7 +72,7 @@ export async function* streamCopilot(
       body: JSON.stringify({ message, agent }),
       signal,
     });
-  } catch (e) {
+  } catch {
     if (signal?.aborted) return;
     yield failure("Could not reach the API. Is it running?");
     return;
@@ -81,7 +81,7 @@ export async function* streamCopilot(
   if (!res.ok || !res.body) return void (yield failure(`The copilot request failed (${res.status}).`));
   try {
     yield* parseSse(res.body);
-  } catch (e) {
+  } catch {
     if (!signal?.aborted) yield failure("The connection to the copilot was lost.");
   }
 }

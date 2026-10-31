@@ -128,9 +128,7 @@ describe("copilotStore", () => {
   });
 
   it("turns a thrown stream failure into an error", async () => {
-    install(async function* () {
-      throw new Error("boom");
-    });
+    install(() => ({ [Symbol.asyncIterator]: () => ({ next: () => Promise.reject(new Error("boom")) }) }));
     await useCopilotStore.getState().send("a", "go", base);
     expect(reply().error).toEqual({ message: "boom", setup: false });
     expect(chat().running).toBe(false);

@@ -49,7 +49,7 @@ export function GuidelinesDialog({ onSubmit, onClose }: Props) {
     setName((n) => n || titleOf(file.name));
   };
 
-  const useSample = (sample: SampleGuidelines) => {
+  const applySample = (sample: SampleGuidelines) => {
     setError(null);
     setText(sample.text);
     setSource(titleOf(sample.name));
@@ -107,7 +107,7 @@ export function GuidelinesDialog({ onSubmit, onClose }: Props) {
             }}
           />
           {samples.map((sample) => (
-            <button key={sample.name} type="button" onClick={() => useSample(sample)}>
+            <button key={sample.name} type="button" onClick={() => applySample(sample)}>
               Use sample: {titleOf(sample.name)}
             </button>
           ))}
