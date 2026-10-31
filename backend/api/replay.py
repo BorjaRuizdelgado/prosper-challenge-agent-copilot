@@ -2,7 +2,7 @@
 
 import asyncio
 import os
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -56,7 +56,7 @@ async def stream_replay(jobs: list, fn: ReplayFn):
         while not (pending.done() and queue.empty()):
             try:
                 event = await asyncio.wait_for(queue.get(), timeout=0.05)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 continue
             yield sse(event)
         yield sse({"event": "done", "data": {}})

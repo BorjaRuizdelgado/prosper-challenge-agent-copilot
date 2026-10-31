@@ -11,8 +11,8 @@ import argparse
 import asyncio
 import os
 import sys
+from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Awaitable, Callable
 
 from dotenv import load_dotenv
 

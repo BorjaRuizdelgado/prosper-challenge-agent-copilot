@@ -3,7 +3,7 @@
 
 PROJECT := backend
 
-.PHONY: help install run api frontend dev up down demo demo-check check-guidelines test clean
+.PHONY: help install run api frontend dev up down demo demo-check check-guidelines lint test clean
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -49,6 +49,10 @@ demo-check: ## Replay every demo run against the seeded agents (before only) and
 
 check-guidelines: ## Check a real copilot build of a sample (SAMPLE=name, MODEL=haiku|sonnet, DUMP=file); needs the claude CLI
 	uv run --directory $(PROJECT) python -m demo.check_build $(SAMPLE) $(if $(MODEL),--model $(MODEL)) $(if $(DUMP),--dump $(DUMP))
+
+lint: ## Lint the backend (ruff) and typecheck the frontend (tsc)
+	uv run --directory $(PROJECT) ruff check .
+	cd frontend && npm run lint
 
 test: ## Run backend (pytest), frontend (Vitest) and the Playwright smoke spec
 	uv run --directory $(PROJECT) pytest

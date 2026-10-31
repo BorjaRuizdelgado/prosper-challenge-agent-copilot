@@ -6,7 +6,7 @@ import re
 import secrets
 import shutil
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
@@ -65,7 +65,7 @@ def list_agents() -> list[dict]:
                 "name": data.get("name", path.stem),
                 "node_count": len(data.get("nodes", [])),
                 "updated_at": datetime.fromtimestamp(
-                    path.stat().st_mtime, tz=timezone.utc
+                    path.stat().st_mtime, tz=UTC
                 ).isoformat(),
             }
         )
@@ -74,7 +74,7 @@ def list_agents() -> list[dict]:
 
 
 def _updated_at(path: Path) -> str:
-    return datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).isoformat()
+    return datetime.fromtimestamp(path.stat().st_mtime, tz=UTC).isoformat()
 
 
 def _record(agent_id: str, path: Path, data: dict) -> dict:

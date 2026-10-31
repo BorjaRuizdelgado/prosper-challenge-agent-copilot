@@ -1,7 +1,7 @@
 """Copilot endpoints (design Decision 6): one turn streamed as server-sent events."""
 
 import json
-from typing import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Callable
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse

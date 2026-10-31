@@ -3,7 +3,7 @@ import asyncio
 from agent_builder.schema import AgentConfig
 from replay.simulator import replay
 
-from .fakes import FakeChat, ScriptedCaller, call, say
+from .fakes import FakeChat, ScriptedCaller, call
 
 
 def agent(**over):

@@ -6,13 +6,14 @@
 
 import os
 import warnings
-from typing import Any, AsyncIterator, Callable
+from collections.abc import AsyncIterator, Callable
+from typing import Any
 
 from claude_agent_sdk import (
     AssistantMessage,
+    CanUseToolShadowedWarning,
     ClaudeAgentOptions,
     ClaudeSDKClient,
-    CanUseToolShadowedWarning,
     CLIConnectionError,
     CLINotFoundError,
     HookMatcher,
@@ -30,13 +31,13 @@ from agent_builder.validation import validate_as_dicts
 from api.runs import list_runs
 from api.store import get_guidelines
 from copilot import workspace
+from copilot.events import DraftTracker, step_for_tool, validation_step
+from copilot.guard import check_path
+from copilot.validate_tool import FULL_COVERAGE_TOOL_NAME, FULL_FINDINGS_TOOL_NAME, FULL_TOOL_NAME, build_server
 
 # Sonnet by default: builds and coverage questions are noticeably better than on Haiku (the CLI resolves
 # the alias to the current Sonnet). COPILOT_MODEL overrides it, e.g. `haiku` for the cheapest tier.
 DEFAULT_MODEL = "sonnet"
-from copilot.events import DraftTracker, step_for_tool, validation_step
-from copilot.guard import check_path
-from copilot.validate_tool import FULL_COVERAGE_TOOL_NAME, FULL_FINDINGS_TOOL_NAME, FULL_TOOL_NAME, build_server
 
 # Skill and validate_agent are allowed on purpose; the callback guards the file tools only.
 warnings.filterwarnings("ignore", category=CanUseToolShadowedWarning)

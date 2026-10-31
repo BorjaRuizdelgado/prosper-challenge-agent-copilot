@@ -9,7 +9,6 @@
 #
 
 from dataclasses import dataclass, field
-from typing import Optional
 
 DEFAULT_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"  # ElevenLabs "Rachel"
 DEFAULT_MODEL = "gpt-4o"
@@ -43,7 +42,7 @@ class Node:
 
     name: str
     task_messages: list = field(default_factory=list)   # this node's objectives
-    role_message: Optional[str] = None                  # overrides the global persona
+    role_message: str | None = None                  # overrides the global persona
     edges: list = field(default_factory=list)           # list[Edge]; transitions out
     pre_actions: list = field(default_factory=list)
     post_actions: list = field(default_factory=list)

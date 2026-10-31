@@ -11,9 +11,9 @@
 
 import inspect
 import json
+from collections.abc import Awaitable, Callable
 from dataclasses import asdict
 from pathlib import Path
-from typing import Awaitable, Callable, Optional, Union
 
 from loguru import logger
 from pipecat_flows import FlowManager, FlowsFunctionSchema, NodeConfig
@@ -22,13 +22,13 @@ from .schema import AgentConfig, Edge, Node
 from .validation import validate
 
 # (from_node, to_node, via_function, collected_args); may be sync or async.
-TransitionCallback = Callable[[str, str, str, dict], Union[None, Awaitable[None]]]
+TransitionCallback = Callable[[str, str, str, dict], None | Awaitable[None]]
 
 
 class AgentBuilder:
     """Builds a runnable Pipecat Flows graph from a declarative AgentConfig."""
 
-    def __init__(self, config: AgentConfig, on_transition: Optional[TransitionCallback] = None):
+    def __init__(self, config: AgentConfig, on_transition: TransitionCallback | None = None):
         self.config = config
         # Settable after construction: bot.py only has the worker to report through later.
         self.on_transition = on_transition
@@ -41,7 +41,7 @@ class AgentBuilder:
         return cls(AgentConfig.from_dict(data))
 
     @classmethod
-    def from_json(cls, path: Union[str, Path]) -> "AgentBuilder":
+    def from_json(cls, path: str | Path) -> "AgentBuilder":
         data = json.loads(Path(path).read_text())
         return cls.from_dict(data)
 

@@ -15,9 +15,10 @@ import re
 import sys
 import tempfile
 import time
+from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, AsyncIterator, Callable
+from typing import Any
 
 DEMO_GUIDELINES_DIR = Path(__file__).resolve().parent / "guidelines"
 DEFAULT_SAMPLE = "harbor-dental-reschedule"

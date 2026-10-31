@@ -6,7 +6,6 @@
 
 import re
 from dataclasses import asdict, dataclass
-from typing import Optional
 
 # Edges become LLM tools; OpenAI rejects tool names outside this pattern mid-call.
 FUNCTION_NAME_RE = re.compile(r"^[a-zA-Z0-9_-]{1,64}$")
@@ -17,8 +16,8 @@ class Issue:
     severity: str  # "error" | "warning"
     code: str
     message: str
-    node: Optional[str] = None
-    edge: Optional[str] = None  # edge function name, within `node`
+    node: str | None = None
+    edge: str | None = None  # edge function name, within `node`
 
 
 def _error(code: str, message: str, **where) -> Issue:

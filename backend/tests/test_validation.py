@@ -6,7 +6,6 @@ from agent_builder import AgentBuilder, validate
 from agent_builder.schema import AgentConfig
 from api import store
 
-
 TASK = [{"role": "developer", "content": "t"}]
 
 

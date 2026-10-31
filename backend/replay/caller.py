@@ -2,7 +2,6 @@
 
 import json
 from pathlib import Path
-from typing import Optional
 
 from .client import ChatClient
 
@@ -54,7 +53,7 @@ class Caller:
         return (out.content or "").strip()
 
 
-async def goal_for(run: dict, chat_client: ChatClient, cache_path: Optional[Path] = None) -> str:
+async def goal_for(run: dict, chat_client: ChatClient, cache_path: Path | None = None) -> str:
     """The run's own ``goal``, else a cached one-line summary of the call."""
     if run.get("goal"):
         return run["goal"]

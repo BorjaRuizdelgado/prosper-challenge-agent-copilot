@@ -7,7 +7,7 @@ real implementation.
 
 import json
 from dataclasses import dataclass, field
-from typing import Optional, Protocol
+from typing import Protocol
 
 
 @dataclass
@@ -19,7 +19,7 @@ class ToolCall:
 
 @dataclass
 class ChatReply:
-    content: Optional[str] = None
+    content: str | None = None
     tool_calls: list = field(default_factory=list)  # list[ToolCall]
 
 
@@ -29,9 +29,9 @@ class ChatClient(Protocol):
         *,
         model: str,
         messages: list,
-        tools: Optional[list] = None,
-        temperature: Optional[float] = None,
-        response_format: Optional[dict] = None,
+        tools: list | None = None,
+        temperature: float | None = None,
+        response_format: dict | None = None,
     ) -> ChatReply: ...
 
 
