@@ -86,7 +86,7 @@ Two other requests use the same file:
 - **Client answers.** When the user pastes or relays the client's answers to your questions:
   1. Write every value they gave (a notice period, a phone number, a list) into each node that needs it: the greeting, the task and the handoff, not only the first. Write numbers as digits (24 hours, 555-0142), exactly as the client gave them. Replace the default with the answer; do not keep both.
   2. Validate.
-  3. Call `report_coverage` again. A requirement the answers settle becomes `covered` and its question is removed. Remove every question the reply answers, even in part, and add no new question about a detail the reply already settled (for example, whether messages should include a callback number, when the reply gave the number). If a question asked for several things and the reply gave some, reword it to ask only what is left. Keep a question only when the reply says nothing about it.
+  3. Then call `report_coverage` again. A requirement the answers settle becomes `covered` and its question is removed. Remove every question the reply answers, even in part, and add no new question about a detail the reply already settled (for example, whether messages should include a callback number, when the reply gave the number). If a question asked for several things and the reply gave some, reword it to ask only what is left. Keep a question only when the reply says nothing about it.
 
 ## Blueprints
 
