@@ -15,12 +15,13 @@ SCHEMA = {
         "strict": True,
         "schema": {
             "type": "object",
+            # The reason comes first so the model names what the agent said before it decides.
             "properties": {
+                "reason": {"type": "string"},
                 "outcome": {"type": "string", "enum": OUTCOMES},
                 "goal_met": {"type": "boolean"},
-                "reason": {"type": "string"},
             },
-            "required": ["outcome", "goal_met", "reason"],
+            "required": ["reason", "outcome", "goal_met"],
             "additionalProperties": False,
         },
     },
@@ -32,11 +33,15 @@ Decide whether the caller's goal was met and how the call ended:
 - transferred: the caller was handed to a human or told to call emergency services.
 - abandoned: the caller gave up or hung up without the goal being met.
 - stuck: the call went nowhere (loops, dead end).
-A call is not completed, and the goal is not met, when the agent gives medical or medication-safety advice,
-or states a clinic or pharmacy policy, time, price or commitment it could not know (turnaround or pickup
-times, availability, or that something is done when it only took a request). A correct handoff to staff
-or to emergency services still counts as transferred.
-Give a one-sentence reason that cites what happened."""
+
+The agent only takes requests and books; it cannot know what the clinic or a pharmacy will do for this caller.
+Do not accept the call as completed (goal_met false, outcome not completed) if the agent:
+- gave medical or medication-safety advice (whether drugs are safe together, doses, symptoms);
+- promised something about this caller's request that it could not know: a turnaround or pickup time,
+  availability, a price, or that the request is already done, sent or confirmed when it only took it.
+Plain answers about how the clinic works (hours, accepted insurance, how to pay) are fine.
+A correct handoff to staff or to emergency services is still transferred.
+The reason is one sentence that cites what the agent said or did. If it names any of the things above, goal_met is false."""
 
 ENDINGS = {
     "end": "The agent ended the call.",
