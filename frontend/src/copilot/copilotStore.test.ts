@@ -128,9 +128,7 @@ describe("copilotStore", () => {
   });
 
   it("turns a thrown stream failure into an error", async () => {
-    install(async function* () {
-      throw new Error("boom");
-    });
+    install(() => ({ [Symbol.asyncIterator]: () => ({ next: () => Promise.reject(new Error("boom")) }) }));
     await useCopilotStore.getState().send("a", "go", base);
     expect(reply().error).toEqual({ message: "boom", setup: false });
     expect(chat().running).toBe(false);
@@ -192,15 +190,36 @@ describe("copilotStore", () => {
       expect(chat().review).toEqual({ base, agent: proposed });
     });
 
-    it("is cleared when the turn ends without a proposal, fails or is stopped", async () => {
+    it("is cleared when the turn ends without a proposal or fails with none", async () => {
       install(stream([{ event: "draft", agent: draft }, { event: "done" }]));
       await useCopilotStore.getState().send("a", "go", base);
       expect(chat().review).toBeNull();
 
-      install(stream([{ event: "draft", agent: draft }, { event: "error", message: "boom" }]));
+      install(
+        stream([
+          { event: "draft", agent: draft },
+          { event: "error", message: "boom" },
+        ]),
+      );
       await useCopilotStore.getState().send("a", "again", base);
       expect(chat().review).toBeNull();
+    });
 
+    it("keeps an incomplete proposal pending after an error turn", async () => {
+      install(
+        stream([
+          { event: "proposal", agent: draft, issues: [], incomplete: true },
+          { event: "error", message: "boom" },
+        ]),
+      );
+      await useCopilotStore.getState().send("a", "go", base);
+      expect(reply().error).toEqual({ message: "boom", setup: false });
+      expect(reply().proposal).toEqual({ agent: draft, issues: [], base, status: "pending", incomplete: true });
+      expect(chat().review).toEqual({ base, agent: draft });
+      expect(loadChats().a.review).toEqual({ base, agent: draft });
+    });
+
+    it("turns the latest draft into an incomplete proposal when the turn is stopped", async () => {
       const c = controlled();
       install(c.streamer);
       const sent = useCopilotStore.getState().send("a", "stop me", base);
@@ -208,6 +227,19 @@ describe("copilotStore", () => {
       await vi.waitFor(() => expect(chat().review).not.toBeNull());
       useCopilotStore.getState().stop("a");
       await sent;
+      expect(reply()).toMatchObject({ stopped: true, proposal: { agent: draft, base, status: "pending", incomplete: true } });
+      expect(chat().review).toEqual({ base, agent: draft });
+    });
+
+    it("restores the working copy when a stopped turn sent no draft", async () => {
+      const c = controlled();
+      install(c.streamer);
+      const sent = useCopilotStore.getState().send("a", "stop me", base);
+      c.push({ event: "text", delta: "x" });
+      await vi.waitFor(() => expect(reply().text).toBe("x"));
+      useCopilotStore.getState().stop("a");
+      await sent;
+      expect(reply().proposal).toBeUndefined();
       expect(chat().review).toBeNull();
     });
 
@@ -238,13 +270,15 @@ const findings = [{ title: "Callers cannot cancel", runs: ["r-1", "r-2"], cause:
 
 describe("findings", () => {
   it("attach to the assistant message, before the proposal, and the last event wins", async () => {
-    install(stream([
-      { event: "step", label: "Reporting 2 findings" },
-      { event: "findings", findings: [{ ...findings[0], title: "first" }] },
-      { event: "findings", findings },
-      { event: "proposal", agent: proposed, issues: [] },
-      { event: "done" },
-    ]));
+    install(
+      stream([
+        { event: "step", label: "Reporting 2 findings" },
+        { event: "findings", findings: [{ ...findings[0], title: "first" }] },
+        { event: "findings", findings },
+        { event: "proposal", agent: proposed, issues: [] },
+        { event: "done" },
+      ]),
+    );
     await useCopilotStore.getState().send("a", "review", base);
     expect(reply().findings).toEqual(findings);
     expect(reply().proposal?.status).toBe("pending");
@@ -273,12 +307,14 @@ const coverage = {
 
 describe("coverage", () => {
   it("attaches to the assistant message and the last event wins", async () => {
-    install(stream([
-      { event: "coverage", requirements: [], questions: [] },
-      { event: "coverage", ...coverage },
-      { event: "proposal", agent: proposed, issues: [] },
-      { event: "done" },
-    ]));
+    install(
+      stream([
+        { event: "coverage", requirements: [], questions: [] },
+        { event: "coverage", ...coverage },
+        { event: "proposal", agent: proposed, issues: [] },
+        { event: "done" },
+      ]),
+    );
     await useCopilotStore.getState().send("a", "build", base);
     expect(reply().coverage).toEqual(coverage);
     expect(reply().proposal?.status).toBe("pending");

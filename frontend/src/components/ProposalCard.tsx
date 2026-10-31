@@ -26,8 +26,12 @@ function Fields({ fields }: { fields: FieldChange[] }) {
       {fields.map((f) => (
         <li key={f.field}>
           <strong>{f.field}</strong>
-          <p className="proposal__before" aria-label={`${f.field} before`}>{f.before || "(empty)"}</p>
-          <p className="proposal__after" aria-label={`${f.field} after`}>{f.after || "(empty)"}</p>
+          <p className="proposal__before" aria-label={`${f.field} before`}>
+            {f.before || "(empty)"}
+          </p>
+          <p className="proposal__after" aria-label={`${f.field} after`}>
+            {f.after || "(empty)"}
+          </p>
         </li>
       ))}
     </ul>
@@ -39,18 +43,36 @@ function Changes({ diff }: { diff: AgentDiff }) {
     <details className="proposal__changes">
       <summary>Changes</summary>
       <ul>
-        {diff.addedNodes.map((n) => <li key={`+${n}`}>Added node <code>{n}</code></li>)}
-        {diff.removedNodes.map((n) => <li key={`-${n}`}>Removed node <code>{n}</code></li>)}
+        {diff.addedNodes.map((n) => (
+          <li key={`+${n}`}>
+            Added node <code>{n}</code>
+          </li>
+        ))}
+        {diff.removedNodes.map((n) => (
+          <li key={`-${n}`}>
+            Removed node <code>{n}</code>
+          </li>
+        ))}
         {diff.changedNodes.map((c) => (
           <li key={`~${c.name}`}>
             <details>
-              <summary>Changed node <code>{c.name}</code></summary>
+              <summary>
+                Changed node <code>{c.name}</code>
+              </summary>
               <Fields fields={c.fields} />
             </details>
           </li>
         ))}
-        {diff.addedEdges.map((id) => <li key={`+${id}`}>Added edge <code>{id}</code></li>)}
-        {diff.removedEdges.map((id) => <li key={`-${id}`}>Removed edge <code>{id}</code></li>)}
+        {diff.addedEdges.map((id) => (
+          <li key={`+${id}`}>
+            Added edge <code>{id}</code>
+          </li>
+        ))}
+        {diff.removedEdges.map((id) => (
+          <li key={`-${id}`}>
+            Removed edge <code>{id}</code>
+          </li>
+        ))}
         {diff.changedSettings.length > 0 && (
           <li>
             <details>
@@ -62,7 +84,9 @@ function Changes({ diff }: { diff: AgentDiff }) {
         {diff.changedEdges.map((c) => (
           <li key={`~${c.id}`}>
             <details>
-              <summary>Changed edge <code>{c.id}</code></summary>
+              <summary>
+                Changed edge <code>{c.id}</code>
+              </summary>
               <Fields fields={c.fields} />
             </details>
           </li>
@@ -82,6 +106,11 @@ export function ProposalCard({ agentId, index, proposal }: { agentId: string; in
   return (
     <section className={`proposal proposal--${proposal.status}`} aria-label="Proposal">
       <p className="proposal__summary">{summarize(diff)}</p>
+      {proposal.incomplete && pending && (
+        <p className="proposal__warn" role="note">
+          The copilot stopped before finishing: review these changes carefully.
+        </p>
+      )}
       {proposal.issues.length > 0 && (
         <ul className="proposal__issues" aria-label="Remaining issues">
           {proposal.issues.map((i, k) => (
@@ -91,7 +120,11 @@ export function ProposalCard({ agentId, index, proposal }: { agentId: string; in
           ))}
         </ul>
       )}
-      {blocking && pending && <p className="proposal__warn" role="note">The agent will not be callable until these errors are fixed.</p>}
+      {blocking && pending && (
+        <p className="proposal__warn" role="note">
+          The agent will not be callable until these errors are fixed.
+        </p>
+      )}
       <Changes diff={diff} />
       {pending ? (
         <div className="proposal__actions">

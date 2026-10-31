@@ -7,7 +7,7 @@ export type CopilotEvent =
   | { event: "findings"; findings: Finding[] }
   | { event: "coverage"; requirements: Requirement[]; questions: ClientQuestion[] }
   | { event: "draft"; agent: Agent }
-  | { event: "proposal"; agent: Agent; issues: Issue[] }
+  | { event: "proposal"; agent: Agent; issues: Issue[]; incomplete?: boolean }
   | { event: "done" }
   | { event: "error"; message: string; setup?: boolean };
 
@@ -58,12 +58,7 @@ const failure = (message: string): CopilotEvent => ({ event: "error", message })
  * a turn already running) come back as an `error` event so callers have a single path.
  * Aborting `signal` ends the stream quietly; the server sees the disconnect and stops the turn.
  */
-export async function* streamCopilot(
-  agentId: string,
-  message: string,
-  agent: Agent,
-  signal?: AbortSignal,
-): AsyncGenerator<CopilotEvent> {
+export async function* streamCopilot(agentId: string, message: string, agent: Agent, signal?: AbortSignal): AsyncGenerator<CopilotEvent> {
   let res: Response;
   try {
     res = await fetch(`/api/copilot/${encodeURIComponent(agentId)}`, {
@@ -72,7 +67,7 @@ export async function* streamCopilot(
       body: JSON.stringify({ message, agent }),
       signal,
     });
-  } catch (e) {
+  } catch {
     if (signal?.aborted) return;
     yield failure("Could not reach the API. Is it running?");
     return;
@@ -81,7 +76,7 @@ export async function* streamCopilot(
   if (!res.ok || !res.body) return void (yield failure(`The copilot request failed (${res.status}).`));
   try {
     yield* parseSse(res.body);
-  } catch (e) {
+  } catch {
     if (!signal?.aborted) yield failure("The connection to the copilot was lost.");
   }
 }

@@ -24,9 +24,7 @@ def test_existing_agents_are_listed_and_not_reseeded(agents_dir):
     with TestClient(app) as c:
         body = c.get("/api/agents").json()
 
-    assert body == [
-        {"id": "mine", "name": "Mine", "node_count": 2, "updated_at": body[0]["updated_at"]}
-    ]
+    assert body == [{"id": "mine", "name": "Mine", "node_count": 2, "updated_at": body[0]["updated_at"]}]
 
 
 def test_broken_and_oddly_named_files_are_skipped(client, agents_dir):

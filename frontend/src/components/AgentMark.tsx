@@ -15,11 +15,7 @@ const hueOf = (name: string) => HUES[[...name].reduce((h, c) => (h * 31 + c.char
 export function AgentMark({ name, size = 28 }: { name: string; size?: number }) {
   const hue = hueOf(name);
   return (
-    <span
-      className="agent-mark"
-      aria-hidden
-      style={{ width: size, height: size, background: `hsl(${hue} 42% 91%)`, color: `hsl(${hue} 48% 26%)` }}
-    >
+    <span className="agent-mark" aria-hidden style={{ width: size, height: size, background: `hsl(${hue} 42% 91%)`, color: `hsl(${hue} 48% 26%)` }}>
       {initials(name)}
     </span>
   );

@@ -4,9 +4,7 @@ import { afterEach, vi } from "vitest";
 import { json, mockFetch, renderApp } from "../test/helpers";
 import { AgentList } from "./AgentList";
 
-const agents = [
-  { id: "a-1", name: "Scheduler", node_count: 4, updated_at: "2026-01-01T00:00:00Z" },
-];
+const agents = [{ id: "a-1", name: "Scheduler", node_count: 4, updated_at: "2026-01-01T00:00:00Z" }];
 
 const renderList = () => renderApp(<AgentList />);
 

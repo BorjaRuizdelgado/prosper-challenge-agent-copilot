@@ -12,7 +12,10 @@ const UNSUPPORTED = "Only text and Markdown files (.md, .txt) are supported.";
 
 const isText = (file: File) => /\.(md|markdown|txt)$/i.test(file.name);
 const titleOf = (fileName: string) =>
-  fileName.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  fileName
+    .replace(/\.[^.]+$/, "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 
 /** Creates an agent from client guidelines: a name, the text (typed, dropped as a .md/.txt file, or a sample). */
 export function GuidelinesDialog({ onSubmit, onClose }: Props) {
@@ -49,7 +52,7 @@ export function GuidelinesDialog({ onSubmit, onClose }: Props) {
     setName((n) => n || titleOf(file.name));
   };
 
-  const useSample = (sample: SampleGuidelines) => {
+  const applySample = (sample: SampleGuidelines) => {
     setError(null);
     setText(sample.text);
     setSource(titleOf(sample.name));
@@ -107,7 +110,7 @@ export function GuidelinesDialog({ onSubmit, onClose }: Props) {
             }}
           />
           {samples.map((sample) => (
-            <button key={sample.name} type="button" onClick={() => useSample(sample)}>
+            <button key={sample.name} type="button" onClick={() => applySample(sample)}>
               Use sample: {titleOf(sample.name)}
             </button>
           ))}

@@ -16,8 +16,7 @@ afterEach(() => vi.unstubAllGlobals());
 /** In the editor the agents live in the switcher menu next to the agent's name. */
 const openSwitcher = () => userEvent.click(screen.getByRole("button", { name: "Switch agent" }));
 
-const calls = (fn: ReturnType<typeof vi.fn>) =>
-  fn.mock.calls.map(([url, init]) => `${init?.method ?? "GET"} ${url}`);
+const calls = (fn: ReturnType<typeof vi.fn>) => fn.mock.calls.map(([url, init]) => `${init?.method ?? "GET"} ${url}`);
 
 test("creating an agent adds it to the list and opens it at its own URL", async () => {
   const fetchMock = mockApi({
@@ -96,9 +95,10 @@ test("duplicating adds the copy and opens it", async () => {
 
   await userEvent.click(screen.getByRole("button", { name: "Duplicate Scheduler" }));
 
-  expect(await screen.findByRole("link", { name: /Scheduler copy/ })).toHaveAttribute("href", "/agents/copy-9999");
-  expect(calls(fetchMock)).toContain("POST /api/agents/a-1/duplicate");
+  // The copy's list link only lives until the editor opens, so check where it ends up instead.
   expect(await screen.findByRole("heading", { name: "Scheduler copy" })).toBeInTheDocument();
+  expect(calls(fetchMock)).toContain("POST /api/agents/a-1/duplicate");
+  expect(calls(fetchMock)).toContain("GET /api/agents/copy-9999");
 });
 
 test("delete needs confirmation, and cancelling deletes nothing", async () => {

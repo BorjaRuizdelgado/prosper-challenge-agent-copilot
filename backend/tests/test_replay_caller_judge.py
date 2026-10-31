@@ -70,6 +70,13 @@ def test_judge_passes_the_verdict_through_and_asks_for_json_schema():
     assert "Cancel" in call["messages"][1]["content"] and "Done." in call["messages"][1]["content"]
 
 
+def test_judge_prompt_rejects_invented_answers_but_allows_handoffs():
+    system = run_judge(SimResult(transcript=[], ended="end"), verdict("completed", True))[1]["messages"][0]["content"]
+
+    assert "medication-safety advice" in system and "could not know" in system
+    assert "handoff to staff" in system and "emergency services" in system
+
+
 def test_turn_limit_overrides_to_stuck():
     sim = SimResult(transcript=[{"speaker": "agent", "text": "Hmm."}], ended="stuck")
     out, _ = run_judge(sim, verdict("completed", True))

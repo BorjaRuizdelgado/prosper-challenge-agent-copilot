@@ -1,17 +1,7 @@
 import { create } from "zustand";
 import * as api from "./api";
 import { autoLayout, NODE_HEIGHT, resolveLayout } from "./layout";
-import {
-  type Agent,
-  type AgentNode,
-  type Edge,
-  edgeId,
-  FUNCTION_NAME_RE,
-  isEdgeKey,
-  type Issue,
-  type Position,
-  toFunctionName,
-} from "./model";
+import { type Agent, type AgentNode, type Edge, edgeId, FUNCTION_NAME_RE, isEdgeKey, type Issue, type Position, toFunctionName } from "./model";
 
 export type Selection = { kind: "node"; node: string } | { kind: "edge"; node: string; function: string } | null;
 
@@ -189,8 +179,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     if (to === from) return { ok: true };
     if (agent.nodes.some((n) => n.name === to)) return { ok: false, reason: "duplicate" };
 
-    const moved = (map?: Record<string, Position>) =>
-      map && Object.fromEntries(Object.entries(map).map(([k, v]) => [k === from ? to : k, v]));
+    const moved = (map?: Record<string, Position>) => map && Object.fromEntries(Object.entries(map).map(([k, v]) => [k === from ? to : k, v]));
     set({
       dirty: true,
       agent: {
@@ -203,9 +192,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         })),
       },
       positions: moved(positions)!,
-      labelOffsets: Object.fromEntries(
-        Object.entries(labelOffsets).map(([k, v]) => [k.startsWith(`${from}::`) ? `${to}${k.slice(from.length)}` : k, v]),
-      ),
+      labelOffsets: Object.fromEntries(Object.entries(labelOffsets).map(([k, v]) => [k.startsWith(`${from}::`) ? `${to}${k.slice(from.length)}` : k, v])),
       selection: selection && selection.node === from ? { ...selection, node: to } : selection,
     });
     return { ok: true };
@@ -234,9 +221,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       dirty: true,
       agent: {
         ...agent,
-        nodes: agent.nodes.map((n) =>
-          n.name === from ? { ...n, edges: n.edges!.map((e) => (e.function === fn ? { ...e, ...patch } : e)) } : n,
-        ),
+        nodes: agent.nodes.map((n) => (n.name === from ? { ...n, edges: n.edges!.map((e) => (e.function === fn ? { ...e, ...patch } : e)) } : n)),
       },
     });
   },
@@ -253,15 +238,10 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       dirty: true,
       agent: {
         ...agent,
-        nodes: agent.nodes.map((n) =>
-          n === node ? { ...n, edges: n.edges!.map((e) => (e.function === fn ? { ...e, function: to } : e)) } : n,
-        ),
+        nodes: agent.nodes.map((n) => (n === node ? { ...n, edges: n.edges!.map((e) => (e.function === fn ? { ...e, function: to } : e)) } : n)),
       },
       labelOffsets: renameKey(get().labelOffsets, edgeId(from, fn), edgeId(from, to)),
-      selection:
-        selection?.kind === "edge" && selection.node === from && selection.function === fn
-          ? { ...selection, function: to }
-          : selection,
+      selection: selection?.kind === "edge" && selection.node === from && selection.function === fn ? { ...selection, function: to } : selection,
     });
     return { ok: true };
   },
@@ -272,9 +252,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       dirty: true,
       agent: {
         ...agent,
-        nodes: agent.nodes.map((n) =>
-          n.name === from ? { ...n, edges: n.edges!.filter((e) => e.function !== fn) } : n,
-        ),
+        nodes: agent.nodes.map((n) => (n.name === from ? { ...n, edges: n.edges!.filter((e) => e.function !== fn) } : n)),
       },
       labelOffsets: renameKey(get().labelOffsets, edgeId(from, fn)),
       selection: selection?.kind === "edge" && selection.node === from && selection.function === fn ? null : selection,
@@ -288,9 +266,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     if (!agent) return null;
     const name = uniqueNodeName(agent, "new_node");
     const spots = Object.values(positions);
-    const position = spots.length
-      ? { x: Math.min(...spots.map((p) => p.x)), y: Math.max(...spots.map((p) => p.y)) + NODE_HEIGHT + 48 }
-      : { x: 0, y: 0 };
+    const position = spots.length ? { x: Math.min(...spots.map((p) => p.x)), y: Math.max(...spots.map((p) => p.y)) + NODE_HEIGHT + 48 } : { x: 0, y: 0 };
     set({
       dirty: true,
       agent: { ...agent, nodes: [...agent.nodes, { name, task_messages: [], edges: [] }] },
@@ -306,11 +282,9 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     if (agent.nodes.length === 1) return { ok: false, reason: "last" };
     if (agent.initial_node === name) return { ok: false, reason: "initial" };
     const gone = new Set(
-      agent.nodes.flatMap((n) =>
-        (n.edges ?? []).filter((e) => n.name === name || e.target === name).map((e) => edgeId(n.name, e.function)),
-      ),
+      agent.nodes.flatMap((n) => (n.edges ?? []).filter((e) => n.name === name || e.target === name).map((e) => edgeId(n.name, e.function))),
     );
-    const without = <T,>(map?: Record<string, T>) => map && Object.fromEntries(Object.entries(map).filter(([k]) => k !== name));
+    const without = <T>(map?: Record<string, T>) => map && Object.fromEntries(Object.entries(map).filter(([k]) => k !== name));
     set({
       dirty: true,
       agent: {
@@ -321,9 +295,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           .map((n) => (n.edges?.some((e) => e.target === name) ? { ...n, edges: n.edges.filter((e) => e.target !== name) } : n)),
       },
       positions: without(positions)!,
-      labelOffsets: Object.fromEntries(
-        Object.entries(get().labelOffsets).filter(([k]) => !gone.has(k)),
-      ),
+      labelOffsets: Object.fromEntries(Object.entries(get().labelOffsets).filter(([k]) => !gone.has(k))),
       selection: selection && (selection.node === name || selectedEdgeTargets(agent, selection, name)) ? null : selection,
     });
     return { ok: true };

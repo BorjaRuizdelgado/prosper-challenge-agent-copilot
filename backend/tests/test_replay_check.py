@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from api import runs, store
+from api import runs
 from demo.seed import seed
 from replay import check
 

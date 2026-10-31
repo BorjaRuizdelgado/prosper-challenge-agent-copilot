@@ -3,7 +3,7 @@ import asyncio
 from agent_builder.schema import AgentConfig
 from replay.simulator import replay
 
-from .fakes import FakeChat, ScriptedCaller, call, say
+from .fakes import FakeChat, ScriptedCaller, call
 
 
 def agent(**over):
@@ -109,7 +109,10 @@ def test_post_action_tts_say_is_spoken_verbatim_then_call_ends():
 
 
 def test_unknown_function_is_reported_back_and_does_not_move():
-    chat = FakeChat(call("nope"), "Sorry.", )
+    chat = FakeChat(
+        call("nope"),
+        "Sorry.",
+    )
     result = run(agent(), chat, ScriptedCaller("ok"), max_turns=2)
 
     assert [p["node"] for p in result.path] == ["greet"]

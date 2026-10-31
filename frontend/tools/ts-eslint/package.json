@@ -1,0 +1,9 @@
+{
+  "name": "ts-eslint-sandbox",
+  "private": true,
+  "description": "typescript-eslint needs the TypeScript JS API (<6.1); the app itself is on TypeScript 7, which has none. Kept in its own package so the two do not collide.",
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.1"
+  }
+}

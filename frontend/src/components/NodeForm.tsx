@@ -48,8 +48,7 @@ function TaskMessages({ node }: { node: AgentNode }) {
   const updateNode = useAgentStore((s) => s.updateNode);
   const messages = node.task_messages ?? [];
   const set = (next: TaskMessage[]) => updateNode(node.name, { task_messages: next });
-  const change = (i: number, patch: Partial<TaskMessage>) =>
-    set(messages.map((m, j) => (j === i ? { ...m, ...patch } : m)));
+  const change = (i: number, patch: Partial<TaskMessage>) => set(messages.map((m, j) => (j === i ? { ...m, ...patch } : m)));
   const move = (i: number, by: -1 | 1) => {
     const next = [...messages];
     [next[i], next[i + by]] = [next[i + by], next[i]];
@@ -79,12 +78,7 @@ function TaskMessages({ node }: { node: AgentNode }) {
                 Remove
               </button>
             </div>
-            <textarea
-              aria-label={`Content of message ${i + 1}`}
-              rows={4}
-              value={m.content}
-              onChange={(e) => change(i, { content: e.target.value })}
-            />
+            <textarea aria-label={`Content of message ${i + 1}`} rows={4} value={m.content} onChange={(e) => change(i, { content: e.target.value })} />
           </li>
         ))}
       </ol>
@@ -97,8 +91,7 @@ function TaskMessages({ node }: { node: AgentNode }) {
 
 const ACTION_LABELS: Record<(typeof ACTION_TYPES)[number], string> = { tts_say: "Say", end_conversation: "End call" };
 
-const isKnownAction = (a: unknown): a is Action =>
-  typeof a === "object" && a !== null && (ACTION_TYPES as readonly unknown[]).includes((a as Action).type);
+const isKnownAction = (a: unknown): a is Action => typeof a === "object" && a !== null && (ACTION_TYPES as readonly unknown[]).includes((a as Action).type);
 
 /** The pre- or post-actions of a node as a list of Say / End call steps; anything else is shown as raw JSON. */
 function ActionsField({ node, field, label }: { node: AgentNode; field: "pre_actions" | "post_actions"; label: string }) {
@@ -198,11 +191,7 @@ function NodeActions({ node }: { node: AgentNode }) {
   const initial = agent.initial_node === node.name;
   const only = agent.nodes.length === 1;
   const incoming = incomingEdgeCount(agent, node.name);
-  const blocked = only
-    ? "An agent needs at least one node."
-    : initial
-      ? "This is the initial node. Set another node as initial before deleting it."
-      : null;
+  const blocked = only ? "An agent needs at least one node." : initial ? "This is the initial node. Set another node as initial before deleting it." : null;
 
   return (
     <div className="field node-actions">
@@ -218,11 +207,7 @@ function NodeActions({ node }: { node: AgentNode }) {
       {confirming && (
         <ConfirmDialog
           title={`Delete ${node.name}?`}
-          message={
-            incoming === 0
-              ? "No other node leads here."
-              : `${incoming} ${incoming === 1 ? "edge leads" : "edges lead"} here and will be removed too.`
-          }
+          message={incoming === 0 ? "No other node leads here." : `${incoming} ${incoming === 1 ? "edge leads" : "edges lead"} here and will be removed too.`}
           confirmLabel="Delete node"
           onConfirm={() => {
             setConfirming(false);

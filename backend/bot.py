@@ -16,7 +16,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from loguru import logger
-
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.worker import PipelineParams, PipelineWorker
@@ -46,9 +45,7 @@ transport_params = {
 }
 
 
-async def run_bot(
-    transport: BaseTransport, runner_args: RunnerArguments, builder: AgentBuilder
-) -> None:
+async def run_bot(transport: BaseTransport, runner_args: RunnerArguments, builder: AgentBuilder) -> None:
     config = builder.config
     logger.info(f"Starting '{config.name}' with {len(config.nodes)} nodes")
 

@@ -102,4 +102,12 @@ export function diffAgents(before: Agent, after: Agent): AgentDiff {
 }
 
 export const isEmptyDiff = (d: AgentDiff) =>
-  !(d.addedNodes.length || d.removedNodes.length || d.changedNodes.length || d.addedEdges.length || d.removedEdges.length || d.changedEdges.length || d.changedSettings.length);
+  !(
+    d.addedNodes.length ||
+    d.removedNodes.length ||
+    d.changedNodes.length ||
+    d.addedEdges.length ||
+    d.removedEdges.length ||
+    d.changedEdges.length ||
+    d.changedSettings.length
+  );

@@ -151,7 +151,11 @@ describe("transcript", () => {
 
 describe("active node", () => {
   const msg = (node: string, from: string | null = null, via: string | null = null) => ({
-    type: "node_changed", from, node, via, args: {},
+    type: "node_changed",
+    from,
+    node,
+    via,
+    args: {},
   });
 
   it("tracks the node and the last transition", async () => {

@@ -23,7 +23,11 @@ const agent: Agent = {
 };
 
 const stuck: Run = {
-  id: "r-1", started_at: "2026-10-21T09:14:00Z", duration_s: 30, outcome: "stuck", transcript: [],
+  id: "r-1",
+  started_at: "2026-10-21T09:14:00Z",
+  duration_s: 30,
+  outcome: "stuck",
+  transcript: [],
   path: [{ node: "greeting" }, { node: "collect", via: "book" }],
 };
 
@@ -37,7 +41,9 @@ function renderNodes() {
   return render(
     <ReactFlowProvider>
       {["greeting", "collect", "bye"].map((n) => (
-        <div key={n} data-testid={n}>{card(n)}</div>
+        <div key={n} data-testid={n}>
+          {card(n)}
+        </div>
       ))}
     </ReactFlowProvider>,
   );
@@ -98,7 +104,17 @@ describe("run highlight on the canvas", () => {
         <ReactFlowProvider>
           <svg>
             <LabelEdge
-              {...({ id, sourceX: 0, sourceY: 0, targetX: 100, targetY: 100, sourcePosition: Position.Right, targetPosition: Position.Left, label: "x", selected: false } as unknown as ComponentProps<typeof LabelEdge>)}
+              {...({
+                id,
+                sourceX: 0,
+                sourceY: 0,
+                targetX: 100,
+                targetY: 100,
+                sourcePosition: Position.Right,
+                targetPosition: Position.Left,
+                label: "x",
+                selected: false,
+              } as unknown as ComponentProps<typeof LabelEdge>)}
             />
           </svg>
         </ReactFlowProvider>,

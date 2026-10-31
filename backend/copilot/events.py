@@ -5,7 +5,6 @@
 
 import json
 import re
-from typing import Optional
 
 from copilot.validate_tool import FULL_COVERAGE_TOOL_NAME, FULL_FINDINGS_TOOL_NAME, FULL_TOOL_NAME, coverage_count
 
@@ -24,7 +23,7 @@ def node_names(draft_text: str) -> list[str]:
         return []
 
 
-def node_for_edit(draft_text: str, old_string: str) -> Optional[str]:
+def node_for_edit(draft_text: str, old_string: str) -> str | None:
     """The node an Edit touches: the closest node name at or before `old_string` in the file.
 
     Node names are matched against the draft's real nodes, so the agent's own top-level
@@ -43,7 +42,7 @@ def node_for_edit(draft_text: str, old_string: str) -> Optional[str]:
     return found
 
 
-def step_for_tool(tool: str, tool_input: dict, draft_text: str) -> Optional[dict]:
+def step_for_tool(tool: str, tool_input: dict, draft_text: str) -> dict | None:
     """The `step` event data for a tool call, or None when it should not be shown.
 
     The validation line is produced from the tool's result instead (see `validation_step`).
@@ -80,7 +79,7 @@ class DraftTracker:
     def __init__(self, base: dict):
         self._last = base
 
-    def next_draft(self, text: str) -> Optional[dict]:
+    def next_draft(self, text: str) -> dict | None:
         try:
             draft = json.loads(text)
         except ValueError:

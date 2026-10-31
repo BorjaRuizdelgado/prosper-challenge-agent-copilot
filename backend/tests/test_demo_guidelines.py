@@ -1,4 +1,5 @@
-from api import app as app_module, store
+from api import app as app_module
+from api import store
 from demo import seed
 
 NAME = "maple-family-practice"

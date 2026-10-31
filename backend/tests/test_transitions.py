@@ -60,5 +60,9 @@ def test_no_callback_is_fine():
 
 def test_node_changed_message_shape():
     assert node_changed_message("a", "b", "go", {"who": "Ana"}) == {
-        "type": "node_changed", "from": "a", "node": "b", "via": "go", "args": {"who": "Ana"},
+        "type": "node_changed",
+        "from": "a",
+        "node": "b",
+        "via": "go",
+        "args": {"who": "Ana"},
     }

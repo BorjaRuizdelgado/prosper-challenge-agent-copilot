@@ -6,13 +6,14 @@
 
 import os
 import warnings
-from typing import Any, AsyncIterator, Callable
+from collections.abc import AsyncIterator, Callable
+from typing import Any
 
 from claude_agent_sdk import (
     AssistantMessage,
+    CanUseToolShadowedWarning,
     ClaudeAgentOptions,
     ClaudeSDKClient,
-    CanUseToolShadowedWarning,
     CLIConnectionError,
     CLINotFoundError,
     HookMatcher,
@@ -30,22 +31,20 @@ from agent_builder.validation import validate_as_dicts
 from api.runs import list_runs
 from api.store import get_guidelines
 from copilot import workspace
-
-# Cheapest tier by default; the CLI resolves the alias to the current Haiku. COPILOT_MODEL overrides it.
-DEFAULT_MODEL = "haiku"
 from copilot.events import DraftTracker, step_for_tool, validation_step
 from copilot.guard import check_path
 from copilot.validate_tool import FULL_COVERAGE_TOOL_NAME, FULL_FINDINGS_TOOL_NAME, FULL_TOOL_NAME, build_server
+
+# Sonnet by default: builds and coverage questions are noticeably better than on Haiku (the CLI resolves
+# the alias to the current Sonnet). COPILOT_MODEL overrides it, e.g. `haiku` for the cheapest tier.
+DEFAULT_MODEL = "sonnet"
 
 # Skill and validate_agent are allowed on purpose; the callback guards the file tools only.
 warnings.filterwarnings("ignore", category=CanUseToolShadowedWarning)
 
 Event = dict  # {"event": "step" | "text" | "findings" | "coverage" | "draft" | "proposal" | "done" | "error", "data": {...}}
 
-SETUP_MESSAGE = (
-    "The copilot needs Claude Code: install the `claude` CLI and log in with it, "
-    "or set ANTHROPIC_API_KEY in the API's environment."
-)
+SETUP_MESSAGE = "The copilot needs Claude Code: install the `claude` CLI and log in with it, or set ANTHROPIC_API_KEY in the API's environment."
 SETUP_ERRORS = {"authentication_failed", "billing_error"}
 FILE_TOOLS = "Read|Edit|Write"
 EDIT_TOOLS = {"Edit", "Write"}
@@ -120,6 +119,17 @@ def _setup_error() -> Event:
     return _event("error", message=SETUP_MESSAGE, setup=True)
 
 
+def _partial_proposal(agent_id: str, agent: dict) -> Event | None:
+    """The draft on disk as an incomplete proposal, so a failed turn does not throw its edits away."""
+    try:
+        draft = workspace.read_draft(agent_id)
+    except (FileNotFoundError, ValueError):
+        return None
+    if not isinstance(draft, dict) or draft == agent:
+        return None
+    return _event("proposal", agent=draft, issues=validate_as_dicts(draft), incomplete=True)
+
+
 async def run_turn(
     agent_id: str,
     message: str,
@@ -177,6 +187,8 @@ async def run_turn(
                                     yield _event("draft", agent=draft)
                     elif isinstance(msg, ResultMessage):
                         if msg.is_error:
+                            if partial := _partial_proposal(agent_id, agent):
+                                yield partial
                             yield _event("error", message=msg.result or "The copilot failed.")
                             return
                         _sessions[agent_id] = msg.session_id
@@ -191,6 +203,8 @@ async def run_turn(
         yield _setup_error()
         return
     except ProcessError as e:
+        if partial := _partial_proposal(agent_id, agent):
+            yield partial
         yield _event("error", message=str(e))
         return
 

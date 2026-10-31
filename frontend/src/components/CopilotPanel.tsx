@@ -20,14 +20,25 @@ function useElapsed(startedAt: number | null): number {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (startedAt === null) return;
-    setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, [startedAt]);
   return startedAt === null ? 0 : Math.max(0, Math.floor((now - startedAt) / 1000));
 }
 
-function Reply({ agentId, index, message, running, elapsed }: { agentId: string; index: number; message: Extract<ChatMessage, { role: "assistant" }>; running: boolean; elapsed: number }) {
+function Reply({
+  agentId,
+  index,
+  message,
+  running,
+  elapsed,
+}: {
+  agentId: string;
+  index: number;
+  message: Extract<ChatMessage, { role: "assistant" }>;
+  running: boolean;
+  elapsed: number;
+}) {
   return (
     <li className="copilot__msg copilot__msg--assistant">
       {message.steps.length > 0 && (
@@ -70,14 +81,18 @@ export function CopilotPanel() {
   // "Ask Copilot" from the Call tab: take the text, put the cursor at its end so the user can finish it.
   useEffect(() => {
     if (prefill === null) return;
-    setDraft(prefill);
-    useCopilotStore.getState().setPrefill(null);
-    requestAnimationFrame(() => {
-      const el = input.current;
-      if (!el) return;
-      el.focus();
-      el.setSelectionRange(prefill.length, prefill.length);
+    const frame = requestAnimationFrame(() => {
+      setDraft(prefill);
+      useCopilotStore.getState().setPrefill(null);
+      // The textarea shows the new draft only after this render, so place the cursor once it has.
+      requestAnimationFrame(() => {
+        const el = input.current;
+        if (!el) return;
+        el.focus();
+        el.setSelectionRange(prefill.length, prefill.length);
+      });
     });
+    return () => cancelAnimationFrame(frame);
   }, [prefill]);
   const elapsed = useElapsed(chat.startedAt);
   const end = useRef<HTMLLIElement>(null);
@@ -155,25 +170,25 @@ export function CopilotPanel() {
         }}
       >
         <div className="copilot__composer">
-        <textarea
-          ref={input}
-          aria-label="Message to the copilot"
-          rows={3}
-          value={draft}
-          disabled={chat.running}
-          placeholder="Ask the copilot to build or change this agent…"
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={onKeyDown}
-        />
-        {chat.running ? (
-          <button type="button" onClick={() => stop(agentId)}>
-            Stop
-          </button>
-        ) : (
-          <button type="submit" className="primary" disabled={!draft.trim()}>
-            Send
-          </button>
-        )}
+          <textarea
+            ref={input}
+            aria-label="Message to the copilot"
+            rows={3}
+            value={draft}
+            disabled={chat.running}
+            placeholder="Ask the copilot to build or change this agent…"
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={onKeyDown}
+          />
+          {chat.running ? (
+            <button type="button" onClick={() => stop(agentId)}>
+              Stop
+            </button>
+          ) : (
+            <button type="submit" className="primary" disabled={!draft.trim()}>
+              Send
+            </button>
+          )}
         </div>
       </form>
     </div>

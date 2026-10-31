@@ -3,7 +3,14 @@ import type { Agent, Finding, Run } from "../model";
 import type { ReplayEvent } from "../replay/client";
 import type { CopilotEvent } from "./client";
 import {
-  chatOf, loadChats, resetCopilotStore, setCopilotStreamer, setReplayStreamer, type ReplayStreamer, type ReplayState, useCopilotStore,
+  chatOf,
+  loadChats,
+  resetCopilotStore,
+  setCopilotStreamer,
+  setReplayStreamer,
+  type ReplayStreamer,
+  type ReplayState,
+  useCopilotStore,
 } from "./copilotStore";
 
 const base = { name: "a", initial_node: "n", nodes: [{ name: "n" }] } as unknown as Agent;
@@ -27,7 +34,11 @@ afterEach(() => {
 });
 
 const turn = (events: CopilotEvent[]) =>
-  restores.push(setCopilotStreamer(async function* () { yield* events; }));
+  restores.push(
+    setCopilotStreamer(async function* () {
+      yield* events;
+    }),
+  );
 const replaying = (fn: ReplayStreamer) => {
   const spy = vi.fn(fn);
   restores.push(setReplayStreamer(spy));
@@ -35,15 +46,19 @@ const replaying = (fn: ReplayStreamer) => {
 };
 const chat = () => chatOf(useCopilotStore.getState().chats, "a");
 const msg = () => chat().messages.at(-1) as { replay?: ReplayState };
-const proposalTurn: CopilotEvent[] = [
-  { event: "findings", findings }, { event: "proposal", agent: proposed, issues: [] }, { event: "done" },
-];
+const proposalTurn: CopilotEvent[] = [{ event: "findings", findings }, { event: "proposal", agent: proposed, issues: [] }, { event: "done" }];
 
 /** A replay stream the test releases by hand. */
 function held(events: ReplayEvent[]) {
   let release!: () => void;
   const gate = new Promise<void>((r) => (release = r));
-  return { release, fn: (async function* () { await gate; yield* events; }) as ReplayStreamer };
+  return {
+    release,
+    fn: async function* () {
+      await gate;
+      yield* events;
+    } as ReplayStreamer,
+  };
 }
 
 /** The turn, then the user asking for the replay (it never starts on its own). */
@@ -54,7 +69,13 @@ const sendAndReplay = async (message: string) => {
 
 describe("replay on request", () => {
   it("replays the cited and 3 working runs when asked", async () => {
-    const spy = replaying(async function* () { yield res("bad", "before", "abandoned", false); yield res("bad", "after"); yield res("good", "before"); yield res("good", "after"); yield { event: "done" }; });
+    const spy = replaying(async function* () {
+      yield res("bad", "before", "abandoned", false);
+      yield res("bad", "after");
+      yield res("good", "before");
+      yield res("good", "after");
+      yield { event: "done" };
+    });
     turn(proposalTurn);
     await sendAndReplay("analyze");
     await vi.waitFor(() => expect(msg().replay?.status).toBe("done"));
@@ -69,7 +90,9 @@ describe("replay on request", () => {
     ["no proposal", [{ event: "findings", findings }, { event: "done" }]],
     ["an error", [{ event: "findings", findings }, { event: "proposal", agent: proposed, issues: [] }, { event: "error", message: "x" }, { event: "done" }]],
   ] as Array<[string, CopilotEvent[]]>)("does not start with %s", async (_n, events) => {
-    const spy = replaying(async function* () { yield { event: "done" }; });
+    const spy = replaying(async function* () {
+      yield { event: "done" };
+    });
     turn(events);
     await useCopilotStore.getState().send("a", "go", base);
     await new Promise((r) => setTimeout(r, 20));
@@ -78,7 +101,10 @@ describe("replay on request", () => {
   });
 
   it("a setup error lands on the replay, not the turn", async () => {
-    replaying(async function* () { yield { event: "error", message: "no key", setup: true }; yield { event: "done" }; });
+    replaying(async function* () {
+      yield { event: "error", message: "no key", setup: true };
+      yield { event: "done" };
+    });
     turn(proposalTurn);
     await sendAndReplay("go");
     await vi.waitFor(() => expect(msg().replay?.status).toBe("done"));
@@ -88,7 +114,9 @@ describe("replay on request", () => {
 
 describe("replayCalls and retry", () => {
   it("the button replays the runs that need attention when there are no findings", async () => {
-    const spy = replaying(async function* () { yield { event: "done" }; });
+    const spy = replaying(async function* () {
+      yield { event: "done" };
+    });
     turn([{ event: "proposal", agent: proposed, issues: [] }, { event: "done" }]);
     await sendAndReplay("go");
     await useCopilotStore.getState().replayCalls("a", 1);
@@ -96,12 +124,21 @@ describe("replayCalls and retry", () => {
   });
 
   it("a failure on one run is kept on that run and retry replays only it", async () => {
-    replaying(async function* () { yield { event: "error", run_id: "good", version: "after", message: "boom" }; yield res("bad", "before", "abandoned", false); yield res("bad", "after"); yield { event: "done" }; });
+    replaying(async function* () {
+      yield { event: "error", run_id: "good", version: "after", message: "boom" };
+      yield res("bad", "before", "abandoned", false);
+      yield res("bad", "after");
+      yield { event: "done" };
+    });
     turn(proposalTurn);
     await sendAndReplay("go");
     await vi.waitFor(() => expect(msg().replay?.status).toBe("done"));
     expect(msg().replay?.runs.good.error).toBe("boom");
-    const spy = replaying(async function* () { yield res("good", "before"); yield res("good", "after"); yield { event: "done" }; });
+    const spy = replaying(async function* () {
+      yield res("good", "before");
+      yield res("good", "after");
+      yield { event: "done" };
+    });
     await useCopilotStore.getState().retryReplay("a", 1, "good");
     expect(spy.mock.calls[0][3]).toEqual(["good"]);
     expect(msg().replay?.runs.good).toMatchObject({ before: {}, after: {} });
@@ -128,7 +165,11 @@ describe("replay and the proposal", () => {
 describe("persistence", () => {
   it("keeps finished results and marks the runs a reload cut off for retry", async () => {
     const h = held([]);
-    replaying(async function* () { yield res("bad", "before", "abandoned", false); yield res("bad", "after"); await h.fn("a", base, proposed, [], new AbortController().signal)[Symbol.asyncIterator]().next(); });
+    replaying(async function* () {
+      yield res("bad", "before", "abandoned", false);
+      yield res("bad", "after");
+      await h.fn("a", base, proposed, [], new AbortController().signal)[Symbol.asyncIterator]().next();
+    });
     turn(proposalTurn);
     await sendAndReplay("go");
     await vi.waitFor(() => expect(msg().replay?.runs.bad?.after).toBeDefined());
@@ -164,7 +205,10 @@ describe("persistence", () => {
     turn(proposalTurn);
     await sendAndReplay("analyze");
     await vi.waitFor(() => expect(msg().replay?.runs.bad?.live?.after).toHaveLength(2));
-    expect(msg().replay?.runs.bad.live?.after).toEqual([{ speaker: "agent", text: "Hello" }, { speaker: "caller", text: "Hi" }]);
+    expect(msg().replay?.runs.bad.live?.after).toEqual([
+      { speaker: "agent", text: "Hello" },
+      { speaker: "caller", text: "Hi" },
+    ]);
     release();
   });
 });

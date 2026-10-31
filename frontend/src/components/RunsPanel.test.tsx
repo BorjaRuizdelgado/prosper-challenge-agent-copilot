@@ -16,8 +16,14 @@ const agent: Agent = {
 };
 
 const run = (id: string, over: Partial<Run> = {}): Run => ({
-  id, started_at: "2026-10-21T09:14:00Z", duration_s: 96, outcome: "completed",
-  transcript: [{ speaker: "agent", text: "Hello." }, { speaker: "caller", text: `Hi from ${id}` }],
+  id,
+  started_at: "2026-10-21T09:14:00Z",
+  duration_s: 96,
+  outcome: "completed",
+  transcript: [
+    { speaker: "agent", text: "Hello." },
+    { speaker: "caller", text: `Hi from ${id}` },
+  ],
   path: [{ node: "greeting" }, { node: "collect", via: "book", args: { reason: "cough" } }],
   ...over,
 });

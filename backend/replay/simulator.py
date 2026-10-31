@@ -8,8 +8,8 @@ an ``end`` node) ends the call. Voice effects are not simulated.
 """
 
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable, Optional
 
 from agent_builder.schema import AgentConfig
 
@@ -26,9 +26,7 @@ class SimResult:
     ended: str = "stuck"  # "end" | "hangup" | "stuck"
 
 
-async def replay(
-    agent: AgentConfig, caller, chat_client: ChatClient, max_turns: int = 20, on_line: Optional[Callable[[dict], None]] = None
-) -> SimResult:
+async def replay(agent: AgentConfig, caller, chat_client: ChatClient, max_turns: int = 20, on_line: Callable[[dict], None] | None = None) -> SimResult:
     """Run one call. ``caller`` has ``async reply(transcript) -> str``; ``on_line`` sees each transcript line as it is added."""
     nodes = build_nodes(agent)
     result = SimResult()
@@ -68,9 +66,7 @@ async def replay(
             add("agent", reply.content)
         assistant = {"role": "assistant", "content": reply.content}
         if call:
-            assistant["tool_calls"] = [
-                {"id": call.id, "type": "function", "function": {"name": call.name, "arguments": json.dumps(call.arguments)}}
-            ]
+            assistant["tool_calls"] = [{"id": call.id, "type": "function", "function": {"name": call.name, "arguments": json.dumps(call.arguments)}}]
         history.append(assistant)
 
         if call:

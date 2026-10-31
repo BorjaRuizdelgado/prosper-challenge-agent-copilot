@@ -16,6 +16,8 @@ export interface Proposal {
   issues: Issue[];
   base: Agent;
   status: "pending" | "applied" | "discarded";
+  /** The turn ended in an error or was stopped, so the draft may be unfinished. */
+  incomplete?: boolean;
 }
 
 /** The guidelines a build request refers to; the chat shows this instead of their text. */
@@ -43,7 +45,8 @@ export interface ReplayState {
 }
 
 /** Whether a chat message asks to replay calls ("replay them", "replicate the failing calls"). Replaying costs money, so the panel answers it itself. */
-export const asksForReplay = (text: string) => /\b(replay|replicate|reproduce|re-?run)\w*\b/i.test(text) && /\b(calls?|runs?|them|it|fix|proposal|this|these|those)\b/i.test(text);
+export const asksForReplay = (text: string) =>
+  /\b(replay|replicate|reproduce|re-?run)\w*\b/i.test(text) && /\b(calls?|runs?|them|it|fix|proposal|this|these|those)\b/i.test(text);
 
 export const REPLAY_INTERRUPTED = "The replay was interrupted.";
 
@@ -119,7 +122,7 @@ export interface CopilotStore {
   setPrefill: (text: string | null) => void;
   /** Sends an instruction with the current working copy; resolves when the turn has ended. */
   send: (agentId: string, message: string, agent: Agent, guidelines?: GuidelinesChip) => Promise<void>;
-  /** Aborts the running turn; its output so far stays, and it yields no proposal. */
+  /** Aborts the running turn; its output so far stays, and the latest draft (if any) becomes an incomplete proposal. */
   stop: (agentId: string) => void;
   /** Sets the status of the proposal on the assistant message at `index` (Apply and Discard). */
   setProposalStatus: (agentId: string, index: number, status: Proposal["status"]) => void;
@@ -196,12 +199,10 @@ export function loadChats(): Record<string, Chat> {
   }
 }
 
-export const chatOf = (chats: Record<string, Chat>, agentId: string | null): Chat =>
-  (agentId && chats[agentId]) || emptyChat;
+export const chatOf = (chats: Record<string, Chat>, agentId: string | null): Chat => (agentId && chats[agentId]) || emptyChat;
 
 export const useCopilotStore = create<CopilotStore>((set, get) => {
-  const patch = (agentId: string, change: (chat: Chat) => Chat) =>
-    set((s) => ({ chats: { ...s.chats, [agentId]: change(chatOf(s.chats, agentId)) } }));
+  const patch = (agentId: string, change: (chat: Chat) => Chat) => set((s) => ({ chats: { ...s.chats, [agentId]: change(chatOf(s.chats, agentId)) } }));
 
   /** Updates the assistant message of the running turn (always the last one). */
   const patchReply = (agentId: string, change: (m: Extract<ChatMessage, { role: "assistant" }>) => Partial<ChatMessage>) =>
@@ -234,8 +235,7 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
       ...chat,
       messages: chat.messages.map((x, i) => (i === index && x.role === "assistant" ? { ...x, replay: { status: "running", ids: allIds, runs } } : x)),
     }));
-    const fail = (id: string, message: string) =>
-      patchReplay(agentId, index, (r) => ({ ...r, runs: { ...r.runs, [id]: { ...r.runs[id], error: message } } }));
+    const fail = (id: string, message: string) => patchReplay(agentId, index, (r) => ({ ...r, runs: { ...r.runs, [id]: { ...r.runs[id], error: message } } }));
     try {
       for await (const e of replayStreamer(agentId, base, agent, ids, controller.signal)) {
         if (controller.signal.aborted) return;
@@ -287,14 +287,20 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
       const message = (err as Error).message || "Could not load the runs";
       patch(agentId, (chat) => ({
         ...chat,
-        messages: chat.messages.map((x, i) => (i === index && x.role === "assistant" ? { ...x, replay: { status: "done", ids: [], runs: {}, error: { message, setup: false } } } : x)),
+        messages: chat.messages.map((x, i) =>
+          i === index && x.role === "assistant" ? { ...x, replay: { status: "done", ids: [], runs: {}, error: { message, setup: false } } } : x,
+        ),
       }));
       return;
     }
     if (!ids.length) {
       patch(agentId, (chat) => ({
         ...chat,
-        messages: chat.messages.map((x, i) => (i === index && x.role === "assistant" ? { ...x, replay: { status: "done", ids: [], runs: {}, error: { message: "There are no calls to replay.", setup: false } } } : x)),
+        messages: chat.messages.map((x, i) =>
+          i === index && x.role === "assistant"
+            ? { ...x, replay: { status: "done", ids: [], runs: {}, error: { message: "There are no calls to replay.", setup: false } } }
+            : x,
+        ),
       }));
       return;
     }
@@ -313,7 +319,10 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
       const answer = m.replay
         ? "That fix was already replayed; the results are on the proposal above."
         : "Replaying calls uses your OpenAI key and costs money, so I have not started it. If you want it, use the Replay button on the proposal above.";
-      patch(agentId, (chat) => ({ ...chat, messages: [...chat.messages, { role: "user", text: text.trim() }, { role: "assistant", text: answer, steps: [] }] }));
+      patch(agentId, (chat) => ({
+        ...chat,
+        messages: [...chat.messages, { role: "user", text: text.trim() }, { role: "assistant", text: answer, steps: [] }],
+      }));
       set({ replayAsk: m.replay ? null : { agentId, index } });
       return true;
     },
@@ -336,16 +345,16 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
             patchReply(agentId, (m) => ({ text: "", steps: [...m.steps, { label: e.label, node: e.node }] }));
             // A step without a node (validating) keeps the last focus; only the end of the turn clears it.
             if (e.node) patch(agentId, (chat) => ({ ...chat, focus: e.node! }));
-          }
-          else if (e.event === "findings") patchReply(agentId, () => ({ findings: e.findings }));
+          } else if (e.event === "findings") patchReply(agentId, () => ({ findings: e.findings }));
           else if (e.event === "coverage") patchReply(agentId, () => ({ coverage: { requirements: e.requirements, questions: e.questions } }));
           else if (e.event === "draft") patch(agentId, (chat) => ({ ...chat, review: { base: agent, agent: e.agent } }));
           else if (e.event === "text") patchReply(agentId, (m) => ({ text: m.text + e.delta }));
           else if (e.event === "proposal") {
-            patchReply(agentId, () => ({ proposal: { agent: e.agent, issues: e.issues, base: agent, status: "pending" } }));
+            patchReply(agentId, () => ({
+              proposal: { agent: e.agent, issues: e.issues, base: agent, status: "pending", ...(e.incomplete && { incomplete: true }) },
+            }));
             patch(agentId, (chat) => ({ ...chat, review: { base: agent, agent: e.agent } }));
-          }
-          else if (e.event === "error") patchReply(agentId, () => ({ error: { message: e.message, setup: !!e.setup } }));
+          } else if (e.event === "error") patchReply(agentId, () => ({ error: { message: e.message, setup: !!e.setup } }));
           else if (e.event === "done") break;
         }
       } catch (err) {
@@ -353,11 +362,18 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
       } finally {
         if (controllers.get(agentId) === controller) controllers.delete(agentId);
         if (controller.signal.aborted) patchReply(agentId, () => ({ stopped: true }));
-        // Only a proposal keeps the canvas on the draft; a stopped, failed or no-change turn restores the working copy.
+        // Only a proposal keeps the canvas on the draft; a failed or no-change turn restores the working copy.
+        // A stopped turn that already sent a draft turns it into an incomplete proposal.
         patch(agentId, (chat) => {
           const last = chat.messages[chat.messages.length - 1];
-          const keep = last?.role === "assistant" && last.proposal?.status === "pending" && !controller.signal.aborted;
-          return { ...chat, running: false, startedAt: null, focus: null, review: keep ? chat.review : null };
+          let messages = chat.messages;
+          if (controller.signal.aborted && chat.review && last?.role === "assistant" && !last.proposal) {
+            const proposal: Proposal = { agent: chat.review.agent, issues: [], base: chat.review.base, status: "pending", incomplete: true };
+            messages = [...messages.slice(0, -1), { ...last, proposal }];
+          }
+          const kept = messages[messages.length - 1];
+          const keep = kept?.role === "assistant" && kept.proposal?.status === "pending" && (!controller.signal.aborted || !!kept.proposal.incomplete);
+          return { ...chat, messages, running: false, startedAt: null, focus: null, review: keep ? chat.review : null };
         });
       }
     },
@@ -382,14 +398,16 @@ export const useCopilotStore = create<CopilotStore>((set, get) => {
       patch(agentId, (chat) => ({
         ...chat,
         review: status === "pending" ? chat.review : null,
-        messages: chat.messages.map((m, i) =>
-          i === index && m.role === "assistant" && m.proposal ? { ...m, proposal: { ...m.proposal, status } } : m,
-        ),
+        messages: chat.messages.map((m, i) => (i === index && m.role === "assistant" && m.proposal ? { ...m, proposal: { ...m.proposal, status } } : m)),
       })),
     reset: async (agentId) => {
       controllers.get(agentId)?.abort();
       controllers.delete(agentId);
-      for (const [k, c] of replayControllers) if (k.startsWith(`${agentId}#`)) (c.abort(), replayControllers.delete(k));
+      for (const [k, c] of replayControllers) {
+        if (!k.startsWith(`${agentId}#`)) continue;
+        c.abort();
+        replayControllers.delete(k);
+      }
       patch(agentId, () => emptyChat);
       await resetCopilot(agentId).catch(() => {});
     },

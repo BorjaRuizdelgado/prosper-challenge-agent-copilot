@@ -5,7 +5,6 @@
 
 import json
 import os
-from typing import Optional
 
 from agent_builder import AgentBuilder, validate
 from api.store import AgentNotFound, InvalidAgentId, get_agent
@@ -17,7 +16,7 @@ class SessionError(Exception):
     """A call cannot start; the message is shown to whoever started it."""
 
 
-def agent_id_from_body(body: Optional[dict]) -> str:
+def agent_id_from_body(body: dict | None) -> str:
     agent_id = (body or {}).get("agent_id")
     if not agent_id:
         raise SessionError("No agent selected: the session was started without an agent_id.")
@@ -39,9 +38,7 @@ def load_agent(agent_id: str) -> AgentBuilder:
         raise SessionError(f"Agent '{agent_id}' must be a JSON object.")
     errors = [i for i in validate(data) if i.severity == "error"]
     if errors:
-        raise SessionError(
-            f"Agent '{agent_id}' has blocking issues: " + " ".join(i.message for i in errors)
-        )
+        raise SessionError(f"Agent '{agent_id}' has blocking issues: " + " ".join(i.message for i in errors))
     try:
         return AgentBuilder.from_dict(data)
     except Exception as e:  # anything validation missed must still fail as a session error
@@ -51,11 +48,9 @@ def load_agent(agent_id: str) -> AgentBuilder:
 def check_keys() -> None:
     missing = [k for k in REQUIRED_KEYS if not os.environ.get(k)]
     if missing:
-        raise SessionError(
-            f"Missing API keys in backend/.env: {', '.join(missing)}. Add them and restart the runner."
-        )
+        raise SessionError(f"Missing API keys in backend/.env: {', '.join(missing)}. Add them and restart the runner.")
 
 
-def node_changed_message(from_node: Optional[str], node: str, via: Optional[str], args: dict) -> dict:
+def node_changed_message(from_node: str | None, node: str, via: str | None, args: dict) -> dict:
     """The RTVI server message the editor listens to for highlighting the active node."""
     return {"type": "node_changed", "from": from_node, "node": node, "via": via, "args": args}

@@ -11,7 +11,10 @@ const ENUMERABLE = ["string", "number", "integer"];
 
 /** Allowed values typed as text, converted to the parameter's type; null when one does not fit it. */
 function parseEnum(text: string, type: string): Array<string | number> | null {
-  const values = text.split(",").map((v) => v.trim()).filter(Boolean);
+  const values = text
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
   if (type === "string") return values;
   const numbers = values.map(Number);
   const fits = numbers.every((n) => (type === "integer" ? Number.isInteger(n) : Number.isFinite(n)));
@@ -172,11 +175,7 @@ function ParamRow({ node, edge, name }: { node: AgentNode; edge: Edge; name: str
           </select>
         </label>
       )}
-      {!editable && (
-        <p className="field__hint">
-          A {type} parameter has a nested schema; edit it in the JSON view.
-        </p>
-      )}
+      {!editable && <p className="field__hint">A {type} parameter has a nested schema; edit it in the JSON view.</p>}
       {ENUMERABLE.includes(type) && (
         <input
           aria-label={`Allowed values of ${name}`}

@@ -25,7 +25,10 @@ function seed(c: Coverage = coverage, running = false) {
   useCopilotStore.setState({
     chats: {
       demo: {
-        messages: [{ role: "user", text: "Build" }, { role: "assistant", text: "Done.", steps: [], coverage: c }],
+        messages: [
+          { role: "user", text: "Build" },
+          { role: "assistant", text: "Done.", steps: [], coverage: c },
+        ],
         running,
         startedAt: null,
         focus: null,

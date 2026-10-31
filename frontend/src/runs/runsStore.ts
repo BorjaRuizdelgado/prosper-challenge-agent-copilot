@@ -85,9 +85,7 @@ export function useRunPath(): RunPath | null {
   const agentId = useAgentStore((s) => s.agentId);
   const agent = useAgentStore((s) => s.agent);
   const selected = useRunsStore((s) => s.selected);
-  const run = useRunsStore((s) =>
-    selected && selected.agentId === agentId ? s.byAgent[agentId]?.runs.find((r) => r.id === selected.runId) : undefined,
-  );
+  const run = useRunsStore((s) => (selected && selected.agentId === agentId ? s.byAgent[agentId]?.runs.find((r) => r.id === selected.runId) : undefined));
   const reviewing = useCopilotStore((s) => chatOf(s.chats, agentId).review !== null);
   const calling = useCallStore((s) => s.activeNode !== null);
   return useMemo(() => (run && agent && !reviewing && !calling ? runPath(run, agent) : null), [run, agent, reviewing, calling]);

@@ -33,8 +33,25 @@ package = false
 dev = [
     "httpx>=0.28.1",
     "pytest>=9.2.0",
+    "ruff>=0.17.3",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.ruff]
+line-length = 200
+extend-exclude = [".venv"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+# B008: FastAPI `Depends(...)` defaults; B905: zip() over equal-length lists.
+ignore = ["B008", "B905"]
+
+[tool.ruff.lint.per-file-ignores]
+# The caller prompt is one long instruction line.
+"replay/caller.py" = ["E501"]

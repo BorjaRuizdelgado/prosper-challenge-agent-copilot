@@ -29,9 +29,7 @@ beforeEach(() => {
 });
 
 const sent = () =>
-  (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls
-    .filter(([, init]) => init?.method === "PUT")
-    .map(([, init]) => JSON.parse(init.body));
+  (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.filter(([, init]) => init?.method === "PUT").map(([, init]) => JSON.parse(init.body));
 
 async function openAndEdit() {
   const view = renderApp(<App />, "/agents/s-1");

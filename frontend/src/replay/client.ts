@@ -28,13 +28,7 @@ const failure = (message: string, setup = false): ReplayEvent => ({ event: "erro
  * Replays `runIds` against `base` (version before) and `proposal` (version after; with null only *before* runs), yielding events as they arrive. Transport
  * problems come back as an `error` event so callers have a single path; aborting `signal` ends the stream quietly.
  */
-export async function* streamReplay(
-  agentId: string,
-  base: Agent,
-  proposal: Agent | null,
-  runIds: string[],
-  signal?: AbortSignal,
-): AsyncGenerator<ReplayEvent> {
+export async function* streamReplay(agentId: string, base: Agent, proposal: Agent | null, runIds: string[], signal?: AbortSignal): AsyncGenerator<ReplayEvent> {
   let res: Response;
   try {
     res = await fetch(`/api/agents/${encodeURIComponent(agentId)}/replay`, {

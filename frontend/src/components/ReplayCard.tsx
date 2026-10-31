@@ -6,7 +6,8 @@ import { type ReplayClass, type ReplayScore, scoreReplay, selectRuns } from "../
 import { useReplayView } from "../replay/replayView";
 import { useRunsStore } from "../runs/runsStore";
 
-const NOTE = "Simulated text calls: a simulated caller replays each call on your current agent (before) and on this fix (after), to see whether the failing calls get fixed and the working ones keep working.";
+const NOTE =
+  "Simulated text calls: a simulated caller replays each call on your current agent (before) and on this fix (after), to see whether the failing calls get fixed and the working ones keep working.";
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
@@ -33,7 +34,21 @@ const VERDICT: Record<ReplayClass, string> = {
 
 const outcomeOf = (r?: ReplayResult) => (r ? `${r.outcome}${r.goal_met ? "" : ", goal not met"}` : "…");
 
-function Row({ agentId, index, id, run, cls, entry }: { agentId: string; index: number; id: string; run?: Run; cls: ReplayClass; entry: ReplayState["runs"][string] }) {
+function Row({
+  agentId,
+  index,
+  id,
+  run,
+  cls,
+  entry,
+}: {
+  agentId: string;
+  index: number;
+  id: string;
+  run?: Run;
+  cls: ReplayClass;
+  entry: ReplayState["runs"][string];
+}) {
   const open = useReplayView((s) => s.row?.agentId === agentId && s.row.index === index && s.row.runId === id);
   const toggle = useReplayView((s) => s.toggleRow);
   const retry = useCopilotStore((s) => s.retryReplay);
@@ -46,7 +61,9 @@ function Row({ agentId, index, id, run, cls, entry }: { agentId: string; index: 
         <span className="replay__id">{id}</span>
         {run && <span className={`pill runs__outcome runs__outcome--${run.outcome}`}>{run.outcome}</span>}
         <span className="replay__verdict">{failed ? "Failed" : VERDICT[cls]}</span>
-        <span className="replay__flow">{outcomeOf(entry.before)} → {outcomeOf(entry.after)}</span>
+        <span className="replay__flow">
+          {outcomeOf(entry.before)} → {outcomeOf(entry.after)}
+        </span>
         {(after?.reason || entry.error) && <span className="replay__reason">{failed ? entry.error : after?.reason}</span>}
       </button>
       {failed && (
@@ -69,7 +86,19 @@ function Row({ agentId, index, id, run, cls, entry }: { agentId: string; index: 
 }
 
 /** Replays of the calls against a proposal: a summary, one row per call (open it for the transcript and the path on the canvas), Retry per row. */
-export function ReplayCard({ agentId, index, proposal, findings, replay }: { agentId: string; index: number; proposal: Proposal; findings?: Finding[]; replay?: ReplayState }) {
+export function ReplayCard({
+  agentId,
+  index,
+  proposal,
+  findings,
+  replay,
+}: {
+  agentId: string;
+  index: number;
+  proposal: Proposal;
+  findings?: Finding[];
+  replay?: ReplayState;
+}) {
   const runsState = useRunsStore((s) => s.byAgent[agentId]);
   const replayCalls = useCopilotStore((s) => s.replayCalls);
   const asked = useCopilotStore((s) => s.replayAsk?.agentId === agentId && s.replayAsk.index === index);
@@ -90,8 +119,12 @@ export function ReplayCard({ agentId, index, proposal, findings, replay }: { age
     return (
       <section className={`replay${asked ? " replay--asked" : ""}`} aria-label="Replay">
         <p className="replay__summary">Check this fix against {plural(count, "real call")}?</p>
-        <p className="replay__note">{NOTE} That is {count * 2} simulated calls, which use your OpenAI key and cost money, so nothing runs until you ask.</p>
-        <button ref={button} type="button" onClick={() => void replayCalls(agentId, index)}>Replay {plural(count, "call")}</button>
+        <p className="replay__note">
+          {NOTE} That is {count * 2} simulated calls, which use your OpenAI key and cost money, so nothing runs until you ask.
+        </p>
+        <button ref={button} type="button" onClick={() => void replayCalls(agentId, index)}>
+          Replay {plural(count, "call")}
+        </button>
       </section>
     );
   }
@@ -100,21 +133,35 @@ export function ReplayCard({ agentId, index, proposal, findings, replay }: { age
   const score = scoreReplay(runs, replay.runs);
   return (
     <section className="replay" aria-label="Replay">
-      <p className="replay__summary" aria-live="polite">{replay.error ? "Replay did not run" : summarizeReplay(score, replay)}</p>
+      <p className="replay__summary" aria-live="polite">
+        {replay.error ? "Replay did not run" : summarizeReplay(score, replay)}
+      </p>
       <p className="replay__note">{NOTE}</p>
       {replay.error && (
         <div role="alert" className="replay__error">
           <p>{replay.error.message}</p>
-          {proposal.status === "pending" && <button type="button" onClick={() => void replayCalls(agentId, index)}>Retry</button>}
+          {proposal.status === "pending" && (
+            <button type="button" onClick={() => void replayCalls(agentId, index)}>
+              Retry
+            </button>
+          )}
         </div>
       )}
       {/* After a setup error nothing ran, so the rows would only say "Replaying…". */}
       {!replay.error?.setup && (
-      <ul className="replay__rows" aria-label="Replayed calls">
-        {replay.ids.map((id) => (
-          <Row key={id} agentId={agentId} index={index} id={id} run={allRuns.find((r) => r.id === id)} cls={score.classes[id] ?? "pending"} entry={replay.runs[id] ?? {}} />
-        ))}
-      </ul>
+        <ul className="replay__rows" aria-label="Replayed calls">
+          {replay.ids.map((id) => (
+            <Row
+              key={id}
+              agentId={agentId}
+              index={index}
+              id={id}
+              run={allRuns.find((r) => r.id === id)}
+              cls={score.classes[id] ?? "pending"}
+              entry={replay.runs[id] ?? {}}
+            />
+          ))}
+        </ul>
       )}
     </section>
   );

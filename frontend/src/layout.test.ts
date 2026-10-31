@@ -23,8 +23,7 @@ test("auto layout places every node without overlaps", () => {
 
   for (let i = 0; i < r.length; i++) {
     for (let j = i + 1; j < r.length; j++) {
-      const apart =
-        r[i].x + r[i].w <= r[j].x || r[j].x + r[j].w <= r[i].x || r[i].y + r[i].h <= r[j].y || r[j].y + r[j].h <= r[i].y;
+      const apart = r[i].x + r[i].w <= r[j].x || r[j].x + r[j].w <= r[i].x || r[i].y + r[i].h <= r[j].y || r[j].y + r[j].h <= r[i].y;
       expect(apart, `${agent.nodes[i].name} overlaps ${agent.nodes[j].name}`).toBe(true);
     }
   }

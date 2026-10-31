@@ -19,19 +19,11 @@ export const WENT_WRONG = "What went wrong: ";
 
 /** The message "Ask Copilot" puts in the input: the transcript, the node path, and an open question for the user to finish. */
 export function buildCallMessage(transcript: TranscriptEntry[]): string {
-  const lines = transcript
-    .filter((e) => e.kind !== "note")
-    .map((e) => `${e.kind === "user" ? "Caller" : "Agent"}: ${e.text}`);
+  const lines = transcript.filter((e) => e.kind !== "note").map((e) => `${e.kind === "user" ? "Caller" : "Agent"}: ${e.text}`);
   const path = nodePath(transcript);
-  return [
-    "Here is a test call with the agent.",
-    "",
-    "Transcript:",
-    ...lines,
-    ...(path.length ? ["", `Path: ${path.join(" -> ")}`] : []),
-    "",
-    WENT_WRONG,
-  ].join("\n");
+  return ["Here is a test call with the agent.", "", "Transcript:", ...lines, ...(path.length ? ["", `Path: ${path.join(" -> ")}`] : []), "", WENT_WRONG].join(
+    "\n",
+  );
 }
 
 /** "Ask Copilot" on one run: its transcript, path, outcome and flag, then the open question. */

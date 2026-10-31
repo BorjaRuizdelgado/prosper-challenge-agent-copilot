@@ -12,11 +12,7 @@ function ChoiceField({ id, label, options, value, onChange }: { id: string; labe
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
-      <select
-        id={id}
-        value={known ? value : CUSTOM}
-        onChange={(e) => onChange(e.target.value === CUSTOM ? (known ? "" : value) : e.target.value)}
-      >
+      <select id={id} value={known ? value : CUSTOM} onChange={(e) => onChange(e.target.value === CUSTOM ? (known ? "" : value) : e.target.value)}>
         {options.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
@@ -50,8 +46,6 @@ function GuidelinesSection() {
   useEffect(() => {
     if (!agentId) return;
     let live = true;
-    setText(undefined);
-    setDraft(null);
     getGuidelines(agentId).then(
       (t) => live && setText(t),
       (e: Error) => {
@@ -121,7 +115,11 @@ function GuidelinesSection() {
           </div>
         </>
       )}
-      {error && <span role="alert" className="guidelines-section__error">{error}</span>}
+      {error && (
+        <span role="alert" className="guidelines-section__error">
+          {error}
+        </span>
+      )}
     </section>
   );
 }
@@ -129,6 +127,7 @@ function GuidelinesSection() {
 /** Agent-level settings: name, global persona, voice and model. */
 export function SettingsForm() {
   const agent = useAgentStore((s) => s.agent);
+  const agentId = useAgentStore((s) => s.agentId);
   const updateSettings = useAgentStore((s) => s.updateSettings);
   if (!agent) return null;
   return (
@@ -147,9 +146,16 @@ export function SettingsForm() {
           onChange={(e) => updateSettings({ persona: e.target.value })}
         />
       </div>
-      <ChoiceField id="agent-voice" label="Voice" options={VOICES} value={agent.voice_id ?? VOICES[0].value} onChange={(voice_id) => updateSettings({ voice_id })} />
+      <ChoiceField
+        id="agent-voice"
+        label="Voice"
+        options={VOICES}
+        value={agent.voice_id ?? VOICES[0].value}
+        onChange={(voice_id) => updateSettings({ voice_id })}
+      />
       <ChoiceField id="agent-model" label="Model" options={MODELS} value={agent.model ?? MODELS[0].value} onChange={(model) => updateSettings({ model })} />
-      <GuidelinesSection />
+      {/* keyed so switching agent starts from a clean loading state */}
+      <GuidelinesSection key={agentId} />
     </form>
   );
 }

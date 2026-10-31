@@ -15,9 +15,10 @@ import re
 import sys
 import tempfile
 import time
+from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, AsyncIterator, Callable
+from typing import Any
 
 DEMO_GUIDELINES_DIR = Path(__file__).resolve().parent / "guidelines"
 DEFAULT_SAMPLE = "harbor-dental-reschedule"
@@ -198,7 +199,7 @@ def main(argv: list[str] | None = None, run: Runner | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m demo.check_build", description=__doc__.split("\n\n")[0])
     parser.add_argument("sample", nargs="?", default=DEFAULT_SAMPLE, help=f"sample name (default {DEFAULT_SAMPLE})")
     parser.add_argument("--dump", metavar="FILE", help="also write the coverage reports and drafts of both turns to FILE as JSON")
-    parser.add_argument("--model", help="copilot model alias, sets COPILOT_MODEL (default haiku)")
+    parser.add_argument("--model", help="copilot model alias, sets COPILOT_MODEL (default sonnet)")
     args = parser.parse_args(argv)
     if args.model:
         os.environ["COPILOT_MODEL"] = args.model

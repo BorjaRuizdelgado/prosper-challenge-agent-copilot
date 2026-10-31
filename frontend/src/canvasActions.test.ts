@@ -6,11 +6,7 @@ import { useAgentStore } from "./store";
 const agent = (): Agent => ({
   name: "Scheduler",
   initial_node: "a",
-  nodes: [
-    { name: "a", edges: [{ function: "go", description: "d", target: "b" }] },
-    { name: "b" },
-    { name: "c" },
-  ],
+  nodes: [{ name: "a", edges: [{ function: "go", description: "d", target: "b" }] }, { name: "b" }, { name: "c" }],
 });
 
 const edges = (node = "a") => useAgentStore.getState().agent!.nodes.find((n) => n.name === node)!.edges ?? [];

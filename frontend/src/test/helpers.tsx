@@ -10,9 +10,7 @@ export const json = (body: unknown, status = 200) => new Response(JSON.stringify
 /** Stub fetch with queued responses; an Error rejects like a network failure. */
 export function mockFetch(...responses: Array<Response | Error>) {
   const fn = vi.fn();
-  responses.forEach((r) =>
-    r instanceof Error ? fn.mockRejectedValueOnce(r) : fn.mockResolvedValueOnce(r),
-  );
+  responses.forEach((r) => (r instanceof Error ? fn.mockRejectedValueOnce(r) : fn.mockResolvedValueOnce(r)));
   vi.stubGlobal("fetch", fn);
   return fn;
 }

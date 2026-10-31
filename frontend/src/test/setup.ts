@@ -12,7 +12,9 @@ class ResizeObserverStub {
 }
 // Assigned directly (not vi.stubGlobal) so tests calling vi.unstubAllGlobals() keep them.
 globalThis.ResizeObserver = ResizeObserverStub;
-globalThis.DOMMatrixReadOnly = class { m22 = 1 } as unknown as typeof DOMMatrixReadOnly;
+globalThis.DOMMatrixReadOnly = class {
+  m22 = 1;
+} as unknown as typeof DOMMatrixReadOnly;
 
 // Node 25 ships its own `localStorage` that shadows jsdom's and fails without a backing file: use an in-memory one.
 const memory = new Map<string, string>();

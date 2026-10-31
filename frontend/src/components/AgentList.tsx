@@ -7,11 +7,7 @@ import { ConfirmDialog } from "./ConfirmDialog";
 import { GuidelinesDialog } from "./GuidelinesDialog";
 import { NameDialog } from "./NameDialog";
 
-type Dialog =
-  | { kind: "create" }
-  | { kind: "guidelines" }
-  | { kind: "rename"; agent: AgentSummary }
-  | { kind: "delete"; agent: AgentSummary };
+type Dialog = { kind: "create" } | { kind: "guidelines" } | { kind: "rename"; agent: AgentSummary } | { kind: "delete"; agent: AgentSummary };
 
 const updated = (iso: string) => {
   const date = new Date(iso);
@@ -70,7 +66,12 @@ export function AgentList({ variant = "page", onNavigate }: { variant?: "page" |
                 <button type="button" className="ghost" aria-label={`Duplicate ${a.name}`} onClick={() => duplicate(a.id)}>
                   Copy
                 </button>
-                <button type="button" className="ghost agent-list__delete" aria-label={`Delete ${a.name}`} onClick={() => setDialog({ kind: "delete", agent: a })}>
+                <button
+                  type="button"
+                  className="ghost agent-list__delete"
+                  aria-label={`Delete ${a.name}`}
+                  onClick={() => setDialog({ kind: "delete", agent: a })}
+                >
                   Delete
                 </button>
               </span>

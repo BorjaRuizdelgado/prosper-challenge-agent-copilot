@@ -2,7 +2,6 @@
 
 import json
 from pathlib import Path
-from typing import Optional
 
 from .client import ChatClient
 
@@ -22,10 +21,7 @@ Rules:
 - React to the agent as the original caller did: if it asks for several things in one message, you cannot hold them all: answer only the first one, or say you are not sure what it wants, and ask for a person if it keeps asking for everything at once, as in your original lines.
 - If you are told to hang up and call emergency services, or that you are being transferred, say goodbye and output {hangup}. Also output {hangup} when you would give up."""
 
-SUMMARY_PROMPT = (
-    "In one short sentence, in the caller's own terms, state what the caller wanted "
-    "in this phone call. Reply with the sentence only."
-)
+SUMMARY_PROMPT = "In one short sentence, in the caller's own terms, state what the caller wanted in this phone call. Reply with the sentence only."
 
 
 def caller_lines(run: dict) -> list:
@@ -54,7 +50,7 @@ class Caller:
         return (out.content or "").strip()
 
 
-async def goal_for(run: dict, chat_client: ChatClient, cache_path: Optional[Path] = None) -> str:
+async def goal_for(run: dict, chat_client: ChatClient, cache_path: Path | None = None) -> str:
     """The run's own ``goal``, else a cached one-line summary of the call."""
     if run.get("goal"):
         return run["goal"]

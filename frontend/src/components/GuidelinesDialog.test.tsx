@@ -7,8 +7,11 @@ import { AgentList } from "./AgentList";
 
 const sample = { name: "maple-family-practice", text: "Hours: 9 to 5.\nTwo providers.", reply: "Reply" };
 const small = { name: "harbor-dental-reschedule", text: "Cancel or move a visit.", reply: "Small reply" };
-const record = { id: "new-1", agent: { name: "Maple Family Practice", initial_node: "greeting", nodes: [{ name: "greeting" }] }, updated_at: "2026-01-01T00:00:00Z" };
-
+const record = {
+  id: "new-1",
+  agent: { name: "Maple Family Practice", initial_node: "greeting", nodes: [{ name: "greeting" }] },
+  updated_at: "2026-01-01T00:00:00Z",
+};
 
 beforeEach(() => {
   resetCopilotStore();
@@ -83,7 +86,7 @@ test("confirming creates with the guidelines, navigates and sends the build mess
     calls.push(message);
     yield { event: "done" } as never;
   });
-  const fetchMock = (globalThis.fetch as unknown as ReturnType<typeof vi.fn>);
+  const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
   const { router } = renderApp(<AgentList />);
   await userEvent.click(await screen.findByRole("button", { name: "New from guidelines" }));
   await userEvent.click(await screen.findByRole("button", { name: "Use sample: Maple Family Practice" }));

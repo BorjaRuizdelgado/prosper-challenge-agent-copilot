@@ -14,7 +14,12 @@ const agent: Agent = {
 };
 
 const run = (id: string, path: Run["path"]): Run => ({
-  id, started_at: "2026-10-21T09:14:00Z", duration_s: 30, outcome: "completed", transcript: [], path,
+  id,
+  started_at: "2026-10-21T09:14:00Z",
+  duration_s: 30,
+  outcome: "completed",
+  transcript: [],
+  path,
 });
 
 beforeEach(() => {
@@ -50,7 +55,10 @@ describe("runPath", () => {
   it("returns visited nodes, taken edges and the last node of a normal run", () => {
     const r = run("r", [{ node: "greeting" }, { node: "collect", via: "book" }, { node: "bye", via: "done" }]);
     expect(runPath(r, agent)).toEqual({
-      nodes: ["greeting", "collect", "bye"], edges: ["greeting::book", "collect::done"], last: "bye", missing: [],
+      nodes: ["greeting", "collect", "bye"],
+      edges: ["greeting::book", "collect::done"],
+      last: "bye",
+      missing: [],
     });
   });
 

@@ -6,7 +6,6 @@
 
 import re
 from dataclasses import asdict, dataclass
-from typing import Optional
 
 # Edges become LLM tools; OpenAI rejects tool names outside this pattern mid-call.
 FUNCTION_NAME_RE = re.compile(r"^[a-zA-Z0-9_-]{1,64}$")
@@ -17,8 +16,8 @@ class Issue:
     severity: str  # "error" | "warning"
     code: str
     message: str
-    node: Optional[str] = None
-    edge: Optional[str] = None  # edge function name, within `node`
+    node: str | None = None
+    edge: str | None = None  # edge function name, within `node`
 
 
 def _error(code: str, message: str, **where) -> Issue:
@@ -53,23 +52,17 @@ def _edge_issues(name: str, edge: dict) -> list[Issue]:
 
     properties, required = edge.get("properties", {}), edge.get("required", [])
     if not isinstance(properties, dict) or not isinstance(required, list):
-        issues.append(
-            _error("bad-parameters", f"{label} needs 'properties' as an object and 'required' as a list.", **where)
-        )
+        issues.append(_error("bad-parameters", f"{label} needs 'properties' as an object and 'required' as a list.", **where))
         return issues
     for param in required:
         if param not in properties:
-            issues.append(
-                _warning("unknown-required", f"{label} requires '{param}', which is not one of its parameters.", **where)
-            )
+            issues.append(_warning("unknown-required", f"{label} requires '{param}', which is not one of its parameters.", **where))
     for param, spec in properties.items():
         if not isinstance(spec, dict) or not spec.get("type"):
             issues.append(_warning("untyped-parameter", f"Parameter '{param}' of {label.lower()} has no type.", **where))
         elif spec["type"] == "array" and not isinstance(spec.get("items"), dict):
             # OpenAI rejects the whole tool list when an array parameter does not say what it holds.
-            issues.append(
-                _error("array-without-items", f"Parameter '{param}' of {label.lower()} is a list but has no item type.", **where)
-            )
+            issues.append(_error("array-without-items", f"Parameter '{param}' of {label.lower()} is a list but has no item type.", **where))
     return issues
 
 
@@ -91,15 +84,12 @@ def _action_issues(name: str, node: dict) -> list[Issue]:
                 issues.append(
                     _error(
                         "bad-action",
-                        f"Action {i} in {field} of node '{name}' must have a type of "
-                        f"{' or '.join(SUPPORTED_ACTIONS)} (got {kind!r}).",
+                        f"Action {i} in {field} of node '{name}' must have a type of {' or '.join(SUPPORTED_ACTIONS)} (got {kind!r}).",
                         node=name,
                     )
                 )
             elif kind == "tts_say" and not _is_text(action.get("text")):
-                issues.append(
-                    _warning("empty-say", f"Action {i} in {field} of node '{name}' has nothing to say, so it is skipped.", node=name)
-                )
+                issues.append(_warning("empty-say", f"Action {i} in {field} of node '{name}' has nothing to say, so it is skipped.", node=name))
 
     post = node.get("post_actions") or []
     if node.get("end") and isinstance(post, list) and post:
@@ -181,9 +171,7 @@ def validate(data: dict) -> list[Issue]:
             else:
                 reachable_from.setdefault(name, []).append(target)
         if not edges and not node.get("end"):
-            issues.append(
-                _warning("dead-end", f"Node '{name}' is not terminal and has no edges out.", node=name)
-            )
+            issues.append(_warning("dead-end", f"Node '{name}' is not terminal and has no edges out.", node=name))
 
     if isinstance(initial, str) and initial in names:
         visited, stack = set(), [initial]

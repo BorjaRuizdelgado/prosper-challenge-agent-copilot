@@ -28,7 +28,11 @@ function control(pos: Position, x1: number, y1: number, x2: number, y2: number):
  * The midpoint of a cubic is (S + 3c1 + 3c2 + T) / 8, so shifting both controls by 4/3 of the offset moves it exactly there.
  */
 export function bezierThroughOffset(
-  [sx, sy]: [number, number], [tx, ty]: [number, number], sourcePosition: Position, targetPosition: Position, offset: { x: number; y: number },
+  [sx, sy]: [number, number],
+  [tx, ty]: [number, number],
+  sourcePosition: Position,
+  targetPosition: Position,
+  offset: { x: number; y: number },
 ) {
   const k = 4 / 3;
   const [c1x, c1y] = control(sourcePosition, sx, sy, tx, ty);
@@ -58,7 +62,12 @@ export function LabelEdge({ id, sourceX, sourceY, targetX, targetY, sourcePositi
 
   return (
     <>
-      <BaseEdge id={id} path={path} markerEnd={markerEnd} className={[taken && "edge--taken", ran && "edge--run", change && `edge--${change}`].filter(Boolean).join(" ") || undefined} />
+      <BaseEdge
+        id={id}
+        path={path}
+        markerEnd={markerEnd}
+        className={[taken && "edge--taken", ran && "edge--run", change && `edge--${change}`].filter(Boolean).join(" ") || undefined}
+      />
       <EdgeLabelRenderer>
         <div
           className={`edge-label nodrag nopan${selected ? " edge-label--selected" : ""}${severity ? ` edge-label--${severity}` : ""}${taken ? " edge-label--taken" : ""}${ran ? " edge-label--run" : ""}${change ? ` edge-label--${change}` : ""}`}

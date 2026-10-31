@@ -2,7 +2,7 @@
 
 import asyncio
 import os
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -42,6 +42,7 @@ async def stream_replay(jobs: list, fn: ReplayFn):
         async with sem:
             await queue.put({"event": "started", "data": key})
             try:
+
                 def on_line(line: dict) -> None:
                     queue.put_nowait({"event": "line", "data": {**key, **line}})
 
@@ -56,7 +57,7 @@ async def stream_replay(jobs: list, fn: ReplayFn):
         while not (pending.done() and queue.empty()):
             try:
                 event = await asyncio.wait_for(queue.get(), timeout=0.05)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 continue
             yield sse(event)
         yield sse({"event": "done", "data": {}})
@@ -82,10 +83,5 @@ async def replay_endpoint(agent_id: str, body: ReplayBody, fn: ReplayFn = Depend
 
         return StreamingResponse(setup_error(), media_type="text/event-stream", headers=headers)
 
-    jobs = [
-        (available[rid], version, agent)
-        for rid in dict.fromkeys(body.run_ids)
-        for version, agent in (("before", body.base), ("after", body.proposal))
-        if agent is not None
-    ]
+    jobs = [(available[rid], version, agent) for rid in dict.fromkeys(body.run_ids) for version, agent in (("before", body.base), ("after", body.proposal)) if agent is not None]
     return StreamingResponse(stream_replay(jobs, fn), media_type="text/event-stream", headers=headers)

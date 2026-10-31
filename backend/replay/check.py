@@ -11,8 +11,8 @@ import argparse
 import asyncio
 import os
 import sys
+from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Awaitable, Callable
 
 from dotenv import load_dotenv
 
@@ -52,9 +52,7 @@ async def check(fn: ReplayFn, agent_ids: list[str], only: set[str] | None = None
 def format_table(rows: list[tuple]) -> str:
     cells = [HEADER, *rows]
     widths = [max(len(str(row[i])) for row in cells) for i in range(4)]
-    return "\n".join(
-        " · ".join([str(row[i]).ljust(widths[i]) for i in range(4)] + [str(row[4])]) for row in cells
-    )
+    return "\n".join(" · ".join([str(row[i]).ljust(widths[i]) for i in range(4)] + [str(row[4])]) for row in cells)
 
 
 def main(argv: list[str] | None = None, fn: ReplayFn | None = None) -> int:

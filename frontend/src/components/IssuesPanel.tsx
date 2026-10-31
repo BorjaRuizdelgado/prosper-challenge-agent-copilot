@@ -4,9 +4,7 @@ import { useAgentStore } from "../store";
 /** The dock selection an issue points at, or null for agent-wide issues. */
 export function issueSelection(issue: Issue) {
   if (!issue.node) return null;
-  return issue.edge
-    ? ({ kind: "edge", node: issue.node, function: issue.edge } as const)
-    : ({ kind: "node", node: issue.node } as const);
+  return issue.edge ? ({ kind: "edge", node: issue.node, function: issue.edge } as const) : ({ kind: "node", node: issue.node } as const);
 }
 
 export function IssuesPanel() {

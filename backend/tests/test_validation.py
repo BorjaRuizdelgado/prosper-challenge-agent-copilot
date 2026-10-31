@@ -6,7 +6,6 @@ from agent_builder import AgentBuilder, validate
 from agent_builder.schema import AgentConfig
 from api import store
 
-
 TASK = [{"role": "developer", "content": "t"}]
 
 
@@ -214,9 +213,7 @@ def test_builder_raises_on_errors_but_not_warnings():
 
 
 def test_schema_preserves_layout():
-    config = AgentConfig.from_dict(
-        {"name": "x", "initial_node": "a", "nodes": [], "layout": {"a": {"x": 1, "y": 2}}}
-    )
+    config = AgentConfig.from_dict({"name": "x", "initial_node": "a", "nodes": [], "layout": {"a": {"x": 1, "y": 2}}})
     assert config.layout == {"a": {"x": 1, "y": 2}}
 
 

@@ -13,21 +13,45 @@ import { useAgentStore } from "../store";
 import { resetReplayView, useReplayView } from "./replayView";
 
 const base: Agent = {
-  name: "A", initial_node: "greeting",
+  name: "A",
+  initial_node: "greeting",
   nodes: [{ name: "greeting", edges: [{ function: "book", description: "", target: "collect" }] }, { name: "collect" }],
 };
 const proposed: Agent = {
   ...base,
   nodes: [
-    { name: "greeting", edges: [{ function: "book", description: "", target: "collect" }, { function: "cancel", description: "", target: "handoff" }] },
+    {
+      name: "greeting",
+      edges: [
+        { function: "book", description: "", target: "collect" },
+        { function: "cancel", description: "", target: "handoff" },
+      ],
+    },
     { name: "collect" },
     { name: "handoff", end: true },
   ],
 };
-const after = { transcript: [], outcome: "transferred" as const, goal_met: true, reason: "ok", path: [{ node: "greeting" }, { node: "handoff", via: "cancel" }] };
+const after = {
+  transcript: [],
+  outcome: "transferred" as const,
+  goal_met: true,
+  reason: "ok",
+  path: [{ node: "greeting" }, { node: "handoff", via: "cancel" }],
+};
 
 const edgeProps = (id: string) =>
-  ({ id, sourceX: 0, sourceY: 0, targetX: 100, targetY: 100, sourcePosition: Position.Bottom, targetPosition: Position.Top, label: id, selected: false, data: {} }) as unknown as ComponentProps<typeof LabelEdge>;
+  ({
+    id,
+    sourceX: 0,
+    sourceY: 0,
+    targetX: 100,
+    targetY: 100,
+    sourcePosition: Position.Bottom,
+    targetPosition: Position.Top,
+    label: id,
+    selected: false,
+    data: {},
+  }) as unknown as ComponentProps<typeof LabelEdge>;
 
 function renderProposal() {
   const { nodes } = toFlow(proposed, {});
@@ -38,8 +62,12 @@ function renderProposal() {
           <NodeCard {...({ data: n.data, selected: false } as unknown as ComponentProps<typeof NodeCard>)} />
         </div>
       ))}
-      <svg><LabelEdge {...edgeProps("greeting::cancel")} /></svg>
-      <svg><LabelEdge {...edgeProps("greeting::book")} /></svg>
+      <svg>
+        <LabelEdge {...edgeProps("greeting::cancel")} />
+      </svg>
+      <svg>
+        <LabelEdge {...edgeProps("greeting::book")} />
+      </svg>
     </ReactFlowProvider>,
   );
 }
@@ -57,12 +85,17 @@ beforeEach(() => {
         messages: [
           { role: "user", text: "go" },
           {
-            role: "assistant", text: "", steps: [],
+            role: "assistant",
+            text: "",
+            steps: [],
             proposal: { agent: proposed, issues: [], base, status: "pending" },
             replay: { status: "done", ids: ["r-1"], runs: { "r-1": { after } } },
           },
         ],
-        running: false, startedAt: null, focus: null, review: null,
+        running: false,
+        startedAt: null,
+        focus: null,
+        review: null,
       },
     },
   });

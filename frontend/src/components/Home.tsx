@@ -18,8 +18,8 @@ export function Home() {
         <div className="home__intro">
           <h1 className="home__title">Voice agents</h1>
           <p className="home__lede">
-            Each agent answers your front desk's calls as a graph of steps. Select an agent to open its graph, or start a new one and
-            describe it to the copilot.
+            Each agent answers your front desk's calls as a graph of steps. Select an agent to open its graph, or start a new one and describe it to the
+            copilot.
           </p>
           {agents.length > 0 && (
             <dl className="home__stats">

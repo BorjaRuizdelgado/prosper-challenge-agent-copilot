@@ -6,12 +6,9 @@ export type CallState = "idle" | "connecting" | "live" | "ended" | "failed";
 /** How long to wait for the voice agent before giving up; the runner never answers when its session setup fails. */
 export const CONNECT_TIMEOUT_MS = 20_000;
 
-export const TIMEOUT_MESSAGE =
-  "The voice agent did not answer. Check that the voice runner is up, that backend/.env has both API keys, and its logs.";
+export const TIMEOUT_MESSAGE = "The voice agent did not answer. Check that the voice runner is up, that backend/.env has both API keys, and its logs.";
 
-export type TranscriptEntry =
-  | { kind: "user" | "agent"; text: string }
-  | { kind: "note"; text: string };
+export type TranscriptEntry = { kind: "user" | "agent"; text: string } | { kind: "note"; text: string };
 
 export interface Transition {
   from: string | null;
@@ -89,9 +86,7 @@ export const useCallStore = create<CallStore>((set, get) => {
     const last = transcript[transcript.length - 1];
     set({
       transcript:
-        last?.kind === kind
-          ? [...transcript.slice(0, -1), { kind, text: `${last.text} ${text.trim()}` }]
-          : [...transcript, { kind, text: text.trim() }],
+        last?.kind === kind ? [...transcript.slice(0, -1), { kind, text: `${last.text} ${text.trim()}` }] : [...transcript, { kind, text: text.trim() }],
     });
   };
 

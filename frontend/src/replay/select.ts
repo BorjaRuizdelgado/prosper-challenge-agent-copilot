@@ -57,7 +57,8 @@ export const met = (r: ReplayResult) => r.goal_met && (r.outcome === "completed"
 /**
  * Scores replayed runs (design Decision 5). A failing run is fixed when *after* meets the goal; if *before*
  * already met it, the failure did not reproduce and the run counts as neither fixed nor failing. A working run
- * is kept when *after* still meets the goal and broken when it does not.
+ * is kept when *after* meets the goal, or when *before* did not either and *after* ends the same way (the judge
+ * often marks a correct transfer as not met); it is broken only when *after* is worse than *before*.
  */
 export function scoreReplay(runs: Run[], results: Record<string, RunReplay>): ReplayScore {
   const score: ReplayScore = { classes: {}, fixed: 0, failing: 0, kept: 0, working: 0, broken: 0, notReproduced: 0 };
@@ -67,7 +68,7 @@ export function scoreReplay(runs: Run[], results: Record<string, RunReplay>): Re
     if (needsAttention(run)) {
       if (before && met(before)) cls = "not_reproduced";
       else if (after) cls = met(after) ? "fixed" : "unfixed";
-    } else if (after) cls = met(after) ? "kept" : "broken";
+    } else if (after) cls = met(after) || (before && !met(before) && before.outcome === after.outcome) ? "kept" : "broken";
     score.classes[run.id] = cls;
     if (cls === "fixed") score.fixed++;
     if (cls === "fixed" || cls === "unfixed") score.failing++;
